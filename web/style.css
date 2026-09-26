@@ -96,23 +96,12 @@ h2 {
   font-weight: 700;
 }
 
-.header-status,
 .data-note,
 .factor-line,
 .mini-breakdown,
 .result-detail {
   color: var(--muted);
   font-size: 0.78rem;
-}
-
-.header-status {
-  display: inline-flex;
-  align-items: center;
-  min-height: 32px;
-  padding: 6px 10px;
-  border: 1px solid var(--gold);
-  background: #1d1c1a;
-  color: #f4eadb;
 }
 
 .header-status-group {
@@ -124,12 +113,6 @@ h2 {
 .save-status {
   color: #c5b49d;
   font-size: 0.72rem;
-}
-
-.header-status.ready {
-  color: #f4eadb;
-  border-color: var(--gold);
-  background: #32281b;
 }
 
 .result-strip {
@@ -938,10 +921,6 @@ h2 {
     flex-direction: column;
     gap: 12px;
     margin-bottom: 14px;
-  }
-
-  .header-status {
-    min-height: 30px;
   }
 
   .header-status-group {

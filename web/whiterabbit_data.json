@@ -583,6 +583,7 @@
       "scope": "全队",
       "effect": "10%恢复，10%格挡，10%基础气血",
       "hp_percent": 10,
+      "recovery_base_percent": 10,
       "attack_percent": null,
       "calculate": true,
       "access": "玄武岛击杀玄武尊者获得",

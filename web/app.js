@@ -472,6 +472,7 @@ function techniqueScopeStatus(technique) {
   if (scope.includes('学习千山寂雪')) return false;
   if (personName === '陆仁甲') return true;
   if (scope.includes('女号') && gender !== '女号') return false;
+  if (scope.includes('男号') && gender !== '男号') return false;
   if (scope.includes('全队')) return true;
   const requiredStyle = ['拳主', '剑主', '刀主', '棍主'].find((item) => scope.includes(item));
   if (personName === '陆仁甲' && (scope.includes('主角') || requiredStyle)) return true;
@@ -487,6 +488,7 @@ function techniqueAccountEligible(technique) {
   if (scope.includes('学习千山寂雪')) return false;
   if (personName === '陆仁甲') return true;
   if (scope.includes('女号') && gender === '男号') return false;
+  if (scope.includes('男号') && gender !== '男号') return false;
   const requiredStyle = ['拳主', '剑主', '刀主', '棍主'].find((item) => scope.includes(item));
   if (scope.includes('全队') || !scope) return true;
   if (personName === '陆仁甲' && (scope.includes('主角') || requiredStyle)) return true;
@@ -498,10 +500,14 @@ function techniqueStats(technique) {
   const totals = {
     hp: Number(technique?.hp_percent) || 0,
     attack: Number(technique?.attack_percent) || 0,
+    recoveryBasePercent: Number(technique?.recovery_base_percent) || 0,
     secondary: emptySecondaryStats(),
   };
   addSecondaryStats(totals.secondary, technique?.secondary);
-  addSecondaryStats(totals.secondary, secondaryStatsFromText(technique?.effect));
+  const parsedSecondary = secondaryStatsFromText(technique?.effect);
+  // 玄武的“10%恢复”是基础生命转化出的回复量，不是回复百分比。
+  parsedSecondary.recovery -= totals.recoveryBasePercent;
+  addSecondaryStats(totals.secondary, parsedSecondary);
   return totals;
 }
 function techniqueStatsLabel(technique) {
@@ -509,6 +515,7 @@ function techniqueStatsLabel(technique) {
   const parts = [];
   if (stats.hp) parts.push(`${formatPercent(stats.hp)}血`);
   if (stats.attack) parts.push(`${formatPercent(stats.attack)}攻`);
+  if (stats.recoveryBasePercent) parts.push(`${formatPercent(stats.recoveryBasePercent)}回复量`);
   SECONDARY_STAT_DEFS.forEach((definition) => {
     const value = stats.secondary[definition.key];
     if (value) parts.push(`${formatSecondaryValue(definition.key, value)}${definition.label}`);
@@ -531,6 +538,7 @@ function defaultTechniqueIds() {
       if (!techniqueAccountEligible(technique)) return false;
       const scope = String(technique.scope || '').replace(/\s/g, '');
       if (scope.includes('女号') && gender !== '女号') return false;
+      if (scope.includes('男号') && gender !== '男号') return false;
       if (!scope || scope.includes('全队')) return true;
       if (personName === '胡休') {
         if (scope !== '胡休') return false;
@@ -558,7 +566,7 @@ function selectedTechniques() {
   return selectedTechniqueIds().map(getWhiteTechnique).filter(Boolean);
 }
 function techniqueTotals() {
-  const totals = { hp: 0, attack: 0, secondary: emptySecondaryStats(), applied: [], skipped: [] };
+  const totals = { hp: 0, attack: 0, recoveryBasePercent: 0, secondary: emptySecondaryStats(), applied: [], skipped: [] };
   selectedTechniques().forEach((technique) => {
     if (!techniqueScopeStatus(technique)) {
       totals.skipped.push(technique.name);
@@ -567,6 +575,7 @@ function techniqueTotals() {
     const stats = techniqueStats(technique);
     totals.hp += stats.hp;
     totals.attack += stats.attack;
+    totals.recoveryBasePercent += stats.recoveryBasePercent;
     addSecondaryStats(totals.secondary, stats.secondary);
     totals.applied.push(technique.name);
   });
@@ -1131,8 +1140,6 @@ function populate() {
   populateFormationControls();
   populateWeaponAffixes();
   renderEquipmentSlots();
-  $('data-status').textContent = state.whiteRabbit ? '5.40 + 白兔资料已加载' : '5.40 数据已加载';
-  $('data-status').classList.add('ready');
 }
 
 function weaponAffixTotals() {
@@ -1251,7 +1258,10 @@ function calculate({ commit = false } = {}) {
   const finalAttack = trunc(baseAttack * (100 + attackPercent) / 100) + trunc(achievementAttack) + trunc(weaponTotals.attackFlat) + trunc(equipmentAttackFlat);
   // 回复按 APK 面板口径：基础生命先乘内功生命加成，再乘总回复比例。
   const recoveryBase = baseHpRaw * (100 + neigongHp) / 100;
-  const recoveryValue = trunc(recoveryBase * secondaryStats.recovery / 100);
+  const recoveryValue = trunc(
+    recoveryBase * secondaryStats.recovery / 100
+      + baseHpRaw * selectedTechniqueStats.recoveryBasePercent / 100,
+  );
   $('final-hp').textContent = formatNumber(finalHp);
   $('final-attack').textContent = formatNumber(finalAttack);
   $('hp-detail').textContent = `基础 ${formatNumber(baseHp)} · 百分比 ${formatPercent(hpPercent)} · 成就 +${formatNumber(achievementHp)}`;
@@ -1488,7 +1498,6 @@ async function init() {
     renderTechniqueScope();
     renderWeaponAffixes(); renderEquipmentSlots(); calculate();
   } catch (error) {
-    $('data-status').textContent = '数据读取失败';
     setError(`${error.message}。请通过本地 HTTP 服务打开页面，不要直接双击 HTML 文件。`);
   }
 }
