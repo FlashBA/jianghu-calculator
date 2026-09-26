@@ -131,7 +131,7 @@ function innerStatsSummary(stats) {
 }
 function formationStats() {
   const formation = $('formation-select')?.value || '';
-  if (!formation) return { name: '不布阵', position: 0, hp: 0, attack: 0, damage: 0, secondary: emptySecondaryStats(), note: '' };
+  if (!formation) return { name: '不布阵', position: 0, hp: 0, attack: 0, secondary: emptySecondaryStats(), note: '' };
   const roleName = $('person-name').value.trim() || '自定义角色';
   const position = roleName === '主角' ? 1 : Math.max(1, Math.min(9, Math.round(numberValue('formation-position', 1))));
   const secondary = emptySecondaryStats();
@@ -140,7 +140,6 @@ function formationStats() {
     position,
     hp: 0,
     attack: 0,
-    damage: 0,
     secondary,
     note: '',
   };
@@ -151,7 +150,7 @@ function formationStats() {
       3: { hp: 10, mitigation: 5, note: '坤位' },
       4: { speed: 15, crit: 8, note: '震位' },
       5: { speed: 12, dodge: 12, note: '巽位' },
-      6: { damage: 20, note: '乾位，独立伤害乘区' },
+      6: { note: '乾位' },
       7: { crit: 10, lifesteal: 10, note: '兑位' },
       8: { block: 15, reflect: 50, note: '艮位' },
       9: { crit: 10, critDamage: 50, note: '离位' },
@@ -159,7 +158,6 @@ function formationStats() {
     const slot = slots[position];
     result.hp = slot.hp || 0;
     result.attack = slot.attack || 0;
-    result.damage = slot.damage || 0;
     addSecondaryStats(secondary, slot);
     result.note = slot.note;
     return result;
@@ -355,7 +353,7 @@ function equipmentStats(item) {
   return {
     hp: Number(item?.hp_percent) || effectSum(item, 2),
     attack: Number(item?.attack_percent) || effectSum(item, 131072),
-    hpFlat: Number(item?.hp_flat) || 0,
+    hpFlat: Number(item?.hp_flat) || effectSum(item, 1),
     attackFlat: Number(item?.attack_flat) || 0,
     secondary: item?.source === 'white'
       ? secondaryStatsFromRecord(item)
@@ -466,14 +464,16 @@ function getSelectedInner() {
 }
 function techniqueScopeStatus(technique) {
   const scope = String(technique?.scope || '');
-  if (!scope) return true;
   const personName = $('person-name').value.trim() || '自定义角色';
+  const restrictedGroup = technique?.group === 'jiuyin' || technique?.group === 'wolong';
+  if (restrictedGroup && personName !== '主角' && personName !== '陆仁甲') return false;
   const style = $('person-style').value;
   const gender = $('person-gender').value;
   if (scope.includes('学习千山寂雪')) return false;
-  if (personName === '陆仁甲') return true;
   if (scope.includes('女号') && gender !== '女号') return false;
   if (scope.includes('男号') && gender !== '男号') return false;
+  if (!scope) return true;
+  if (personName === '陆仁甲') return true;
   if (scope.includes('全队')) return true;
   const requiredStyle = ['拳主', '剑主', '刀主', '棍主'].find((item) => scope.includes(item));
   if (personName === '陆仁甲' && (scope.includes('主角') || requiredStyle)) return true;
@@ -484,12 +484,14 @@ function techniqueScopeStatus(technique) {
 function techniqueAccountEligible(technique) {
   const scope = String(technique?.scope || '');
   const personName = $('person-name').value.trim() || '自定义角色';
+  const restrictedGroup = technique?.group === 'jiuyin' || technique?.group === 'wolong';
+  if (restrictedGroup && personName !== '主角' && personName !== '陆仁甲') return false;
   const gender = $('person-gender').value;
   const style = $('person-style').value;
   if (scope.includes('学习千山寂雪')) return false;
-  if (personName === '陆仁甲') return true;
   if (scope.includes('女号') && gender === '男号') return false;
   if (scope.includes('男号') && gender !== '男号') return false;
+  if (personName === '陆仁甲') return true;
   const requiredStyle = ['拳主', '剑主', '刀主', '棍主'].find((item) => scope.includes(item));
   if (scope.includes('全队') || !scope) return true;
   if (personName === '陆仁甲' && (scope.includes('主角') || requiredStyle)) return true;
@@ -1182,7 +1184,6 @@ function clearGeneratedResult() {
     const domKey = key.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
     $(`final-${domKey}`).textContent = '--';
   });
-  $('final-damage').textContent = '--';
   $('compare-button').disabled = true;
 }
 
@@ -1215,7 +1216,8 @@ function calculate({ commit = false } = {}) {
   const neigongHp = inner ? (autoStats?.hp ?? numberValue('neigong-hp')) : 0;
   const neigongAttack = inner ? (autoStats?.attack ?? numberValue('neigong-attack')) : 0;
   const selectedTechniqueStats = techniqueTotals();
-  const techniqueHp = selectedTechniqueStats.hp + numberValue('technique-hp');
+  const techniqueHp = selectedTechniqueStats.hp;
+  const supplementalHp = numberValue('technique-hp');
   const techniqueAttack = selectedTechniqueStats.attack + numberValue('technique-attack');
   const activeFormation = formationStats();
   const weaponTotals = weaponAffixTotals();
@@ -1252,16 +1254,16 @@ function calculate({ commit = false } = {}) {
   const largeRenAttack = largeRenEnabled ? 100 : 0;
   const largeRenSpeed = largeRenEnabled ? 8 : 0;
   secondaryStats.speed += largeRenSpeed;
-  // APK getHp keeps the selected inner t=2 effect in its own branch. It is
-  // applied to the base after blood pills, rather than being folded into one
-  // undifferentiated percentage with technique/equipment input.
-  const outerHpPercent = equipmentHp + techniqueHp + pillHp + smallRenHp + largeRenHp + weaponTotals.hpPercent + activeFormation.hp;
-  const innerHpBase = baseHpRaw * (100 + pillHp) / 100;
-  const innerHpBonus = innerHpBase * neigongHp / 100;
+  // Blood pills form their own base-life multiplier. Other life percentages
+  // share that post-pill base, while large Ren Du uses the pre-pill base.
+  const bloodPillBaseHp = baseHpRaw * (100 + pillHp) / 100;
+  const postPillHpPercent = equipmentHp + techniqueHp + neigongHp + smallRenHp
+    + weaponTotals.hpPercent + activeFormation.hp;
+  const largeRenHpBonus = baseHpRaw * (largeRenHp + supplementalHp) / 100;
   const attackPercent = equipmentAttack + neigongAttack + techniqueAttack + smallRenAttack + largeRenAttack + weaponTotals.attackPercent + activeFormation.attack;
-  const finalHpRaw = baseHpRaw * (100 + outerHpPercent) / 100 + innerHpBonus;
+  const finalHpRaw = bloodPillBaseHp * (100 + postPillHpPercent) / 100 + largeRenHpBonus;
   const hpPercent = baseHpRaw ? (finalHpRaw / baseHpRaw - 1) * 100 : 0;
-  const finalHp = trunc(finalHpRaw) + trunc(achievementHp) + trunc(weaponTotals.hpFlat) + trunc(equipmentHpFlat);
+  const finalHp = Math.round(finalHpRaw) + trunc(achievementHp) + trunc(weaponTotals.hpFlat) + trunc(equipmentHpFlat);
   const finalAttack = trunc(baseAttack * (100 + attackPercent) / 100) + trunc(achievementAttack) + trunc(weaponTotals.attackFlat) + trunc(equipmentAttackFlat);
   // 回复按 APK 面板口径：基础生命先乘内功生命加成，再乘总回复比例。
   const recoveryBase = baseHpRaw * (100 + neigongHp) / 100;
@@ -1279,7 +1281,6 @@ function calculate({ commit = false } = {}) {
       ? formatNumber(recoveryValue)
       : formatSecondaryValue(key, secondaryStats[key]);
   });
-  $('final-damage').textContent = formatPercent(activeFormation.damage);
   $('result-person').textContent = roleName;
   $('result-level').textContent = `等级 ${level}`;
   $('factor-line').textContent = `生命系数 ${hpFactor} · 攻击系数 ${powerFactor}`;
@@ -1290,7 +1291,6 @@ function calculate({ commit = false } = {}) {
     roleName,
     level,
     stats: Object.fromEntries(SECONDARY_KEYS.map((key) => [key, key === 'recovery' ? recoveryValue : secondaryStats[key]])),
-    damage: activeFormation.damage,
   };
   resultGenerated = true;
   $('compare-button').disabled = false;
@@ -1324,7 +1324,6 @@ function renderComparison() {
       key: `stats.${definition.key}`,
       format: (value) => formatSecondaryValue(definition.key, value),
     })),
-    { label: '独立伤害', key: 'damage', format: formatPercent },
   ];
   const valueAt = (snapshot, key) => key.startsWith('stats.')
     ? Number(snapshot.stats?.[key.slice(7)]) || 0
