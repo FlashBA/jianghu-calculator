@@ -427,7 +427,7 @@
       "name": "棍势",
       "max_level": 300,
       "scope": "主角，棍主",
-      "effect": "20%棍法伤害，10%格挡",
+      "effect": "20%暴击，20%棍法伤害",
       "hp_percent": null,
       "attack_percent": null,
       "calculate": true,
