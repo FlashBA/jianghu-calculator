@@ -252,6 +252,7 @@ function techniqueOptionEntries() {
   const entries = [];
   (state.whiteRabbit?.techniques || []).forEach((technique, index) => {
     if (technique.calculate === false) return;
+    if (technique.name === '赌术' || technique.name === '任督二脉') return;
     if (technique.group === 'wolong' && Array.isArray(technique.choices)) {
       technique.choices.forEach((choice, choiceIndex) => {
         entries.push({
@@ -451,6 +452,7 @@ function techniqueScopeStatus(technique) {
   const style = $('person-style').value;
   const gender = $('person-gender').value;
   if (scope.includes('学习千山寂雪')) return false;
+  if (personName === '陆仁甲') return true;
   if (scope.includes('女号') && gender !== '女号') return false;
   if (scope.includes('全队')) return true;
   const requiredStyle = ['拳主', '剑主', '刀主', '棍主'].find((item) => scope.includes(item));
@@ -465,6 +467,7 @@ function techniqueAccountEligible(technique) {
   const gender = $('person-gender').value;
   const style = $('person-style').value;
   if (scope.includes('学习千山寂雪')) return false;
+  if (personName === '陆仁甲') return true;
   if (scope.includes('女号') && gender === '男号') return false;
   const requiredStyle = ['拳主', '剑主', '刀主', '棍主'].find((item) => scope.includes(item));
   if (scope.includes('全队') || !scope) return true;
@@ -503,7 +506,7 @@ function defaultTechniqueIds() {
   const gender = $('person-gender').value;
   const isMain = personName === '主角';
   const isLuRenJia = personName === '陆仁甲';
-  const excluded = new Set(['任督二脉', '一苇渡江术', '洗髓伐骨']);
+  const excluded = new Set(['赌术', '任督二脉', '一苇渡江术', '洗髓伐骨']);
   return techniqueOptionEntries()
     .filter((technique) => {
       if (excluded.has(technique.name) || technique.group === 'jiuyin' || technique.group === 'wolong') return false;
@@ -1225,13 +1228,18 @@ function calculate({ commit = false } = {}) {
   const hpPercent = baseHpRaw ? (finalHpRaw / baseHpRaw - 1) * 100 : 0;
   const finalHp = trunc(finalHpRaw) + trunc(achievementHp) + trunc(weaponTotals.hpFlat) + trunc(equipmentHpFlat);
   const finalAttack = trunc(baseAttack * (100 + attackPercent) / 100) + trunc(achievementAttack) + trunc(weaponTotals.attackFlat) + trunc(equipmentAttackFlat);
+  // 回复按 APK 面板口径：基础生命先乘内功生命加成，再乘总回复比例。
+  const recoveryBase = baseHpRaw * (100 + neigongHp) / 100;
+  const recoveryValue = trunc(recoveryBase * secondaryStats.recovery / 100);
   $('final-hp').textContent = formatNumber(finalHp);
   $('final-attack').textContent = formatNumber(finalAttack);
   $('hp-detail').textContent = `基础 ${formatNumber(baseHp)} · 百分比 ${formatPercent(hpPercent)} · 成就 +${formatNumber(achievementHp)}`;
   $('attack-detail').textContent = `基础 ${formatNumber(baseAttack)} · 百分比 ${formatPercent(attackPercent)} · 成就 +${formatNumber(achievementAttack)}`;
   SECONDARY_KEYS.forEach((key) => {
     const domKey = key.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
-    $(`final-${domKey}`).textContent = formatSecondaryValue(key, secondaryStats[key]);
+    $(`final-${domKey}`).textContent = key === 'recovery'
+      ? formatNumber(recoveryValue)
+      : formatSecondaryValue(key, secondaryStats[key]);
   });
   $('final-damage').textContent = formatPercent(activeFormation.damage);
   $('result-person').textContent = roleName;
@@ -1243,7 +1251,7 @@ function calculate({ commit = false } = {}) {
     attack: finalAttack,
     roleName,
     level,
-    stats: Object.fromEntries(SECONDARY_KEYS.map((key) => [key, secondaryStats[key]])),
+    stats: Object.fromEntries(SECONDARY_KEYS.map((key) => [key, key === 'recovery' ? recoveryValue : secondaryStats[key]])),
     damage: activeFormation.damage,
   };
   resultGenerated = true;
@@ -1444,7 +1452,7 @@ function bindEvents() {
 
 async function init() {
   try {
-    const [baseResponse, whiteResponse] = await Promise.all([fetch('./uc540_doc.json'), fetch('./whiterabbit_data.json?v=20260927-2')]);
+    const [baseResponse, whiteResponse] = await Promise.all([fetch('./uc540_doc.json'), fetch('./whiterabbit_data.json?v=20260927-3')]);
     if (!baseResponse.ok) throw new Error(`数据读取失败（HTTP ${baseResponse.status}）`);
     state.data = await baseResponse.json();
     if (whiteResponse.ok) state.whiteRabbit = await whiteResponse.json();
