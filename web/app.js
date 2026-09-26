@@ -1,5 +1,6 @@
-const STORAGE_KEY = 'jianghu-stat-simulator:character:v5';
+const STORAGE_KEY = 'jianghu-stat-simulator:character:v6';
 const LEGACY_STORAGE_KEYS = [
+  'jianghu-stat-simulator:character:v5',
   'jianghu-stat-simulator:character:v4',
   'jianghu-stat-simulator:character:v3',
   'jianghu-stat-simulator:character:v2',
@@ -878,6 +879,12 @@ function restoreConfig() {
     return;
   }
   if (!config || typeof config !== 'object') return;
+  if (storedKey !== STORAGE_KEY) {
+    if (Number(config.baseCrit) === 1) config.baseCrit = '0';
+    if (Number(config.baseDodge) === 1) config.baseDodge = '0';
+    if (Number(config.baseLifesteal) === 1) config.baseLifesteal = '0';
+    if (Number(config.baseCritDamage) === 200) config.baseCritDamage = '0';
+  }
   if (storedKey !== STORAGE_KEY && Number(config.baseSpeed) === 64) config.baseSpeed = '10';
   if (isBuiltInExampleConfig(config)) config = makeBlankConfig(config);
   if (typeof config.personName === 'string') {
@@ -1215,10 +1222,10 @@ function calculate({ commit = false } = {}) {
   const secondaryStats = {
     speed: numberValue('base-speed', 10) + martialSpeed(selectedMartial),
     mitigation: numberValue('base-mitigation'),
-    crit: numberValue('base-crit', 1),
-    dodge: numberValue('base-dodge', 1),
-    lifesteal: numberValue('base-lifesteal', 1),
-    critDamage: numberValue('base-crit-damage', 200),
+    crit: numberValue('base-crit', 0),
+    dodge: numberValue('base-dodge', 0),
+    lifesteal: numberValue('base-lifesteal', 0),
+    critDamage: numberValue('base-crit-damage', 0),
     block: numberValue('base-block'),
     reflect: numberValue('base-reflect'),
     recovery: numberValue('base-recovery'),
@@ -1462,8 +1469,8 @@ function bindEvents() {
     state.weaponAffixes = [EMPTY_WEAPON_AFFIX(), EMPTY_WEAPON_AFFIX(), EMPTY_WEAPON_AFFIX()];
     $('person-name').value = '主角'; $('hp-factor').value = 1; $('power-factor').value = 1;
     $('person-style').value = ''; $('person-gender').value = '';
-    $('base-speed').value = 10; $('base-crit').value = 1; $('base-dodge').value = 1; $('base-lifesteal').value = 1;
-    $('base-crit-damage').value = 200; $('base-mitigation').value = 0; $('base-block').value = 0;
+    $('base-speed').value = 10; $('base-crit').value = 0; $('base-dodge').value = 0; $('base-lifesteal').value = 0;
+    $('base-crit-damage').value = 0; $('base-mitigation').value = 0; $('base-block').value = 0;
     $('base-reflect').value = 0; $('base-recovery').value = 0;
     $('level-input').value = 90; $('martial-select').value = ''; $('neigong-select').value = '';
     $('neigong-level').value = 9;
