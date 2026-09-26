@@ -235,6 +235,15 @@ function getSelectedMartial() {
 function martialSpeed(selection = getSelectedMartial()) {
   return Number(selection?.item?.speed) || 0;
 }
+function getCharacterProfile(name = $('person-name')?.value) {
+  return state.whiteRabbit?.characters?.find((character) => character.name === name) || null;
+}
+function applyCharacterDefaults() {
+  const profile = getCharacterProfile();
+  if (!profile) return;
+  if (Number.isFinite(Number(profile.hp_factor))) $('hp-factor').value = profile.hp_factor;
+  if (Number.isFinite(Number(profile.power_factor))) $('power-factor').value = profile.power_factor;
+}
 function populateCharacterPresets() {
   const list = $('person-name');
   if (!list) return;
@@ -1335,6 +1344,7 @@ function bindEvents() {
     'base-mitigation', 'base-block', 'base-reflect', 'base-recovery']
     .forEach((id) => $(id).addEventListener('input', calculate));
   $('person-name').addEventListener('change', () => {
+    applyCharacterDefaults();
     applyDefaultTechniqueSelections();
     refreshTechniqueAvailability();
     renderFormationControls();
