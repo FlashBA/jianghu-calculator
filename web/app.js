@@ -240,9 +240,17 @@ function getCharacterProfile(name = $('person-name')?.value) {
 }
 function applyCharacterDefaults() {
   const profile = getCharacterProfile();
-  if (!profile) return;
-  if (Number.isFinite(Number(profile.hp_factor))) $('hp-factor').value = profile.hp_factor;
-  if (Number.isFinite(Number(profile.power_factor))) $('power-factor').value = profile.power_factor;
+  if (!profile) return false;
+  let changed = false;
+  if (Number.isFinite(Number(profile.hp_factor))) {
+    $('hp-factor').value = profile.hp_factor;
+    changed = true;
+  }
+  if (Number.isFinite(Number(profile.power_factor))) {
+    $('power-factor').value = profile.power_factor;
+    changed = true;
+  }
+  return changed;
 }
 function populateCharacterPresets() {
   const list = $('person-name');
@@ -256,6 +264,7 @@ function populateCharacterPresets() {
     list.appendChild(option);
   });
   list.value = '主角';
+  applyCharacterDefaults();
 }
 function techniqueOptionEntries() {
   const entries = [];
@@ -872,6 +881,9 @@ function restoreConfig() {
       select.appendChild(option);
     }
     select.value = personName;
+    // A saved profile without explicit coefficients should still inherit its
+    // character defaults before the remaining saved fields are restored.
+    applyCharacterDefaults();
   }
   const fieldMap = {
     personStyle: 'person-style', personGender: 'person-gender',
@@ -1343,14 +1355,18 @@ function bindEvents() {
     'base-speed', 'base-crit', 'base-dodge', 'base-lifesteal', 'base-crit-damage',
     'base-mitigation', 'base-block', 'base-reflect', 'base-recovery']
     .forEach((id) => $(id).addEventListener('input', calculate));
-  $('person-name').addEventListener('change', () => {
+  const handleCharacterSelection = () => {
     applyCharacterDefaults();
     applyDefaultTechniqueSelections();
     refreshTechniqueAvailability();
     renderFormationControls();
     renderTechniqueScope();
     calculate();
-  });
+  };
+  // Mobile select controls can emit input before change; both events must use
+  // the same path so the displayed coefficients follow the selected role.
+  $('person-name').addEventListener('input', handleCharacterSelection);
+  $('person-name').addEventListener('change', handleCharacterSelection);
   ['person-style', 'person-gender'].forEach((id) => $(id).addEventListener('change', () => {
     applyDefaultTechniqueSelections();
     refreshTechniqueAvailability();
