@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#172027">
+    <title>江湖风云录 · 角色数值模拟</title>
+    <link rel="stylesheet" href="style.css?v=20260927-2">
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="app-header">
+        <div>
+          <h1>角色数值模拟</h1>
+        </div>
+        <div class="header-status-group">
+          <div class="header-status" id="data-status" aria-live="polite" hidden>正在读取数据</div>
+          <div class="save-status" id="save-status" aria-live="polite">本机自动保存</div>
+        </div>
+      </header>
+
+      <section class="result-strip" aria-label="计算结果">
+        <div class="result-main">
+          <p class="result-label">最终生命</p>
+          <strong class="result-number" id="final-hp">--</strong>
+          <span class="result-detail" id="hp-detail">等待配置</span>
+        </div>
+        <div class="result-main result-attack">
+          <p class="result-label">最终攻击</p>
+          <strong class="result-number" id="final-attack">--</strong>
+          <span class="result-detail" id="attack-detail">等待配置</span>
+        </div>
+        <div class="result-context">
+          <span id="result-person">--</span>
+          <span id="result-level">等级 --</span>
+        </div>
+          <div class="result-stat-grid" id="result-stat-grid" aria-label="角色面板属性">
+            <div class="result-stat"><span>速度</span><strong id="final-speed">--</strong></div>
+          <div class="result-stat"><span>免伤</span><strong id="final-mitigation">--</strong></div>
+          <div class="result-stat"><span>暴击</span><strong id="final-crit">--</strong></div>
+          <div class="result-stat"><span>闪避</span><strong id="final-dodge">--</strong></div>
+          <div class="result-stat"><span>吸血</span><strong id="final-lifesteal">--</strong></div>
+          <div class="result-stat"><span>爆伤</span><strong id="final-crit-damage">--</strong></div>
+          <div class="result-stat"><span>格挡</span><strong id="final-block">--</strong></div>
+          <div class="result-stat"><span>反伤</span><strong id="final-reflect">--</strong></div>
+            <div class="result-stat"><span>回复</span><strong id="final-recovery">--</strong></div>
+            <div class="result-stat"><span>独立伤害</span><strong id="final-damage">--</strong></div>
+        </div>
+      </section>
+
+      <div id="error-message" class="error-message" role="alert" hidden></div>
+
+      <div class="action-bar" aria-label="计算操作">
+        <button class="primary-button" id="generate-button" type="button">确认生成</button>
+        <button class="text-button" id="save-current-button" type="button">保存当前</button>
+        <button class="text-button" id="compare-button" type="button" disabled>加入对比</button>
+      </div>
+
+      <section class="comparison-section" id="comparison-section" hidden aria-label="模拟对比">
+        <div class="section-heading compact-heading">
+          <div>
+            <p class="section-kicker">COMPARE</p>
+            <h2>模拟对比</h2>
+          </div>
+          <button class="text-button" id="clear-comparison-button" type="button">清空</button>
+        </div>
+        <div id="comparison-content"></div>
+      </section>
+
+      <div class="workspace-grid">
+        <section class="control-column" aria-label="角色配置">
+          <section class="control-section">
+            <div class="section-heading">
+              <div>
+                <p class="section-kicker">01 / BASE</p>
+                <h2>角色系数与等级</h2>
+              </div>
+              <button class="text-button" id="reset-button" type="button">重置白板</button>
+            </div>
+            <div class="field-grid base-field-grid">
+              <label class="field base-name-field">
+                <span>角色名称</span>
+                <select id="person-name" aria-label="选择角色">
+                  <option value="主角">主角</option>
+                </select>
+              </label>
+              <label class="field level-field">
+                <span>等级</span>
+                <input id="level-input" type="number" min="1" max="90" value="90" inputmode="numeric">
+              </label>
+              <label class="field factor-field">
+                <span>生命系数</span>
+                <input id="hp-factor" type="number" min="0" step="0.01" value="1" inputmode="decimal">
+              </label>
+              <label class="field factor-field">
+                <span>攻击系数</span>
+                <input id="power-factor" type="number" min="0" step="0.01" value="1" inputmode="decimal">
+              </label>
+            </div>
+            <div class="field-grid two-up role-meta-grid">
+              <label class="field">
+                <span>职业</span>
+                <select id="person-style">
+                  <option value="">未指定</option>
+                  <option value="拳主">拳主</option>
+                  <option value="剑主">剑主</option>
+                  <option value="刀主">刀主</option>
+                  <option value="棍主">棍主</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>性别</span>
+                <select id="person-gender">
+                  <option value="">未指定</option>
+                  <option value="男号">男号</option>
+                  <option value="女号">女号</option>
+                </select>
+              </label>
+            </div>
+            <div class="factor-line" id="factor-line">生命系数 -- · 攻击系数 --</div>
+            <div class="formation-inline">
+              <div class="inline-heading">
+                <strong>布阵与站位</strong>
+                <span class="manual-tag">初始效果</span>
+              </div>
+              <div class="field-grid two-up">
+                <label class="field">
+                  <span>布阵</span>
+                  <select id="formation-select"></select>
+                </label>
+                <label class="field" id="formation-position-field">
+                  <span>站位</span>
+                  <select id="formation-position"></select>
+                </label>
+              </div>
+              <p class="field-hint" id="formation-hint" aria-live="polite">当前不计入阵法</p>
+            </div>
+          </section>
+
+          <details class="control-section advanced-section">
+            <summary>基础面板修正</summary>
+            <div class="advanced-section-content">
+            <div class="section-heading">
+              <div>
+                <h2>面板基础属性</h2>
+              </div>
+              <span class="manual-tag">可修改</span>
+            </div>
+            <div class="field-grid stat-input-grid">
+              <label class="field"><span>基础速度</span><input id="base-speed" type="number" min="0" step="1" value="10" inputmode="numeric"></label>
+              <label class="field"><span>基础暴击 %</span><input id="base-crit" type="number" min="0" step="0.1" value="1" inputmode="decimal"></label>
+              <label class="field"><span>基础闪避 %</span><input id="base-dodge" type="number" min="0" step="0.1" value="1" inputmode="decimal"></label>
+              <label class="field"><span>基础吸血 %</span><input id="base-lifesteal" type="number" min="0" step="0.1" value="1" inputmode="decimal"></label>
+              <label class="field"><span>基础爆伤 %</span><input id="base-crit-damage" type="number" min="0" step="1" value="200" inputmode="numeric"></label>
+              <label class="field"><span>基础免伤 %</span><input id="base-mitigation" type="number" min="0" step="0.1" value="0" inputmode="decimal"></label>
+              <label class="field"><span>基础格挡 %</span><input id="base-block" type="number" min="0" step="0.1" value="0" inputmode="decimal"></label>
+              <label class="field"><span>基础反伤 %</span><input id="base-reflect" type="number" min="0" step="0.1" value="0" inputmode="decimal"></label>
+              <label class="field"><span>基础回复</span><input id="base-recovery" type="number" min="0" step="1" value="0" inputmode="numeric"></label>
+            </div>
+            </div>
+          </details>
+
+          <section class="control-section">
+            <div class="section-heading">
+              <div>
+                <p class="section-kicker">02 / ACHIEVEMENTS</p>
+                <h2>成就固定加成</h2>
+              </div>
+              <span class="manual-tag">固定值</span>
+            </div>
+            <div class="field-grid two-up">
+              <label class="field">
+                <span>固定生命</span>
+                <input id="achievement-hp" type="number" min="0" step="1" value="292" inputmode="numeric">
+              </label>
+              <label class="field">
+                <span>固定攻击</span>
+                <input id="achievement-attack" type="number" min="0" step="1" value="292" inputmode="numeric">
+              </label>
+            </div>
+          </section>
+
+          <section class="control-section">
+            <div class="section-heading">
+              <div>
+                <p class="section-kicker">03 / EQUIPMENT</p>
+                <h2>装备组合</h2>
+              </div>
+              <span class="section-count" id="equipment-count">已装备 0/4</span>
+            </div>
+            <div class="equipment-slot-grid">
+              <div class="equipment-slot-row weapon-row" data-slot="0">
+                <strong class="slot-label">武器</strong>
+                <label class="field slot-name"><span>名称</span><input id="weapon-name" type="text" placeholder="自定义武器" autocomplete="off"></label>
+                <div class="weapon-affix-grid">
+                  <div class="weapon-affix-row">
+                    <strong>词条 1</strong>
+                    <label class="field"><span>属性</span><select id="weapon-affix-key-0" class="weapon-affix-key"></select></label>
+                    <label class="field"><span>类型</span><select id="weapon-affix-mode-0" class="weapon-affix-mode"><option value="flat">白值</option><option value="percent">百分比</option></select></label>
+                    <label class="field"><span>数值</span><input id="weapon-affix-value-0" class="weapon-affix-value" type="number" step="0.1" value="0" inputmode="decimal"></label>
+                  </div>
+                  <div class="weapon-affix-row">
+                    <strong>词条 2</strong>
+                    <label class="field"><span>属性</span><select id="weapon-affix-key-1" class="weapon-affix-key"></select></label>
+                    <label class="field"><span>类型</span><select id="weapon-affix-mode-1" class="weapon-affix-mode"><option value="flat">白值</option><option value="percent">百分比</option></select></label>
+                    <label class="field"><span>数值</span><input id="weapon-affix-value-1" class="weapon-affix-value" type="number" step="0.1" value="0" inputmode="decimal"></label>
+                  </div>
+                  <div class="weapon-affix-row">
+                    <strong>词条 3</strong>
+                    <label class="field"><span>属性</span><select id="weapon-affix-key-2" class="weapon-affix-key"></select></label>
+                    <label class="field"><span>类型</span><select id="weapon-affix-mode-2" class="weapon-affix-mode"><option value="flat">白值</option><option value="percent">百分比</option></select></label>
+                    <label class="field"><span>数值</span><input id="weapon-affix-value-2" class="weapon-affix-value" type="number" step="0.1" value="0" inputmode="decimal"></label>
+                  </div>
+                </div>
+              </div>
+              <div class="equipment-slot-row direct-equipment-row" data-slot="1">
+                <strong class="slot-label">装备 1</strong>
+                <label class="field slot-picker"><span>选择装备</span><select class="equipment-slot" id="equipment-slot-1" aria-label="装备 1"></select></label>
+              </div>
+              <div class="equipment-slot-row direct-equipment-row" data-slot="2">
+                <strong class="slot-label">装备 2</strong>
+                <label class="field slot-picker"><span>选择装备</span><select class="equipment-slot" id="equipment-slot-2" aria-label="装备 2"></select></label>
+              </div>
+              <div class="equipment-slot-row direct-equipment-row" data-slot="3">
+                <strong class="slot-label">装备 3</strong>
+                <label class="field slot-picker"><span>选择装备</span><select class="equipment-slot" id="equipment-slot-3" aria-label="装备 3"></select></label>
+              </div>
+            </div>
+            <div class="mini-breakdown" id="equipment-breakdown">装备生命 +0% · 装备攻击 +0%</div>
+          </section>
+
+          <section class="control-section">
+            <div class="section-heading">
+              <div>
+                <p class="section-kicker">04 / INNER SKILL</p>
+                <h2>内功</h2>
+              </div>
+            </div>
+            <div class="field-grid">
+              <label class="field field-wide">
+                <span>选择内功</span>
+                <select id="neigong-select" disabled></select>
+              </label>
+              <label class="field field-wide">
+                <span>选择武学（速度）</span>
+                <select id="martial-select" disabled></select>
+              </label>
+              <input id="neigong-level" type="hidden" value="9">
+            </div>
+            <details id="custom-inner-editor" class="custom-inner-editor" hidden>
+              <summary>自定义内功属性</summary>
+              <div class="field-grid two-up custom-inner-field-grid">
+                <label class="field"><span>生命 %</span><input id="neigong-hp" type="number" min="-100" step="0.1" value="0" inputmode="decimal"></label>
+                <label class="field"><span>攻击 %</span><input id="neigong-attack" type="number" min="-100" step="0.1" value="0" inputmode="decimal"></label>
+                <label class="field"><span>速度</span><input id="neigong-speed" type="number" min="-100" step="1" value="0" inputmode="numeric"></label>
+                <label class="field"><span>免伤 %</span><input id="neigong-mitigation" type="number" min="-100" step="0.1" value="0" inputmode="decimal"></label>
+                <label class="field"><span>暴击 %</span><input id="neigong-crit" type="number" min="-100" step="0.1" value="0" inputmode="decimal"></label>
+                <label class="field"><span>闪避 %</span><input id="neigong-dodge" type="number" min="-100" step="0.1" value="0" inputmode="decimal"></label>
+                <label class="field"><span>吸血 %</span><input id="neigong-lifesteal" type="number" min="-100" step="0.1" value="0" inputmode="decimal"></label>
+                <label class="field"><span>爆伤 %</span><input id="neigong-crit-damage" type="number" min="-100" step="0.1" value="0" inputmode="decimal"></label>
+                <label class="field"><span>格挡 %</span><input id="neigong-block" type="number" min="-100" step="0.1" value="0" inputmode="decimal"></label>
+                <label class="field"><span>反伤 %</span><input id="neigong-reflect" type="number" min="-100" step="0.1" value="0" inputmode="decimal"></label>
+                <label class="field"><span>回复</span><input id="neigong-recovery" type="number" min="-100" step="1" value="0" inputmode="numeric"></label>
+              </div>
+            </details>
+          </section>
+
+          <section class="control-section technique-section">
+            <details id="technique-details" class="technique-details">
+              <summary>
+                <span class="technique-summary-title"><span class="section-kicker">05 / TECHNIQUE</span><strong>技艺</strong></span>
+                <span class="technique-summary-status" id="technique-summary">默认选择</span>
+              </summary>
+              <div class="technique-details-content">
+                <div class="technique-section-note"><span class="manual-tag">通用默认 · 可调整</span></div>
+                <div id="technique-options" class="technique-options" aria-label="技艺选择"></div>
+                <p class="field-hint" id="technique-scope" aria-live="polite">范围：手填</p>
+                <div class="field-grid two-up">
+                  <label class="field">
+                    <span>补充生命 %</span>
+                    <input id="technique-hp" type="number" min="-100" step="0.1" value="0" inputmode="decimal">
+                  </label>
+                  <label class="field">
+                    <span>补充攻击 %</span>
+                    <input id="technique-attack" type="number" min="-100" step="0.1" value="0" inputmode="decimal">
+                  </label>
+                </div>
+              </div>
+            </details>
+          </section>
+
+          <section class="control-section compact-toggle-section" aria-label="固定加成开关">
+            <div class="compact-toggle-grid">
+              <label class="switch-label">
+                <input id="pills-enabled" type="checkbox" checked>
+                <span class="switch" aria-hidden="true"></span>
+                <span>血丹</span>
+              </label>
+              <label class="switch-label">
+                <input id="small-ren-enabled" type="checkbox" checked>
+                <span class="switch" aria-hidden="true"></span>
+                <span>小任督</span>
+              </label>
+              <label class="switch-label">
+                <input id="large-ren-enabled" type="checkbox" checked>
+                <span class="switch" aria-hidden="true"></span>
+                <span>大任督</span>
+              </label>
+              <label class="switch-label">
+                <input id="speed-pills-enabled" type="checkbox">
+                <span class="switch" aria-hidden="true"></span>
+                <span>速度丹</span>
+              </label>
+            </div>
+          </section>
+
+        </section>
+
+      </div>
+    </main>
+    <script src="app.js?v=20260927-2"></script>
+  </body>
+</html>
