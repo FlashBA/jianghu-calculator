@@ -468,10 +468,8 @@ function techniqueScopeStatus(technique) {
   const restrictedGroup = technique?.group === 'jiuyin' || technique?.group === 'wolong';
   if (restrictedGroup && personName !== '主角' && personName !== '陆仁甲') return false;
   const style = $('person-style').value;
-  const gender = $('person-gender').value;
   if (scope.includes('学习千山寂雪')) return false;
-  if (scope.includes('女号') && gender !== '女号') return false;
-  if (scope.includes('男号') && gender !== '男号') return false;
+  if (!techniqueGenderEligible(technique)) return false;
   if (!scope) return true;
   if (personName === '陆仁甲') return true;
   if (scope.includes('全队')) return true;
@@ -481,6 +479,18 @@ function techniqueScopeStatus(technique) {
   if (scope.includes('主角')) return personName === '主角';
   return scope.split(/[，,、]/).map((item) => item.trim()).includes(personName);
 }
+function techniqueGenderEligible(technique) {
+  const scope = String(technique?.scope || '');
+  const gender = $('person-gender').value;
+  const personName = $('person-name').value.trim() || '自定义角色';
+  if (scope.includes('女号') && gender !== '女号') return false;
+  if (scope.includes('男号') && gender !== '男号') return false;
+  if (personName === '胡休') {
+    if (technique?.name === '横练护体气功') return gender === '男号';
+    if (technique?.name === '龙象护体功') return gender === '女号';
+  }
+  return true;
+}
 function techniqueAccountEligible(technique) {
   const scope = String(technique?.scope || '');
   const personName = $('person-name').value.trim() || '自定义角色';
@@ -489,8 +499,7 @@ function techniqueAccountEligible(technique) {
   const gender = $('person-gender').value;
   const style = $('person-style').value;
   if (scope.includes('学习千山寂雪')) return false;
-  if (scope.includes('女号') && gender === '男号') return false;
-  if (scope.includes('男号') && gender !== '男号') return false;
+  if (!techniqueGenderEligible(technique)) return false;
   if (personName === '陆仁甲') return true;
   const requiredStyle = ['拳主', '剑主', '刀主', '棍主'].find((item) => scope.includes(item));
   if (scope.includes('全队') || !scope) return true;
@@ -1055,16 +1064,38 @@ function filteredEquipment() {
   const white = state.whiteRabbit?.equipment || [];
   return [...original, ...white].filter((item) => !isWeapon(item) && isSEquipment(item));
 }
+function equipmentCategory(item) {
+  if (item?.source === 'white') {
+    const match = /^wr-eq-(\d+)$/.exec(String(item.id));
+    if (!match) return '';
+    const index = Number(match[1]);
+    if (index < 10) return 'armor';
+    if (index < 20) return 'ring';
+    return 'wrist';
+  }
+  return ({ 5: 'armor', 6: 'ring', 7: 'wrist' })[Number(item?.type)] || '';
+}
+function equipmentCategoryForSlot(slotIndex) {
+  return ({ 1: 'armor', 2: 'ring', 3: 'wrist' })[slotIndex] || '';
+}
+function filteredEquipmentForSlot(slotIndex) {
+  const category = equipmentCategoryForSlot(slotIndex);
+  return filteredEquipment().filter((item) => equipmentCategory(item) === category);
+}
 function renderEquipmentSlots() {
   state.equipmentSlots = state.equipmentSlots.map((slot) => (
     slot?.id && !getEquipment(slot.id) ? EMPTY_EQUIPMENT() : slot
   ));
-  const items = filteredEquipment();
   state.equipmentSlots.slice(1, 4).forEach((rawSlot, visibleIndex) => {
     const slotIndex = visibleIndex + 1;
-    const current = rawSlot || EMPTY_EQUIPMENT();
+    const category = equipmentCategoryForSlot(slotIndex);
+    const currentItem = rawSlot?.id ? getEquipment(rawSlot.id) : null;
+    const current = currentItem && equipmentCategory(currentItem) === category
+      ? rawSlot
+      : EMPTY_EQUIPMENT();
+    state.equipmentSlots[slotIndex] = current;
     const select = $(`equipment-slot-${slotIndex}`);
-    const visibleItems = [...items];
+    const visibleItems = filteredEquipmentForSlot(slotIndex);
     if (current.id && !visibleItems.some((item) => String(item.id) === String(current.id))) {
       const currentItem = getEquipment(current.id);
       if (currentItem) visibleItems.unshift(currentItem);
@@ -1075,7 +1106,7 @@ function renderEquipmentSlots() {
       option.value = String(item.id);
       const source = item.source === 'white' ? '白兔' : '原版';
       const unique = item.unique ? ' · 唯一' : '';
-      option.textContent = `${equipmentName(item)} · ${source}${unique} [${equipmentSummary(item)}]`;
+      option.textContent = `${equipmentName(item)} · ${source}${unique} · ${equipmentSummary(item)}`;
       option.title = item.access ? `获取：${item.access} · 生效：${item.scope || '佩戴者'}` : '';
       select.appendChild(option);
     });

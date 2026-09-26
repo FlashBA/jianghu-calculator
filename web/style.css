@@ -761,6 +761,41 @@ h2 {
   padding-top: 2px;
 }
 
+.field select.compact-picker {
+  min-height: 40px;
+  padding: 7px 8px;
+  font-size: 0.74rem;
+}
+
+.field select.compact-picker option {
+  padding: 4px 6px;
+  font-size: 0.74rem;
+}
+
+.custom-inner-editor[open] {
+  padding-bottom: 2px;
+}
+
+.custom-inner-editor > summary {
+  padding: 7px 0 5px;
+  font-size: 0.74rem;
+}
+
+.custom-inner-field-grid {
+  gap: 8px;
+}
+
+.custom-inner-field-grid .field {
+  gap: 4px;
+  font-size: 0.7rem;
+}
+
+.custom-inner-field-grid .field input {
+  min-height: 38px;
+  padding: 7px 8px;
+  font-size: 0.78rem;
+}
+
 .switch-label {
   display: inline-flex;
   align-items: center;
