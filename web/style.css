@@ -877,6 +877,27 @@ h2 {
   white-space: nowrap;
 }
 
+.compact-count-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink);
+  font-size: 0.84rem;
+  white-space: nowrap;
+}
+
+.compact-count-label input {
+  width: 48px;
+  min-height: 30px;
+  padding: 4px 6px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  text-align: center;
+}
+
 .switch-label input {
   position: absolute;
   opacity: 0;
