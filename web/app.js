@@ -1064,6 +1064,7 @@ function saveConfig() {
     smallRenEnabled: $('small-ren-enabled').checked,
     largeRenEnabled: $('large-ren-enabled').checked,
     comparisonSnapshots,
+    comparisonPair,
   };
   try {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
@@ -1202,6 +1203,19 @@ function normalizeComparisonSnapshots(value) {
   });
 }
 
+function normalizeComparisonPair(value, snapshotCount = comparisonSnapshots.length) {
+  if (snapshotCount < 2) return [0, 1];
+  const savedPair = Array.isArray(value) ? value : [0, 1];
+  const clampIndex = (candidate, fallback) => {
+    const index = Number(candidate);
+    return Number.isInteger(index) && index >= 0 && index < snapshotCount ? index : fallback;
+  };
+  const left = clampIndex(savedPair[0], 0);
+  let right = clampIndex(savedPair[1], left === 0 ? 1 : 0);
+  if (left === right) right = left === 0 ? 1 : 0;
+  return [left, right];
+}
+
 function restoreConfig() {
   let config;
   let storedKey;
@@ -1294,6 +1308,7 @@ function restoreConfig() {
   if (typeof config.largeRenEnabled === 'boolean') $('large-ren-enabled').checked = config.largeRenEnabled;
   if (config.formationId !== undefined) $('formation-select').value = String(config.formationId);
   comparisonSnapshots = normalizeComparisonSnapshots(config.comparisonSnapshots);
+  comparisonPair = normalizeComparisonPair(config.comparisonPair);
   if (Array.isArray(config.equipmentSlots)) {
     state.equipmentSlots = config.equipmentSlots.slice(0, 4).map(normalizeEquipment);
     while (state.equipmentSlots.length < 4) state.equipmentSlots.push(EMPTY_EQUIPMENT());
@@ -1789,15 +1804,12 @@ function hydrateLegacySnapshot(snapshot) {
 function showComparisonSnapshot(index) {
   const snapshot = comparisonSnapshots[index];
   if (!snapshot) return;
-  const hydrated = hydrateLegacySnapshot(snapshot);
+  hydrateLegacySnapshot(snapshot);
   activeComparisonIndex = index;
   if (comparisonSnapshots.length >= 2) {
-    const currentPair = comparisonPair.map((value) => Number(value));
-    let otherIndex = currentPair.find((value) => value !== index);
-    if (!Number.isInteger(otherIndex) || otherIndex < 0 || otherIndex >= comparisonSnapshots.length) {
-      otherIndex = (index + 1) % comparisonSnapshots.length;
-    }
-    comparisonPair = [index, otherIndex];
+    const currentPair = normalizeComparisonPair(comparisonPair);
+    const otherIndex = currentPair[1] === index ? currentPair[0] : currentPair[1];
+    comparisonPair = normalizeComparisonPair([index, otherIndex]);
   }
   $('final-hp').textContent = formatNumber(snapshot.hp);
   $('final-attack').textContent = formatNumber(snapshot.attack);
@@ -1816,7 +1828,8 @@ function showComparisonSnapshot(index) {
   }
   $('result-person').textContent = snapshot.roleName || '自定义角色';
   $('result-level').textContent = `等级 ${snapshot.level}`;
-  if (hydrated || comparisonSnapshots.length >= 2) renderComparison();
+  saveConfig();
+  renderComparison();
 }
 
 function renderComparison() {
@@ -1846,13 +1859,7 @@ function renderComparison() {
       <strong>方案 ${comparisonCode(index)} · ${escapeHtml(snapshot.roleName || '自定义角色')}</strong>
     </button>
   `).join('');
-  const pair = comparisonSnapshots.length >= 2
-    ? [
-      Math.max(0, Math.min(comparisonSnapshots.length - 1, Number(comparisonPair[0]) || 0)),
-      Math.max(0, Math.min(comparisonSnapshots.length - 1, Number(comparisonPair[1]) || 1)),
-    ]
-    : [0, 1];
-  if (pair[0] === pair[1]) pair[1] = pair[0] === 0 ? 1 : 0;
+  const pair = normalizeComparisonPair(comparisonPair);
   comparisonPair = pair;
   const comparisonOptions = (selected) => comparisonSnapshots.map((snapshot, index) => `
     <option value="${index}"${index === selected ? ' selected' : ''}>方案 ${comparisonCode(index)} · ${escapeHtml(snapshot.roleName || '自定义角色')}</option>
@@ -1898,12 +1905,14 @@ function renderComparison() {
       const next = Number(event.target.value);
       if (next === comparisonPair[1]) comparisonPair[1] = comparisonPair[0];
       comparisonPair[0] = next;
+      saveConfig();
       renderComparison();
     });
     $('comparison-right').addEventListener('change', (event) => {
       const next = Number(event.target.value);
       if (next === comparisonPair[0]) comparisonPair[0] = comparisonPair[1];
       comparisonPair[1] = next;
+      saveConfig();
       renderComparison();
     });
   }
@@ -2094,7 +2103,7 @@ function bindEvents() {
 
 async function init() {
   try {
-    const [baseResponse, whiteResponse] = await Promise.all([fetch('./uc540_doc.json'), fetch('./whiterabbit_data.json?v=20260927-56')]);
+    const [baseResponse, whiteResponse] = await Promise.all([fetch('./uc540_doc.json'), fetch('./whiterabbit_data.json?v=20260927-57')]);
     if (!baseResponse.ok) throw new Error(`数据读取失败（HTTP ${baseResponse.status}）`);
     state.data = await baseResponse.json();
     if (whiteResponse.ok) state.whiteRabbit = await whiteResponse.json();
