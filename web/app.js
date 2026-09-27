@@ -1034,7 +1034,7 @@ function normalizeComparisonSnapshots(value) {
       roleName,
       level,
       stats: Object.fromEntries(SECONDARY_KEYS.map((key) => [key, Number(snapshot?.stats?.[key]) || 0])),
-      label: String(snapshot?.label || `${roleName} · 等级 ${level}`),
+      label: roleName,
     };
   });
 }
@@ -1533,7 +1533,7 @@ function comparisonSnapshot() {
   return {
     ...currentResult,
     stats: { ...currentResult.stats },
-    label: `${currentResult.roleName} · 等级 ${currentResult.level}`,
+    label: currentResult.roleName,
   };
 }
 
@@ -1551,7 +1551,6 @@ function renderComparison() {
   }
   section.hidden = false;
   const rows = [
-    { label: '角色名称', key: 'roleName', type: 'text', format: (value) => escapeHtml(value || '--') },
     { label: '生命', key: 'hp', format: formatNumber },
     { label: '攻击', key: 'attack', format: formatNumber },
     ...SECONDARY_STAT_DEFS.map((definition) => ({
@@ -1565,7 +1564,7 @@ function renderComparison() {
     : snapshot[key];
   const cards = comparisonSnapshots.map((snapshot, index) => `
     <div class="comparison-card">
-      <strong>方案 ${comparisonCode(index)} · ${escapeHtml(snapshot.label)}</strong>
+      <strong>方案 ${comparisonCode(index)} · ${escapeHtml(snapshot.roleName || '自定义角色')}</strong>
       <div class="comparison-card-values">
         ${rows.map((row) => `
           <span class="comparison-card-value">
@@ -1585,7 +1584,7 @@ function renderComparison() {
   if (pair[0] === pair[1]) pair[1] = pair[0] === 0 ? 1 : 0;
   comparisonPair = pair;
   const comparisonOptions = (selected) => comparisonSnapshots.map((snapshot, index) => `
-    <option value="${index}"${index === selected ? ' selected' : ''}>方案 ${comparisonCode(index)} · ${escapeHtml(snapshot.label)}</option>
+    <option value="${index}"${index === selected ? ' selected' : ''}>方案 ${comparisonCode(index)} · ${escapeHtml(snapshot.roleName || '自定义角色')}</option>
   `).join('');
   const pairControls = comparisonSnapshots.length < 2 ? '' : `
     <div class="comparison-pair-controls">
@@ -1598,7 +1597,7 @@ function renderComparison() {
     : `
       <div class="comparison-table-wrap">
         <table class="compare-table">
-          <thead><tr><th>属性</th><th>方案 ${comparisonCode(pair[0])}</th><th>方案 ${comparisonCode(pair[1])}</th><th>差值</th></tr></thead>
+          <thead><tr><th>属性</th><th>方案 ${comparisonCode(pair[0])} · ${escapeHtml(comparisonSnapshots[pair[0]].roleName || '自定义角色')}</th><th>方案 ${comparisonCode(pair[1])} · ${escapeHtml(comparisonSnapshots[pair[1]].roleName || '自定义角色')}</th><th>差值</th></tr></thead>
           <tbody>
             ${rows.map((row) => {
               const left = valueAt(comparisonSnapshots[pair[0]], row.key);
