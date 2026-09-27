@@ -18,6 +18,7 @@ const SECONDARY_STAT_DEFS = [
   { key: 'recovery', label: '回复', format: 'number', aliases: ['回复', '恢复', '疗伤'] },
 ];
 const SECONDARY_KEYS = SECONDARY_STAT_DEFS.map((stat) => stat.key);
+const MAX_COMPARISON_SNAPSHOTS = 20;
 const INNER_MANUAL_FIELD_IDS = ['neigong-hp', 'neigong-attack', ...SECONDARY_KEYS.map((key) => (
   `neigong-${key.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}`
 ))];
@@ -51,6 +52,7 @@ const state = {
 let resultGenerated = false;
 let currentResult = null;
 let comparisonSnapshots = [];
+let comparisonPair = [0, 1];
 let techniqueSelectionCustomized = false;
 
 const $ = (id) => document.getElementById(id);
@@ -879,7 +881,7 @@ function isOldSampleEquipment(slots) {
 
 function normalizeComparisonSnapshots(value) {
   if (!Array.isArray(value)) return [];
-  return value.slice(0, 2).map((snapshot) => {
+  return value.slice(0, MAX_COMPARISON_SNAPSHOTS).map((snapshot) => {
     const roleName = String(snapshot?.roleName || '自定义角色');
     const level = Number(snapshot?.level) || 1;
     return {
@@ -1357,6 +1359,10 @@ function comparisonSnapshot() {
   };
 }
 
+function comparisonCode(index) {
+  return String.fromCharCode(65 + index);
+}
+
 function renderComparison() {
   const section = $('comparison-section');
   const content = $('comparison-content');
@@ -1381,7 +1387,7 @@ function renderComparison() {
     : snapshot[key];
   const cards = comparisonSnapshots.map((snapshot, index) => `
     <div class="comparison-card">
-      <strong>方案 ${index === 0 ? 'A' : 'B'} · ${escapeHtml(snapshot.label)}</strong>
+      <strong>方案 ${comparisonCode(index)} · ${escapeHtml(snapshot.label)}</strong>
       <div class="comparison-card-values">
         ${rows.map((row) => `
           <span class="comparison-card-value">
@@ -1392,16 +1398,33 @@ function renderComparison() {
       </div>
     </div>
   `).join('');
+  const pair = comparisonSnapshots.length >= 2
+    ? [
+      Math.max(0, Math.min(comparisonSnapshots.length - 1, Number(comparisonPair[0]) || 0)),
+      Math.max(0, Math.min(comparisonSnapshots.length - 1, Number(comparisonPair[1]) || 1)),
+    ]
+    : [0, 1];
+  if (pair[0] === pair[1]) pair[1] = pair[0] === 0 ? 1 : 0;
+  comparisonPair = pair;
+  const comparisonOptions = (selected) => comparisonSnapshots.map((snapshot, index) => `
+    <option value="${index}"${index === selected ? ' selected' : ''}>方案 ${comparisonCode(index)} · ${escapeHtml(snapshot.label)}</option>
+  `).join('');
+  const pairControls = comparisonSnapshots.length < 2 ? '' : `
+    <div class="comparison-pair-controls">
+      <label>对比左侧<select id="comparison-left">${comparisonOptions(pair[0])}</select></label>
+      <span>对比</span>
+      <label>对比右侧<select id="comparison-right">${comparisonOptions(pair[1])}</select></label>
+    </div>`;
   const table = comparisonSnapshots.length < 2
     ? '<p class="field-hint">再生成一个方案后显示差异</p>'
     : `
       <div class="comparison-table-wrap">
         <table class="compare-table">
-          <thead><tr><th>属性</th><th>方案 A</th><th>方案 B</th><th>差值</th></tr></thead>
+          <thead><tr><th>属性</th><th>方案 ${comparisonCode(pair[0])}</th><th>方案 ${comparisonCode(pair[1])}</th><th>差值</th></tr></thead>
           <tbody>
             ${rows.map((row) => {
-              const left = valueAt(comparisonSnapshots[0], row.key);
-              const right = valueAt(comparisonSnapshots[1], row.key);
+              const left = valueAt(comparisonSnapshots[pair[0]], row.key);
+              const right = valueAt(comparisonSnapshots[pair[1]], row.key);
               const isText = row.type === 'text';
               const difference = isText ? (left === right ? '相同' : '不同') : right - left;
               return `
@@ -1415,17 +1438,33 @@ function renderComparison() {
           </tbody>
         </table>
       </div>`;
-  content.innerHTML = `<div class="comparison-cards">${cards}</div>${table}`;
-  $('compare-button').disabled = comparisonSnapshots.length >= 2 || !resultGenerated;
+  content.innerHTML = `<div class="comparison-cards">${cards}</div>${pairControls}${table}`;
+  if (comparisonSnapshots.length >= 2) {
+    $('comparison-left').addEventListener('change', (event) => {
+      const next = Number(event.target.value);
+      if (next === comparisonPair[1]) comparisonPair[1] = comparisonPair[0];
+      comparisonPair[0] = next;
+      renderComparison();
+    });
+    $('comparison-right').addEventListener('change', (event) => {
+      const next = Number(event.target.value);
+      if (next === comparisonPair[0]) comparisonPair[0] = comparisonPair[1];
+      comparisonPair[1] = next;
+      renderComparison();
+    });
+  }
+  $('compare-button').disabled = comparisonSnapshots.length >= MAX_COMPARISON_SNAPSHOTS || !resultGenerated;
 }
 
 function addCurrentComparison() {
   const snapshot = comparisonSnapshot();
-  if (!snapshot || comparisonSnapshots.length >= 2) return;
+  if (!snapshot || comparisonSnapshots.length >= MAX_COMPARISON_SNAPSHOTS) return;
   comparisonSnapshots.push(snapshot);
   saveConfig();
   renderComparison();
-  setSaveStatus(comparisonSnapshots.length === 2 ? '已生成方案差异' : '已保存方案 A');
+  setSaveStatus(comparisonSnapshots.length >= MAX_COMPARISON_SNAPSHOTS
+    ? '已保存 20 套方案，已达上限'
+    : `已保存方案 ${comparisonCode(comparisonSnapshots.length - 1)}`);
 }
 
 function bindEvents() {
@@ -1521,6 +1560,7 @@ function bindEvents() {
   $('compare-button').addEventListener('click', addCurrentComparison);
   $('clear-comparison-button').addEventListener('click', () => {
     comparisonSnapshots = [];
+    comparisonPair = [0, 1];
     saveConfig();
     renderComparison();
     setSaveStatus('已清空模拟对比');
@@ -1551,6 +1591,7 @@ function bindEvents() {
     $('small-ren-enabled').checked = true;
     $('large-ren-enabled').checked = true;
     comparisonSnapshots = [];
+    comparisonPair = [0, 1];
     renderWeaponAffixes(); renderEquipmentSlots(); renderComparison(); calculate();
   });
 }

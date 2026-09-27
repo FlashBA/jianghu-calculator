@@ -507,6 +507,36 @@ h2 {
   -webkit-overflow-scrolling: touch;
 }
 
+.comparison-pair-controls {
+  display: flex;
+  align-items: end;
+  gap: 8px;
+  margin: 0 0 10px;
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.comparison-pair-controls label {
+  display: grid;
+  flex: 1 1 0;
+  gap: 3px;
+  min-width: 0;
+}
+
+.comparison-pair-controls select {
+  min-width: 0;
+  max-width: 180px;
+  width: 100%;
+  min-height: 34px;
+  padding: 5px 7px;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 0;
+  background: #f5eee5;
+  font-size: 0.7rem;
+}
+
 .compare-table {
   width: 100%;
   min-width: 390px;
@@ -1325,6 +1355,14 @@ h2 {
 
   .comparison-card-values {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .comparison-pair-controls {
+    gap: 5px;
+  }
+
+  .comparison-pair-controls select {
+    max-width: none;
   }
 
   .control-section,
