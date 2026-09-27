@@ -1605,8 +1605,9 @@ function calculate({ commit = false } = {}) {
   const neigongAttack = inner ? (autoStats?.attack ?? numberValue('neigong-attack')) : 0;
   const selectedTechniqueStats = techniqueTotals();
   const techniqueHp = selectedTechniqueStats.hp;
-  const supplementalHp = numberValue('technique-hp');
-  const techniqueAttack = selectedTechniqueStats.attack + numberValue('technique-attack');
+  const largeRenHpSupplement = numberValue('technique-hp');
+  const largeRenAttackSupplement = numberValue('technique-attack');
+  const techniqueAttack = selectedTechniqueStats.attack;
   const activeFormation = formationStats();
   const weaponTotals = weaponAffixTotals();
   const secondaryStats = {
@@ -1647,7 +1648,9 @@ function calculate({ commit = false } = {}) {
   const bloodPillBaseHp = baseHpRaw * (100 + pillHp) / 100;
   const postPillHpPercent = equipmentHp + techniqueHp + neigongHp + smallRenHp
     + weaponTotals.hpPercent + activeFormation.hp;
-  const largeRenHpBonus = baseHpRaw * (largeRenHp + supplementalHp) / 100;
+  const largeRenHpBonus = largeRenEnabled
+    ? baseHpRaw * (largeRenHp + largeRenHpSupplement) / 100
+    : 0;
   const finalHpRaw = bloodPillBaseHp * (100 + postPillHpPercent) / 100 + largeRenHpBonus;
   const hpPercent = baseHpRaw ? (finalHpRaw / baseHpRaw - 1) * 100 : 0;
   const finalHp = Math.round(finalHpRaw) + trunc(achievementHp) + trunc(weaponTotals.hpFlat) + trunc(equipmentHpFlat);
@@ -1669,7 +1672,9 @@ function calculate({ commit = false } = {}) {
   const martialPowerTerm = martialPower * (
     1 + (neigongAttack + smallRenAttack + techniqueAttack + selectedStylePower + martialBonusPercent) / 100
   );
-  const largeRenAttackTerm = baseAttackRaw * 0.1 * largeRenAttackCount;
+  const largeRenAttackTerm = largeRenEnabled
+    ? baseAttackRaw * (0.1 * largeRenAttackCount + largeRenAttackSupplement / 100)
+    : 0;
   const equipmentPercentTerm = (baseAttackRaw * attackPillMultiplier + martialPower)
     * (equipmentAttack + weaponTotals.attackPercent) / 100;
   const attackBeforeSMultiplier = baseAttackTerm + martialPowerTerm + largeRenAttackTerm
@@ -2044,7 +2049,7 @@ function bindEvents() {
 
 async function init() {
   try {
-    const [baseResponse, whiteResponse] = await Promise.all([fetch('./uc540_doc.json'), fetch('./whiterabbit_data.json?v=20260927-54')]);
+    const [baseResponse, whiteResponse] = await Promise.all([fetch('./uc540_doc.json'), fetch('./whiterabbit_data.json?v=20260927-55')]);
     if (!baseResponse.ok) throw new Error(`数据读取失败（HTTP ${baseResponse.status}）`);
     state.data = await baseResponse.json();
     if (whiteResponse.ok) state.whiteRabbit = await whiteResponse.json();

@@ -813,6 +813,37 @@ h2 {
   gap: 12px 18px;
 }
 
+.large-ren-adjustments {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid #b7a895;
+}
+
+.large-ren-adjustments-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+  color: var(--ink);
+  font-size: 0.76rem;
+}
+
+.large-ren-adjustments-heading span {
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 400;
+}
+
+#reset-button {
+  color: var(--muted);
+}
+
+#reset-button:hover {
+  color: var(--teal-dark);
+  background: var(--teal-soft);
+}
+
 .custom-inner-editor {
   margin-top: 10px;
   border-top: 1px solid var(--line);

@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#172027">
     <title>江湖风云录 · 角色数值模拟</title>
-    <link rel="stylesheet" href="style.css?v=20260927-9">
+    <link rel="stylesheet" href="style.css?v=20260927-10">
   </head>
   <body>
     <main class="app-shell">
@@ -287,16 +287,6 @@
                 <div class="technique-section-note"><span class="manual-tag">通用默认 · 可调整</span></div>
                 <div id="technique-options" class="technique-options" aria-label="技艺选择"></div>
                 <p class="field-hint" id="technique-scope" aria-live="polite">范围：手填</p>
-                <div class="field-grid two-up">
-                  <label class="field">
-                    <span>补充生命 %</span>
-                    <input id="technique-hp" type="number" min="-100" step="0.1" value="0" inputmode="decimal">
-                  </label>
-                  <label class="field">
-                    <span>补充攻击 %</span>
-                    <input id="technique-attack" type="number" min="-100" step="0.1" value="0" inputmode="decimal">
-                  </label>
-                </div>
               </div>
             </details>
           </section>
@@ -333,12 +323,28 @@
                 <span>速度丹</span>
               </label>
             </div>
+            <div class="large-ren-adjustments">
+              <div class="large-ren-adjustments-heading">
+                <strong>内功大任督补充</strong>
+                <span>仅用于内功大任督调整</span>
+              </div>
+              <div class="field-grid two-up">
+                <label class="field">
+                  <span>补充生命 %</span>
+                  <input id="technique-hp" type="number" min="-100" step="0.1" value="0" inputmode="decimal">
+                </label>
+                <label class="field">
+                  <span>补充攻击 %</span>
+                  <input id="technique-attack" type="number" min="-100" step="0.1" value="0" inputmode="decimal">
+                </label>
+              </div>
+            </div>
           </section>
 
         </section>
 
       </div>
     </main>
-    <script src="app.js?v=20260927-54"></script>
+    <script src="app.js?v=20260927-55"></script>
   </body>
 </html>
