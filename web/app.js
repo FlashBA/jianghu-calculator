@@ -242,6 +242,22 @@ function isSOrUnknownRank(value) {
 function getWhiteEquipment(id) {
   return state.whiteRabbit?.equipment?.find((item) => String(item.id) === String(id));
 }
+function normalizedDataName(value) {
+  return String(value || '').replace(/\s+/g, '');
+}
+function findWhiteEquipmentByName(name) {
+  const target = normalizedDataName(name);
+  if (!target) return null;
+  return state.whiteRabbit?.equipment?.find((item) => normalizedDataName(item.name || item.nick) === target) || null;
+}
+function findWhiteInnerIndexByName(name) {
+  const target = normalizedDataName(name);
+  return (state.whiteRabbit?.inner_skills || []).findIndex((item) => normalizedDataName(item.name) === target);
+}
+function findWhiteMartialIndexByName(name) {
+  const target = normalizedDataName(name);
+  return (state.whiteRabbit?.martial_arts || []).findIndex((item) => normalizedDataName(item.name) === target);
+}
 function getRawEquipment(id) {
   const key = String(id);
   return key.startsWith('wr-eq-') ? getWhiteEquipment(key) : state.data?.equip?.[key];
@@ -1056,7 +1072,10 @@ function normalizeEquipment(value) {
     const hasId = rawId !== null && rawId !== undefined && String(rawId) !== '';
     if (hasId) {
       if (isCustomEquipmentId(rawId)) return normalizeCustomEquipment(value, rawId);
-      const item = getEquipment(rawId);
+      const rawItem = getEquipment(rawId);
+      const item = rawItem?.source === 'white'
+        ? rawItem
+        : findWhiteEquipmentByName(value.name || equipmentName(rawItem));
       if (!item) return EMPTY_EQUIPMENT();
       const stats = equipmentStats(item);
       return {
@@ -1081,7 +1100,10 @@ function normalizeEquipment(value) {
       extra: String(value.extra || ''),
     };
   }
-  const item = getEquipment(value);
+  const rawItem = getEquipment(value);
+  const item = rawItem?.source === 'white'
+    ? rawItem
+    : findWhiteEquipmentByName(equipmentName(rawItem));
   if (!item) return EMPTY_EQUIPMENT();
   const stats = equipmentStats(item);
   return {
@@ -1217,11 +1239,25 @@ function restoreConfig() {
   }
   if (config.martialId !== undefined) {
     const value = String(config.martialId);
-    $('martial-select').value = value.startsWith('old-skill:') || value.startsWith('wr-skill:') ? value : '';
+    if (value.startsWith('wr-skill:')) {
+      $('martial-select').value = value;
+    } else if (value.startsWith('old-skill:')) {
+      const item = state.data?.skill?.[value.slice(10)];
+      const index = findWhiteMartialIndexByName(item?.nick || item?.name);
+      $('martial-select').value = index >= 0 ? `wr-skill:${index}` : '';
+    } else {
+      $('martial-select').value = '';
+    }
   }
   if (config.neigongId !== undefined) {
     const value = String(config.neigongId);
-    $('neigong-select').value = value === '' || value.startsWith('wr:') || value.startsWith('old:') ? value : `old:${value}`;
+    if (value === '' || value.startsWith('wr:')) {
+      $('neigong-select').value = value;
+    } else {
+      const item = state.data?.neiGong?.[value.replace(/^old:/, '')];
+      const index = findWhiteInnerIndexByName(item?.nick || item?.name);
+      $('neigong-select').value = index >= 0 ? `wr:${index}` : '';
+    }
   }
   let techniqueIds = Array.isArray(config.techniqueIds) ? config.techniqueIds : [];
   const legacyTechniqueSelection = !Array.isArray(config.techniqueIds)
@@ -1256,22 +1292,6 @@ function restoreConfig() {
 function populateNeigong() {
   const select = $('neigong-select');
   select.innerHTML = '<option value="">无内功（0%）</option><option value="custom">自定义内功</option>';
-  const original = Object.values(state.data?.neiGong || {})
-    .filter((skill) => Number(skill.star) >= 6)
-    .sort((left, right) => String(left.nick || '').localeCompare(String(right.nick || ''), 'zh-CN'));
-  if (original.length) {
-    const originalGroup = document.createElement('optgroup');
-    originalGroup.label = '原版 S 内功';
-    original.forEach((skill) => {
-      const option = document.createElement('option');
-      option.value = 'old:' + skill.id;
-      const stats = innerEffectTotals(skill, 9);
-      const summary = innerStatsSummary(stats);
-      option.textContent = (skill.nick || skill.name || '未命名内功') + ' · S' + (summary ? ' · ' + summary : '');
-      originalGroup.appendChild(option);
-    });
-    select.appendChild(originalGroup);
-  }
   if (state.whiteRabbit?.inner_skills?.length) {
     const whiteGroup = document.createElement('optgroup');
     whiteGroup.label = '白兔内功';
@@ -1293,20 +1313,6 @@ function populateNeigong() {
 function populateMartialArts() {
   const select = $('martial-select');
   select.innerHTML = '<option value="">无武学（+0速度）</option>';
-  const original = Object.values(state.data?.skill || {})
-    .filter((skill) => Number(skill.star) >= 6 && Number.isFinite(Number(skill.speed)))
-    .sort((left, right) => String(left.nick || '').localeCompare(String(right.nick || ''), 'zh-CN'));
-  if (original.length) {
-    const group = document.createElement('optgroup');
-    group.label = '原版 S 武学';
-    original.forEach((skill) => {
-      const option = document.createElement('option');
-      option.value = `old-skill:${skill.id}`;
-      option.textContent = `${skill.nick || skill.name || '未命名武学'} · ${Number(skill.speed)}速`;
-      group.appendChild(option);
-    });
-    select.appendChild(group);
-  }
   const white = (state.whiteRabbit?.martial_arts || [])
     .map((skill, index) => ({ skill, index }))
     .filter(({ skill }) => isSOrUnknownRank(skill.rank) && Number.isFinite(Number(skill.speed)));
@@ -1326,9 +1332,8 @@ function populateMartialArts() {
 }
 
 function filteredEquipment() {
-  const original = Object.values(state.data.equip);
   const white = state.whiteRabbit?.equipment || [];
-  return [...original, ...white].filter((item) => !isWeapon(item) && isSEquipment(item));
+  return white.filter((item) => !isWeapon(item) && isSEquipment(item));
 }
 function equipmentCategory(item) {
   if (item?.source === 'white') {
@@ -1990,7 +1995,7 @@ function bindEvents() {
 
 async function init() {
   try {
-    const [baseResponse, whiteResponse] = await Promise.all([fetch('./uc540_doc.json'), fetch('./whiterabbit_data.json?v=20260927-50')]);
+    const [baseResponse, whiteResponse] = await Promise.all([fetch('./uc540_doc.json'), fetch('./whiterabbit_data.json?v=20260927-51')]);
     if (!baseResponse.ok) throw new Error(`数据读取失败（HTTP ${baseResponse.status}）`);
     state.data = await baseResponse.json();
     if (whiteResponse.ok) state.whiteRabbit = await whiteResponse.json();
