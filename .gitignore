@@ -10,6 +10,7 @@ FORMULAS*.md
 !/android-app/.gitignore
 !/android-app/AndroidManifest.xml
 !/android-app/build-apk.sh
+!/android-app/UPDATE.md
 !/android-app/src/
 !/android-app/src/main/
 !/android-app/src/main/java/

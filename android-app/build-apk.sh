@@ -6,6 +6,13 @@ APP_DIR="$ROOT_DIR/android-app"
 BUILD_DIR="$APP_DIR/build"
 ASSET_DIR="$APP_DIR/src/main/assets"
 SDK_ROOT=${ANDROID_SDK_ROOT:-/opt/homebrew/share/android-commandlinetools}
+VERSION_CODE=${VERSION_CODE:-2}
+VERSION_NAME=${VERSION_NAME:-0.1.1}
+KEYSTORE=${APK_KEYSTORE:-$BUILD_DIR/jianghu-debug.keystore}
+STORE_PASSWORD=${APK_STORE_PASSWORD:-android}
+KEY_ALIAS=${APK_KEY_ALIAS:-androiddebugkey}
+KEY_PASSWORD=${APK_KEY_PASSWORD:-$STORE_PASSWORD}
+OUTPUT_APK="$APP_DIR/artifacts/jianghu-calculator-$VERSION_NAME.apk"
 JAVA_HOME=${JAVA_HOME:-}
 if [ -z "$JAVA_HOME" ] && [ -x /usr/libexec/java_home ]; then
   JAVA_HOME=$(/usr/libexec/java_home -v 17 2>/dev/null || true)
@@ -60,8 +67,8 @@ rm -f "$ASSET_DIR/index.html" "$ASSET_DIR/app.js" "$ASSET_DIR/style.css" \
   -A "$ASSET_DIR" \
   --min-sdk-version 23 \
   --target-sdk-version 35 \
-  --version-code 1 \
-  --version-name 0.1.0 \
+  --version-code "$VERSION_CODE" \
+  --version-name "$VERSION_NAME" \
   -o "$BUILD_DIR/unsigned.apk" \
   "$BUILD_DIR/res/resources.zip"
 
@@ -69,20 +76,18 @@ cp "$BUILD_DIR/dex/classes.dex" "$BUILD_DIR/classes.dex"
 zip -q -j "$BUILD_DIR/unsigned.apk" "$BUILD_DIR/classes.dex"
 rm -f "$BUILD_DIR/classes.dex"
 
-KEYSTORE="$BUILD_DIR/jianghu-debug.keystore"
 if [ ! -f "$KEYSTORE" ]; then
-  "$JAVA_HOME/bin/keytool" -genkeypair -noprompt \
-    -keystore "$KEYSTORE" -storepass android -keypass android \
-    -alias androiddebugkey -keyalg RSA -keysize 2048 -validity 10000 \
-    -dname "CN=Android Debug,O=Android,C=US"
+  echo "Missing signing keystore: $KEYSTORE" >&2
+  echo "Set APK_KEYSTORE to the same keystore used by the installed APK." >&2
+  exit 1
 fi
 
 "$BUILD_TOOLS/zipalign" -f -p 4 "$BUILD_DIR/unsigned.apk" "$BUILD_DIR/aligned.apk"
 "$BUILD_TOOLS/apksigner" sign \
-  --ks "$KEYSTORE" --ks-pass pass:android --key-pass pass:android \
-  --out "$BUILD_DIR/signed.apk" "$BUILD_DIR/aligned.apk"
+  --ks "$KEYSTORE" --ks-pass "pass:$STORE_PASSWORD" --ks-key-alias "$KEY_ALIAS" \
+  --key-pass "pass:$KEY_PASSWORD" --out "$BUILD_DIR/signed.apk" "$BUILD_DIR/aligned.apk"
 "$BUILD_TOOLS/apksigner" verify --verbose "$BUILD_DIR/signed.apk"
-cp "$BUILD_DIR/signed.apk" "$APP_DIR/artifacts/jianghu-calculator-0.1.0.apk"
+cp "$BUILD_DIR/signed.apk" "$OUTPUT_APK"
 
-echo "APK: $APP_DIR/artifacts/jianghu-calculator-0.1.0.apk"
-ls -lh "$APP_DIR/artifacts/jianghu-calculator-0.1.0.apk"
+echo "APK: $OUTPUT_APK"
+ls -lh "$OUTPUT_APK"
