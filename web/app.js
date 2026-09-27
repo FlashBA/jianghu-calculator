@@ -1610,7 +1610,7 @@ function renderComparison() {
     })),
   ];
   const valueAt = (snapshot, key) => key.startsWith('stats.')
-    ? snapshot.stats?.[key.slice(7)]
+    ? snapshot.stats?.[key.slice(6)]
     : snapshot[key];
   const formatRowValue = (row, value) => value === null || value === undefined ? '--' : row.format(value);
   const cards = comparisonSnapshots.map((snapshot, index) => `
