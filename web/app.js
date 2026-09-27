@@ -1350,11 +1350,10 @@ function calculate({ commit = false } = {}) {
 
 function comparisonSnapshot() {
   if (!currentResult || !resultGenerated) return null;
-  const comparisonName = $('comparison-name').value.trim();
   return {
     ...currentResult,
     stats: { ...currentResult.stats },
-    label: comparisonName || `${currentResult.roleName} · 等级 ${currentResult.level}`,
+    label: `${currentResult.roleName} · 等级 ${currentResult.level}`,
   };
 }
 
@@ -1368,6 +1367,7 @@ function renderComparison() {
   }
   section.hidden = false;
   const rows = [
+    { label: '角色名称', key: 'roleName', type: 'text', format: (value) => escapeHtml(value || '--') },
     { label: '生命', key: 'hp', format: formatNumber },
     { label: '攻击', key: 'attack', format: formatNumber },
     ...SECONDARY_STAT_DEFS.map((definition) => ({
@@ -1378,7 +1378,7 @@ function renderComparison() {
   ];
   const valueAt = (snapshot, key) => key.startsWith('stats.')
     ? Number(snapshot.stats?.[key.slice(7)]) || 0
-    : Number(snapshot[key]) || 0;
+    : snapshot[key];
   const cards = comparisonSnapshots.map((snapshot, index) => `
     <div class="comparison-card">
       <strong>方案 ${index === 0 ? 'A' : 'B'} · ${escapeHtml(snapshot.label)}</strong>
@@ -1402,13 +1402,14 @@ function renderComparison() {
             ${rows.map((row) => {
               const left = valueAt(comparisonSnapshots[0], row.key);
               const right = valueAt(comparisonSnapshots[1], row.key);
-              const difference = right - left;
+              const isText = row.type === 'text';
+              const difference = isText ? (left === right ? '相同' : '不同') : right - left;
               return `
                 <tr>
                   <td>${row.label}</td>
                   <td>${row.format(left)}</td>
                   <td>${row.format(right)}</td>
-                  <td class="compare-difference${difference < 0 ? ' is-negative' : ''}">${difference > 0 ? '+' : ''}${row.format(difference)}</td>
+                  <td class="compare-difference${!isText && difference < 0 ? ' is-negative' : ''}">${isText ? difference : `${difference > 0 ? '+' : ''}${row.format(difference)}`}</td>
                 </tr>`;
             }).join('')}
           </tbody>
@@ -1422,7 +1423,6 @@ function addCurrentComparison() {
   const snapshot = comparisonSnapshot();
   if (!snapshot || comparisonSnapshots.length >= 2) return;
   comparisonSnapshots.push(snapshot);
-  $('comparison-name').value = '';
   saveConfig();
   renderComparison();
   setSaveStatus(comparisonSnapshots.length === 2 ? '已生成方案差异' : '已保存方案 A');
@@ -1531,7 +1531,6 @@ function bindEvents() {
     state.weaponAffixes = [EMPTY_WEAPON_AFFIX(), EMPTY_WEAPON_AFFIX(), EMPTY_WEAPON_AFFIX()];
     $('person-name').value = '主角'; $('hp-factor').value = 1; $('power-factor').value = 1;
     $('person-style').value = ''; $('person-gender').value = '';
-    $('comparison-name').value = '';
     $('base-speed').value = 10; $('base-crit').value = 0; $('base-dodge').value = 0; $('base-lifesteal').value = 0;
     $('base-crit-damage').value = 0; $('base-mitigation').value = 0; $('base-block').value = 0;
     $('base-reflect').value = 0; $('base-recovery').value = 0;
