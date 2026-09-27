@@ -1029,12 +1029,18 @@ function normalizeComparisonSnapshots(value) {
   return value.slice(0, MAX_COMPARISON_SNAPSHOTS).map((snapshot) => {
     const roleName = String(snapshot?.roleName || '自定义角色');
     const level = Number(snapshot?.level) || 1;
+    const hasStats = Boolean(snapshot?.stats && typeof snapshot.stats === 'object'
+      && SECONDARY_KEYS.some((key) => Object.prototype.hasOwnProperty.call(snapshot.stats, key)));
     return {
       hp: Number(snapshot?.hp) || 0,
       attack: Number(snapshot?.attack) || 0,
       roleName,
       level,
-      stats: Object.fromEntries(SECONDARY_KEYS.map((key) => [key, Number(snapshot?.stats?.[key]) || 0])),
+      stats: Object.fromEntries(SECONDARY_KEYS.map((key) => [
+        key,
+        hasStats ? (Number(snapshot.stats[key]) || 0) : null,
+      ])),
+      statsAvailable: hasStats,
       label: roleName,
     };
   });
@@ -1535,6 +1541,7 @@ function comparisonSnapshot() {
   return {
     ...currentResult,
     stats: { ...currentResult.stats },
+    statsAvailable: true,
     label: currentResult.roleName,
   };
 }
@@ -1553,10 +1560,15 @@ function showComparisonSnapshot(index) {
   $('attack-detail').textContent = `方案 ${comparisonCode(index)} · 已保存快照`;
   SECONDARY_KEYS.forEach((key) => {
     const domKey = key.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
-    $(`final-${domKey}`).textContent = key === 'recovery'
-      ? formatNumber(snapshot.stats?.[key] || 0)
-      : formatSecondaryValue(key, snapshot.stats?.[key] || 0);
+    const value = snapshot.stats?.[key];
+    $(`final-${domKey}`).textContent = value === null || value === undefined
+      ? '--'
+      : key === 'recovery' ? formatNumber(value) : formatSecondaryValue(key, value);
   });
+  if (snapshot.statsAvailable === false) {
+    $('hp-detail').textContent = `方案 ${comparisonCode(index)} · 旧快照未保存面板属性`;
+    $('attack-detail').textContent = `方案 ${comparisonCode(index)} · 旧快照未保存面板属性`;
+  }
   $('result-person').textContent = snapshot.roleName || '自定义角色';
   $('result-level').textContent = `等级 ${snapshot.level}`;
   document.querySelectorAll('[data-comparison-index]').forEach((card) => {
@@ -1584,8 +1596,9 @@ function renderComparison() {
     })),
   ];
   const valueAt = (snapshot, key) => key.startsWith('stats.')
-    ? Number(snapshot.stats?.[key.slice(7)]) || 0
+    ? snapshot.stats?.[key.slice(7)]
     : snapshot[key];
+  const formatRowValue = (row, value) => value === null || value === undefined ? '--' : row.format(value);
   const cards = comparisonSnapshots.map((snapshot, index) => `
     <button class="comparison-card${activeComparisonIndex === index ? ' is-active' : ''}" type="button" data-comparison-index="${index}" aria-pressed="${activeComparisonIndex === index}">
       <strong>方案 ${comparisonCode(index)} · ${escapeHtml(snapshot.roleName || '自定义角色')}</strong>
@@ -1619,13 +1632,15 @@ function renderComparison() {
               const left = valueAt(comparisonSnapshots[pair[0]], row.key);
               const right = valueAt(comparisonSnapshots[pair[1]], row.key);
               const isText = row.type === 'text';
-              const difference = isText ? (left === right ? '相同' : '不同') : right - left;
+              const difference = isText
+                ? (left === right ? '相同' : '不同')
+                : left === null || left === undefined || right === null || right === undefined ? null : right - left;
               return `
                 <tr>
                   <td>${row.label}</td>
-                  <td>${row.format(left)}</td>
-                  <td>${row.format(right)}</td>
-                  <td class="compare-difference${!isText && difference < 0 ? ' is-negative' : ''}">${isText ? difference : `${difference > 0 ? '+' : ''}${row.format(difference)}`}</td>
+                  <td>${formatRowValue(row, left)}</td>
+                  <td>${formatRowValue(row, right)}</td>
+                  <td class="compare-difference${!isText && difference < 0 ? ' is-negative' : ''}">${isText ? difference : difference === null ? '未保存' : `${difference > 0 ? '+' : ''}${row.format(difference)}`}</td>
                 </tr>`;
             }).join('')}
           </tbody>
