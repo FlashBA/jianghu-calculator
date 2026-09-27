@@ -284,6 +284,18 @@ function applyCharacterDefaults() {
     $('base-speed').value = defaultSpeed;
     changed = true;
   }
+  if (personName !== '自定义角色') {
+    const achievementDefault = personName === '主角' ? 292 : 177;
+    ['achievement-hp', 'achievement-attack'].forEach((id) => {
+      const current = Number($(id).value);
+      if (current === 177 || current === 292) {
+        if (current !== achievementDefault) {
+          $(id).value = achievementDefault;
+          changed = true;
+        }
+      }
+    });
+  }
   if (!profile) return changed;
   if (Number.isFinite(Number(profile.hp_factor))) {
     $('hp-factor').value = profile.hp_factor;
@@ -1928,6 +1940,7 @@ function bindEvents() {
     $('base-speed').value = 0; $('base-crit').value = 0; $('base-dodge').value = 0; $('base-lifesteal').value = 0;
     $('base-crit-damage').value = 0; $('base-mitigation').value = 0; $('base-block').value = 0;
     $('base-reflect').value = 0; $('base-recovery').value = 0;
+    $('achievement-hp').value = 292; $('achievement-attack').value = 292;
     $('attack-pill-count').value = 30; $('small-ren-attack-percent').value = 10;
     $('large-ren-attack-count').value = 10; $('learned-s-martial-count').value = 5;
     $('martial-bonus-percent').value = 0;
