@@ -36,6 +36,7 @@ const FORMATION_POSITION_OPTIONS = Array.from({ length: 9 }, (_, index) => ({
   key: String(index + 1),
   label: `${index + 1}号位`,
 }));
+const MARTIAL_STYLE_KEYS = ['拳法', '剑法', '刀法', '棍法'];
 
 const EMPTY_EQUIPMENT = () => ({
   id: null, name: '', hp: 0, attack: 0, hpFlat: 0, attackFlat: 0,
@@ -74,6 +75,36 @@ function numberValueFrom(value) {
 }
 function emptySecondaryStats() {
   return Object.fromEntries(SECONDARY_KEYS.map((key) => [key, 0]));
+}
+function emptyStylePower() {
+  return Object.fromEntries(MARTIAL_STYLE_KEYS.map((style) => [style, 0]));
+}
+function addStylePower(target, source) {
+  MARTIAL_STYLE_KEYS.forEach((style) => { target[style] += numberValueFrom(source?.[style]); });
+  return target;
+}
+function stylePowerFromText(text) {
+  const totals = emptyStylePower();
+  const normalized = String(text || '').replaceAll('\n', '，');
+  const beforeStyle = /(\d+(?:\.\d+)?)\s*%{1,2}[^\n，。；;]*?(拳脚|拳掌|拳法|剑法|刀法|棍法)[^\n，。；;]*?(?:威力|伤害)/g;
+  const afterStyle = /(拳脚|拳掌|拳法|剑法|刀法|棍法)[^\n，。；;]*?(\d+(?:\.\d+)?)\s*%{1,2}[^\n，。；;]*?(?:威力|伤害)/g;
+  let match;
+  while ((match = beforeStyle.exec(normalized))) {
+    const style = match[2] === '拳脚' || match[2] === '拳掌' ? '拳法' : match[2];
+    totals[style] += Number(match[1]);
+  }
+  while ((match = afterStyle.exec(normalized))) {
+    const style = match[1] === '拳脚' || match[1] === '拳掌' ? '拳法' : match[1];
+    totals[style] += Number(match[2]);
+  }
+  return totals;
+}
+function stylePowerFromEffect(effect) {
+  const text = String(effect?.desp || '');
+  const rendered = Number.isFinite(Number(effect?.v)) && /%d/.test(text)
+    ? text.replaceAll('%d', String(effect.v))
+    : text;
+  return stylePowerFromText(rendered);
 }
 function addSecondaryStats(target, source) {
   SECONDARY_KEYS.forEach((key) => { target[key] += numberValueFrom(source?.[key]); });
@@ -237,6 +268,10 @@ function getSelectedMartial() {
 function martialSpeed(selection = getSelectedMartial()) {
   return Number(selection?.item?.speed) || 0;
 }
+function martialStyle(item) {
+  if (MARTIAL_STYLE_KEYS.includes(item?.style)) return item.style;
+  return ({ 1: '拳法', 2: '剑法', 3: '刀法', 4: '棍法' })[Number(item?.type)] || '';
+}
 function getCharacterProfile(name = $('person-name')?.value) {
   return state.whiteRabbit?.characters?.find((character) => character.name === name) || null;
 }
@@ -393,9 +428,10 @@ function innerEffectTotals(record, level) {
     const type = Number(effect.t);
     if (type === 2) totals.hp += Number(effect.v || 0);
     if (type === 131072) totals.attack += Number(effect.v || 0);
+    addStylePower(totals.stylePower, stylePowerFromEffect(effect));
     addSecondaryStats(totals.secondary, innerSecondaryFromEffect(effect));
     return totals;
-  }, { hp: 0, attack: 0, secondary: emptySecondaryStats() });
+  }, { hp: 0, attack: 0, stylePower: emptyStylePower(), secondary: emptySecondaryStats() });
 }
 function setInnerStatsMode(mode) {
   $('neigong-hp').dataset.mode = mode;
@@ -413,6 +449,7 @@ function customInnerStats() {
   return {
     hp: numberValue('neigong-hp'),
     attack: numberValue('neigong-attack'),
+    stylePower: emptyStylePower(),
     directHp: numberValue('neigong-hp'),
     directAttack: numberValue('neigong-attack'),
     secondary,
@@ -425,9 +462,11 @@ function autoInnerStats(selection = getSelectedInner()) {
     const item = selection.item || {};
     const secondary = secondaryStatsFromRecord(item);
     addSecondaryStats(secondary, secondaryStatsFromText(item.special));
+    const stylePower = stylePowerFromText(item.special);
     return {
       hp: Number(item.hp_percent) || 0,
       attack: Number(item.attack_percent) || 0,
+      stylePower,
       directHp: Number(item.hp_percent) || 0,
       directAttack: Number(item.attack_percent) || 0,
       secondary,
@@ -441,6 +480,7 @@ function autoInnerStats(selection = getSelectedInner()) {
     // getHpFromNeiGong2 is a separate map-based path and must not use star.
     hp: direct.hp,
     attack: direct.attack,
+    stylePower: direct.stylePower,
     directHp: direct.hp,
     directAttack: direct.attack,
     secondary: direct.secondary,
@@ -524,6 +564,7 @@ function techniqueStats(technique) {
     hp: Number(technique?.hp_percent) || 0,
     attack: Number(technique?.attack_percent) || 0,
     recoveryBasePercent: Number(technique?.recovery_base_percent) || 0,
+    stylePower: stylePowerFromText(technique?.effect),
     secondary: emptySecondaryStats(),
   };
   addSecondaryStats(totals.secondary, technique?.secondary);
@@ -590,7 +631,7 @@ function selectedTechniques() {
   return selectedTechniqueIds().map(getWhiteTechnique).filter(Boolean);
 }
 function techniqueTotals() {
-  const totals = { hp: 0, attack: 0, recoveryBasePercent: 0, secondary: emptySecondaryStats(), applied: [], skipped: [] };
+  const totals = { hp: 0, attack: 0, recoveryBasePercent: 0, stylePower: emptyStylePower(), secondary: emptySecondaryStats(), applied: [], skipped: [] };
   selectedTechniques().forEach((technique) => {
     if (!techniqueScopeStatus(technique)) {
       totals.skipped.push(technique.name);
@@ -600,6 +641,7 @@ function techniqueTotals() {
     totals.hp += stats.hp;
     totals.attack += stats.attack;
     totals.recoveryBasePercent += stats.recoveryBasePercent;
+    addStylePower(totals.stylePower, stats.stylePower);
     addSecondaryStats(totals.secondary, stats.secondary);
     totals.applied.push(technique.name);
   });
@@ -893,6 +935,11 @@ function saveConfig() {
     baseRecovery: $('base-recovery').value,
     achievementHp: $('achievement-hp').value,
     achievementAttack: $('achievement-attack').value,
+    attackPillCount: $('attack-pill-count').value,
+    smallRenAttackPercent: $('small-ren-attack-percent').value,
+    largeRenAttackCount: $('large-ren-attack-count').value,
+    learnedSMartialCount: $('learned-s-martial-count').value,
+    martialBonusPercent: $('martial-bonus-percent').value,
     equipmentSlots: state.equipmentSlots,
     weaponName: $('weapon-name').value,
     weaponAffixes: state.weaponAffixes,
@@ -1112,6 +1159,9 @@ function restoreConfig() {
     neigongLifesteal: 'neigong-lifesteal', neigongCritDamage: 'neigong-crit-damage',
     neigongBlock: 'neigong-block', neigongReflect: 'neigong-reflect', neigongRecovery: 'neigong-recovery',
     techniqueHp: 'technique-hp', techniqueAttack: 'technique-attack',
+    attackPillCount: 'attack-pill-count', smallRenAttackPercent: 'small-ren-attack-percent',
+    largeRenAttackCount: 'large-ren-attack-count', learnedSMartialCount: 'learned-s-martial-count',
+    martialBonusPercent: 'martial-bonus-percent',
     formationPosition: 'formation-position',
   };
   Object.entries(fieldMap).forEach(([key, id]) => { if (config[key] !== undefined) $(id).value = config[key]; });
@@ -1457,7 +1507,8 @@ function calculate({ commit = false } = {}) {
   const achievementAttack = numberValue('achievement-attack');
   const baseHpRaw = Number(state.data.personHp[level]) * hpFactor;
   const baseHp = trunc(baseHpRaw);
-  const baseAttack = trunc(Number(state.data.personPower[level]) * powerFactor);
+  const baseAttackRaw = Number(state.data.personPower[level]) * powerFactor;
+  const baseAttack = trunc(baseAttackRaw);
   const activeEquipment = state.equipmentSlots.filter(equipmentSlotActive);
   const equipmentHp = activeEquipment.reduce((sum, slot) => sum + numberValueFrom(slot.hp), 0);
   const equipmentAttack = activeEquipment.reduce((sum, slot) => sum + numberValueFrom(slot.attack), 0);
@@ -1501,11 +1552,11 @@ function calculate({ commit = false } = {}) {
   const pillHp = pills * 2;
   const smallRenEnabled = $('small-ren-enabled').checked;
   const smallRenHp = smallRenEnabled ? 20 : 0;
-  const smallRenAttack = smallRenEnabled ? 10 : 0;
+  const smallRenAttack = smallRenEnabled ? numberValue('small-ren-attack-percent', 10) : 0;
   const largeRenEnabled = $('large-ren-enabled').checked;
   // 大任督的气血百分比只乘基础成长生命，不乘装备固定血量或成就固定血量。
   const largeRenHp = largeRenEnabled ? 110 : 0;
-  const largeRenAttack = largeRenEnabled ? 100 : 0;
+  const largeRenAttackCount = largeRenEnabled ? Math.max(0, numberValue('large-ren-attack-count', 10)) : 0;
   const largeRenSpeed = largeRenEnabled ? 8 : 0;
   secondaryStats.speed += largeRenSpeed;
   // Blood pills form their own base-life multiplier. Other life percentages
@@ -1514,11 +1565,31 @@ function calculate({ commit = false } = {}) {
   const postPillHpPercent = equipmentHp + techniqueHp + neigongHp + smallRenHp
     + weaponTotals.hpPercent + activeFormation.hp;
   const largeRenHpBonus = baseHpRaw * (largeRenHp + supplementalHp) / 100;
-  const attackPercent = equipmentAttack + neigongAttack + techniqueAttack + smallRenAttack + largeRenAttack + weaponTotals.attackPercent + activeFormation.attack;
   const finalHpRaw = bloodPillBaseHp * (100 + postPillHpPercent) / 100 + largeRenHpBonus;
   const hpPercent = baseHpRaw ? (finalHpRaw / baseHpRaw - 1) * 100 : 0;
   const finalHp = Math.round(finalHpRaw) + trunc(achievementHp) + trunc(weaponTotals.hpFlat) + trunc(equipmentHpFlat);
-  const finalAttack = trunc(baseAttack * (100 + attackPercent) / 100) + trunc(achievementAttack) + trunc(weaponTotals.attackFlat) + trunc(equipmentAttackFlat);
+  const attackPillCount = Math.max(0, Math.min(30, numberValue('attack-pill-count', 30)));
+  const attackPillMultiplier = 1 + attackPillCount / 100;
+  const selectedMartialStyle = martialStyle(selectedMartial?.item);
+  const martialPower = Number(selectedMartial?.item?.power) || 0;
+  const selectedStylePower = selectedMartialStyle
+    ? (innerDetails?.stylePower?.[selectedMartialStyle] || 0) + (selectedTechniqueStats.stylePower?.[selectedMartialStyle] || 0)
+    : 0;
+  const martialBonusPercent = numberValue('martial-bonus-percent');
+  const baseAttackTerm = baseAttackRaw * attackPillMultiplier * (
+    1 + (neigongAttack + techniqueAttack + activeFormation.attack + selectedStylePower) / 100
+  );
+  const martialPowerTerm = martialPower * (
+    1 + (neigongAttack + smallRenAttack + selectedStylePower + martialBonusPercent) / 100
+  );
+  const largeRenAttackTerm = baseAttackRaw * 0.1 * largeRenAttackCount;
+  const equipmentPercentTerm = (baseAttackRaw * attackPillMultiplier + martialPower)
+    * (equipmentAttack + weaponTotals.attackPercent) / 100;
+  const attackBeforeSMultiplier = baseAttackTerm + martialPowerTerm + largeRenAttackTerm
+    + equipmentAttackFlat + weaponTotals.attackFlat + equipmentPercentTerm;
+  const learnedSMartialCount = Math.max(0, numberValue('learned-s-martial-count', 5));
+  const sMartialMultiplier = 1 + learnedSMartialCount * 0.05;
+  const finalAttack = trunc(attackBeforeSMultiplier * sMartialMultiplier) + trunc(achievementAttack);
   // 回复按 APK 面板口径：基础生命先乘内功生命加成，再乘总回复比例。
   const recoveryBase = baseHpRaw * (100 + neigongHp) / 100;
   const recoveryValue = trunc(
@@ -1528,7 +1599,7 @@ function calculate({ commit = false } = {}) {
   $('final-hp').textContent = formatNumber(finalHp);
   $('final-attack').textContent = formatNumber(finalAttack);
   $('hp-detail').textContent = `基础 ${formatNumber(baseHp)} · 百分比 ${formatPercent(hpPercent)} · 成就 +${formatNumber(achievementHp)}`;
-  $('attack-detail').textContent = `基础 ${formatNumber(baseAttack)} · 百分比 ${formatPercent(attackPercent)} · 成就 +${formatNumber(achievementAttack)}`;
+  $('attack-detail').textContent = `基础项 ${formatNumber(trunc(baseAttackTerm))} · 武学项 ${formatNumber(trunc(martialPowerTerm))} · S武学 ${formatPercent(learnedSMartialCount * 5)} · 成就 +${formatNumber(achievementAttack)}`;
   SECONDARY_KEYS.forEach((key) => {
     const domKey = key.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
     $(`final-${domKey}`).textContent = key === 'recovery'
@@ -1721,7 +1792,9 @@ function addCurrentComparison() {
 function bindEvents() {
   ['person-name', 'hp-factor', 'power-factor', 'achievement-hp', 'achievement-attack',
     'base-speed', 'base-crit', 'base-dodge', 'base-lifesteal', 'base-crit-damage',
-    'base-mitigation', 'base-block', 'base-reflect', 'base-recovery']
+    'base-mitigation', 'base-block', 'base-reflect', 'base-recovery',
+    'attack-pill-count', 'small-ren-attack-percent', 'large-ren-attack-count',
+    'learned-s-martial-count', 'martial-bonus-percent']
     .forEach((id) => $(id).addEventListener('input', calculate));
   const handleCharacterSelection = () => {
     applyCharacterDefaults();
@@ -1849,6 +1922,9 @@ function bindEvents() {
     $('base-speed').value = 0; $('base-crit').value = 0; $('base-dodge').value = 0; $('base-lifesteal').value = 0;
     $('base-crit-damage').value = 0; $('base-mitigation').value = 0; $('base-block').value = 0;
     $('base-reflect').value = 0; $('base-recovery').value = 0;
+    $('attack-pill-count').value = 30; $('small-ren-attack-percent').value = 10;
+    $('large-ren-attack-count').value = 10; $('learned-s-martial-count').value = 5;
+    $('martial-bonus-percent').value = 0;
     $('level-input').value = 90; $('martial-select').value = ''; $('neigong-select').value = '';
     $('neigong-level').value = 9;
     INNER_MANUAL_FIELD_IDS.forEach((id) => { $(id).value = 0; });
