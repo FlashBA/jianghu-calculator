@@ -2371,10 +2371,40 @@ h2 {
 }
 
 .saved-card-title,
-.team-card-heading > div:first-child {
+.team-card-heading > div:first-child,
+.team-card-toggle {
   display: grid;
   gap: 3px;
   min-width: 0;
+}
+
+.team-card-toggle {
+  flex: 1 1 auto;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  padding: 0;
+  color: var(--ink);
+  border: 0;
+  background: transparent;
+  text-align: left;
+}
+
+.team-card-toggle-copy {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.team-card-toggle-action {
+  padding-left: 8px;
+  color: var(--teal);
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.team-card-toggle:hover .team-card-toggle-action,
+.team-card-toggle:focus-visible .team-card-toggle-action {
+  color: var(--teal-dark);
 }
 
 .saved-card-title strong,
@@ -2390,6 +2420,10 @@ h2 {
 .team-card-heading span {
   color: var(--muted);
   font-size: 0.68rem;
+}
+
+.team-card-heading .team-card-toggle-action {
+  color: var(--teal);
 }
 
 .icon-button {
@@ -2470,6 +2504,74 @@ h2 {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 6px;
+}
+
+.team-card-detail {
+  padding-top: 10px;
+  border-top: 1px solid #c9b9a6;
+}
+
+.team-detail-list {
+  display: grid;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.team-detail-row {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 8px;
+  min-width: 0;
+  padding: 8px 0;
+  border-top: 1px solid #c9b9a6;
+}
+
+.team-detail-position {
+  color: var(--gold);
+  font-size: 0.68rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+}
+
+.team-detail-body {
+  min-width: 0;
+}
+
+.team-detail-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+
+.team-detail-heading strong {
+  overflow: hidden;
+  color: var(--teal-dark);
+  font-size: 0.76rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.team-detail-heading span,
+.team-detail-loadout,
+.team-detail-empty {
+  color: var(--muted);
+  font-size: 0.66rem;
+  line-height: 1.45;
+}
+
+.team-detail-heading span {
+  flex: 0 0 auto;
+}
+
+.team-detail-loadout {
+  margin-top: 4px;
+}
+
+.team-detail-empty {
+  padding-top: 10px;
+  text-align: center;
 }
 
 .team-slot {

@@ -150,6 +150,7 @@ let teams = [];
 let activeView = 'calculator';
 let pendingNameDialog = null;
 let pendingTeamPicker = null;
+let expandedTeamId = null;
 
 const $ = (id) => document.getElementById(id);
 
@@ -1321,6 +1322,11 @@ function normalizeComparisonSnapshots(value) {
   });
 }
 
+function teamSlotRoleAllowed(roleName, slotIndex) {
+  const isMainCharacter = String(roleName || '') === '主角';
+  return slotIndex === 0 ? isMainCharacter : !isMainCharacter;
+}
+
 function normalizeTeams(value) {
   if (!Array.isArray(value)) return [];
   return value.map((team, index) => ({
@@ -1329,7 +1335,8 @@ function normalizeTeams(value) {
       || `配队${String(index + 1).padStart(3, '0')}`,
     slots: Array.from({ length: MAX_TEAM_SLOTS }, (_, slotIndex) => {
       const cardId = Array.isArray(team?.slots) ? team.slots[slotIndex] : null;
-      return cardId ? String(cardId) : null;
+      const card = cardId ? comparisonSnapshots.find((snapshot) => snapshot.cardId === String(cardId)) : null;
+      return card && teamSlotRoleAllowed(card.roleName, slotIndex) ? card.cardId : null;
     }),
     createdAt: Number(team?.createdAt) || Date.now(),
     updatedAt: Number(team?.updatedAt) || Date.now(),
@@ -2142,7 +2149,11 @@ function teamCardFromId(cardId) {
 
 function renderTeamRoleFilter() {
   const selects = [$('team-picker-role-filter')].filter(Boolean);
-  const roles = [...new Set(comparisonSnapshots.map((card) => card.roleName).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'zh-CN'));
+  const slotIndex = pendingTeamPicker?.slotIndex ?? 0;
+  const roles = [...new Set(comparisonSnapshots
+    .filter((card) => teamSlotRoleAllowed(card.roleName, slotIndex))
+    .map((card) => card.roleName)
+    .filter(Boolean))].sort((a, b) => a.localeCompare(b, 'zh-CN'));
   selects.forEach((select) => {
     const previous = select.value;
     select.innerHTML = '<option value="">全部角色</option>'
@@ -2170,6 +2181,7 @@ function renderTeamPicker() {
     <div class="saved-card-loadout">${escapeHtml(snapshotDisplayText(currentCard) || '未记录武学、内功或装备')}</div>
   </div>` : '';
   const cards = comparisonSnapshots.filter((card) => {
+    if (!teamSlotRoleAllowed(card.roleName, pendingTeamPicker.slotIndex)) return false;
     if (role && card.roleName !== role) return false;
     if (query && ![card.name, card.roleName, card.martialName, card.innerName].filter(Boolean).join(' ').toLocaleLowerCase().includes(query)) return false;
     return true;
@@ -2189,6 +2201,7 @@ function renderTeamPicker() {
   content.querySelectorAll('[data-team-card]').forEach((button) => button.addEventListener('click', () => {
     const selected = teamCardFromId(button.dataset.teamCard);
     if (!selected) return;
+    if (!teamSlotRoleAllowed(selected.roleName, pendingTeamPicker.slotIndex)) return;
     team.slots[pendingTeamPicker.slotIndex] = selected.cardId;
     team.updatedAt = Date.now();
     saveConfig();
@@ -2215,6 +2228,7 @@ function deleteTeam(teamId) {
   const team = teams.find((item) => item.id === teamId);
   if (!team || !window.confirm(`确认删除配队“${team.name}”吗？`)) return;
   teams = teams.filter((item) => item.id !== teamId);
+  if (expandedTeamId === teamId) expandedTeamId = null;
   saveConfig();
   renderTeams();
   setSaveStatus('已删除配队');
@@ -2242,6 +2256,28 @@ async function createTeam() {
   setSaveStatus(`已创建 ${name}`);
 }
 
+function teamCardDetailMarkup(team) {
+  const rows = team.slots.map((cardId, slotIndex) => {
+    const card = teamCardFromId(cardId);
+    if (!card) return '';
+    return `
+      <article class="team-detail-row">
+        <span class="team-detail-position">${String(slotIndex + 1).padStart(2, '0')}</span>
+        <div class="team-detail-body">
+          <div class="team-detail-heading">
+            <strong>${escapeHtml(card.name)}</strong>
+            <span>${escapeHtml(card.roleName)} · 等级 ${card.level}</span>
+          </div>
+          ${cardStatsMarkup(card)}
+          <div class="team-detail-loadout">${escapeHtml(snapshotDisplayText(card) || '未记录武学、内功或装备')}</div>
+        </div>
+      </article>`;
+  }).filter(Boolean).join('');
+  return rows
+    ? `<div class="team-detail-list">${rows}</div>`
+    : '<div class="team-detail-empty">暂无方案</div>';
+}
+
 function renderTeams() {
   const content = $('team-list');
   if (!content) return;
@@ -2252,19 +2288,34 @@ function renderTeams() {
     content.innerHTML = `<div class="empty-collection"><strong>${teams.length ? '没有匹配的配队' : '配队还是空的'}</strong><span>${teams.length ? '更换搜索内容试试' : '点击右上角“新建配队”，再用加号填入数据卡片'}</span></div>`;
     return;
   }
-  content.innerHTML = visible.map((team) => `
-    <article class="team-card">
+  content.innerHTML = visible.map((team) => {
+    const expanded = expandedTeamId === team.id;
+    const detailId = `team-detail-${team.id.replace(/[^a-zA-Z0-9_-]/g, '-')}`;
+    return `
+    <article class="team-card${expanded ? ' is-expanded' : ''}">
       <div class="team-card-heading">
-        <div><strong>${escapeHtml(team.name)}</strong><span>${team.slots.filter(Boolean).length} / ${MAX_TEAM_SLOTS} 个位置</span></div>
+        <button class="team-card-toggle" type="button" data-team-toggle="${escapeHtml(team.id)}" aria-expanded="${expanded}" aria-controls="${escapeHtml(detailId)}">
+          <span class="team-card-toggle-copy"><strong>${escapeHtml(team.name)}</strong><span>${team.slots.filter(Boolean).length} / ${MAX_TEAM_SLOTS} 个位置</span></span>
+          <span class="team-card-toggle-action">${expanded ? '收起' : '详情'}</span>
+        </button>
         <div class="team-card-actions"><button class="text-button" type="button" data-team-rename="${escapeHtml(team.id)}">改名</button><button class="icon-button card-delete-button" type="button" data-team-delete="${escapeHtml(team.id)}" aria-label="删除配队" title="删除">×</button></div>
       </div>
-      <div class="team-slots">${team.slots.map((cardId, slotIndex) => {
+      <div class="team-card-detail" id="${escapeHtml(detailId)}"${expanded ? '' : ' hidden'}>
+        <div class="team-slots">${team.slots.map((cardId, slotIndex) => {
         const card = teamCardFromId(cardId);
         return card
           ? `<button class="team-slot is-filled" type="button" data-team-add="${escapeHtml(team.id)}" data-team-slot="${slotIndex}"><small>${String(slotIndex + 1).padStart(2, '0')}</small><strong>${escapeHtml(card.roleName)}</strong><span>${escapeHtml(card.name)}</span><b>${formatNumber(card.hp)} · ${formatNumber(card.attack)}</b></button>`
           : `<button class="team-slot is-empty" type="button" data-team-add="${escapeHtml(team.id)}" data-team-slot="${slotIndex}"><small>${String(slotIndex + 1).padStart(2, '0')}</small><strong>＋</strong><span>添加方案</span></button>`;
-      }).join('')}</div>
-    </article>`).join('');
+        }).join('')}</div>
+        ${teamCardDetailMarkup(team)}
+      </div>
+    </article>`;
+  }).join('');
+  content.querySelectorAll('[data-team-toggle]').forEach((button) => button.addEventListener('click', () => {
+    const teamId = button.dataset.teamToggle;
+    expandedTeamId = expandedTeamId === teamId ? null : teamId;
+    renderTeams();
+  }));
   content.querySelectorAll('[data-team-add]').forEach((button) => button.addEventListener('click', () => openTeamPicker(button.dataset.teamAdd, Number(button.dataset.teamSlot))));
   content.querySelectorAll('[data-team-delete]').forEach((button) => button.addEventListener('click', () => deleteTeam(button.dataset.teamDelete)));
   content.querySelectorAll('[data-team-rename]').forEach((button) => button.addEventListener('click', () => renameTeam(button.dataset.teamRename)));
@@ -2672,7 +2723,7 @@ function bindEvents() {
 
 async function init() {
   try {
-    const [baseResponse, whiteResponse] = await Promise.all([fetch('./uc540_doc.json'), fetch('./whiterabbit_data.json?v=20260927-61')]);
+    const [baseResponse, whiteResponse] = await Promise.all([fetch('./uc540_doc.json'), fetch('./whiterabbit_data.json?v=20260927-62')]);
     if (!baseResponse.ok) throw new Error(`数据读取失败（HTTP ${baseResponse.status}）`);
     state.data = await baseResponse.json();
     if (whiteResponse.ok) state.whiteRabbit = await whiteResponse.json();
