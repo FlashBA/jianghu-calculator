@@ -1550,9 +1550,21 @@ function comparisonCode(index) {
   return String.fromCharCode(65 + index);
 }
 
+function hydrateLegacySnapshot(snapshot) {
+  if (snapshot.statsAvailable !== false) return;
+  if (!currentResult || currentResult.hp !== snapshot.hp || currentResult.attack !== snapshot.attack) {
+    calculate({ commit: true });
+  }
+  if (currentResult?.hp !== snapshot.hp || currentResult?.attack !== snapshot.attack) return;
+  snapshot.stats = { ...currentResult.stats };
+  snapshot.statsAvailable = true;
+  saveConfig();
+}
+
 function showComparisonSnapshot(index) {
   const snapshot = comparisonSnapshots[index];
   if (!snapshot) return;
+  hydrateLegacySnapshot(snapshot);
   activeComparisonIndex = index;
   $('final-hp').textContent = formatNumber(snapshot.hp);
   $('final-attack').textContent = formatNumber(snapshot.attack);

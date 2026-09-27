@@ -2098,6 +2098,66 @@ h2 {
 }
 
 @media (max-width: 480px) {
+  .comparison-section {
+    padding: 10px 8px;
+  }
+
+  .comparison-cards {
+    gap: 5px;
+    margin-bottom: 7px;
+  }
+
+  .comparison-card {
+    min-height: 32px;
+    padding: 7px;
+  }
+
+  .comparison-card strong {
+    font-size: 0.68rem;
+    line-height: 1.25;
+    white-space: normal;
+  }
+
+  .comparison-pair-controls {
+    gap: 4px;
+    margin-bottom: 7px;
+    font-size: 0.6rem;
+  }
+
+  .comparison-table-wrap {
+    overflow-x: visible;
+  }
+
+  .compare-table {
+    min-width: 0;
+    table-layout: fixed;
+    font-size: 0.62rem;
+  }
+
+  .compare-table th,
+  .compare-table td {
+    padding: 4px 2px;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .compare-table th {
+    font-size: 0.58rem;
+    line-height: 1.15;
+  }
+
+  .compare-table th:first-child,
+  .compare-table td:first-child {
+    width: 21%;
+  }
+
+  .compare-table th:not(:first-child),
+  .compare-table td:not(:first-child) {
+    width: 26.333%;
+  }
+}
+
+@media (max-width: 480px) {
   .select-proxy-trigger {
     min-height: 42px;
     padding-right: 27px;
