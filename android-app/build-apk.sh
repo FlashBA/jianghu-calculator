@@ -27,14 +27,28 @@ for required in "$JAVAC" "$JAVA" "$PLATFORM" "$BUILD_TOOLS/aapt2" "$BUILD_TOOLS/
   fi
 done
 
-rm -rf "$BUILD_DIR/classes" "$BUILD_DIR/dex" "$BUILD_DIR/generated" "$BUILD_DIR/res" "$BUILD_DIR/unsigned.apk" "$BUILD_DIR/aligned.apk" "$BUILD_DIR/signed.apk"
-mkdir -p "$BUILD_DIR/classes" "$BUILD_DIR/dex" "$BUILD_DIR/generated" "$BUILD_DIR/res" "$APP_DIR/artifacts" "$ASSET_DIR"
+rm -rf "$BUILD_DIR/classes" "$BUILD_DIR/tool-classes" "$BUILD_DIR/dex" "$BUILD_DIR/generated" "$BUILD_DIR/res" "$BUILD_DIR/unsigned.apk" "$BUILD_DIR/aligned.apk" "$BUILD_DIR/signed.apk"
+mkdir -p "$BUILD_DIR/classes" "$BUILD_DIR/tool-classes" "$BUILD_DIR/dex" "$BUILD_DIR/generated" "$BUILD_DIR/res" "$APP_DIR/artifacts" "$ASSET_DIR"
 
-cp "$ROOT_DIR/web/index.html" "$ROOT_DIR/web/app.js" "$ROOT_DIR/web/style.css" \
-  "$ROOT_DIR/web/uc540_doc.json" "$ROOT_DIR/web/whiterabbit_data.json" "$ASSET_DIR/"
+# Keep only the encrypted vault in the APK assets directory. Plaintext web files
+# may be left there by an older build, so remove these exact generated files first.
+rm -f "$ASSET_DIR/index.html" "$ASSET_DIR/app.js" "$ASSET_DIR/style.css" \
+  "$ASSET_DIR/uc540_doc.json" "$ASSET_DIR/whiterabbit_data.json" "$ASSET_DIR/app.vault"
+
+"$JAVAC" --release 8 -d "$BUILD_DIR/tool-classes" \
+  "$APP_DIR/tools/AssetVaultBuilder.java"
+"$JAVA" -cp "$BUILD_DIR/tool-classes" com.flashba.jianghucalculator.AssetVaultBuilder \
+  "$ASSET_DIR/app.vault" \
+  "$BUILD_DIR/generated/com/flashba/jianghucalculator/AssetVaultKey.java" \
+  "index.html=$ROOT_DIR/web/index.html" \
+  "app.js=$ROOT_DIR/web/app.js" \
+  "style.css=$ROOT_DIR/web/style.css" \
+  "uc540_doc.json=$ROOT_DIR/web/uc540_doc.json" \
+  "whiterabbit_data.json=$ROOT_DIR/web/whiterabbit_data.json"
 
 "$JAVAC" --release 8 -classpath "$PLATFORM" -d "$BUILD_DIR/classes" \
-  "$APP_DIR/src/main/java/com/flashba/jianghucalculator/MainActivity.java"
+  "$APP_DIR/src/main/java/com/flashba/jianghucalculator/MainActivity.java" \
+  "$BUILD_DIR/generated/com/flashba/jianghucalculator/AssetVaultKey.java"
 "$BUILD_TOOLS/d8" --lib "$PLATFORM" --min-api 23 --output "$BUILD_DIR/dex" \
   "$BUILD_DIR/classes/com/flashba/jianghucalculator/"*.class
 
