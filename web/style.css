@@ -468,8 +468,48 @@ h2 {
   font-size: 0.7rem;
 }
 
+.comparison-card-values {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 5px 8px;
+  margin-top: 8px;
+}
+
+.comparison-card-value {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 5px;
+  min-width: 0;
+  margin-top: 0;
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.comparison-card-value em {
+  overflow: hidden;
+  font-style: normal;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.comparison-card-value b {
+  flex: 0 0 auto;
+  color: var(--ink);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.comparison-table-wrap {
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
 .compare-table {
   width: 100%;
+  min-width: 390px;
   border-collapse: collapse;
   font-size: 0.78rem;
   font-variant-numeric: tabular-nums;
@@ -1281,6 +1321,10 @@ h2 {
     min-height: 40px;
     padding: 8px 5px;
     font-size: 0.7rem;
+  }
+
+  .comparison-card-values {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .control-section,

@@ -1362,29 +1362,38 @@ function renderComparison() {
   const cards = comparisonSnapshots.map((snapshot, index) => `
     <div class="comparison-card">
       <strong>方案 ${index === 0 ? 'A' : 'B'} · ${escapeHtml(snapshot.label)}</strong>
-      <span>生命 ${formatNumber(snapshot.hp)} · 攻击 ${formatNumber(snapshot.attack)}</span>
+      <div class="comparison-card-values">
+        ${rows.map((row) => `
+          <span class="comparison-card-value">
+            <em>${row.label}</em>
+            <b>${row.format(valueAt(snapshot, row.key))}</b>
+          </span>
+        `).join('')}
+      </div>
     </div>
   `).join('');
   const table = comparisonSnapshots.length < 2
     ? '<p class="field-hint">再生成一个方案后显示差异</p>'
     : `
-      <table class="compare-table">
-        <thead><tr><th>属性</th><th>方案 A</th><th>方案 B</th><th>差值</th></tr></thead>
-        <tbody>
-          ${rows.map((row) => {
-            const left = valueAt(comparisonSnapshots[0], row.key);
-            const right = valueAt(comparisonSnapshots[1], row.key);
-            const difference = right - left;
-            return `
-              <tr>
-                <td>${row.label}</td>
-                <td>${row.format(left)}</td>
-                <td>${row.format(right)}</td>
-                <td class="compare-difference${difference < 0 ? ' is-negative' : ''}">${difference > 0 ? '+' : ''}${row.format(difference)}</td>
-              </tr>`;
-          }).join('')}
-        </tbody>
-      </table>`;
+      <div class="comparison-table-wrap">
+        <table class="compare-table">
+          <thead><tr><th>属性</th><th>方案 A</th><th>方案 B</th><th>差值</th></tr></thead>
+          <tbody>
+            ${rows.map((row) => {
+              const left = valueAt(comparisonSnapshots[0], row.key);
+              const right = valueAt(comparisonSnapshots[1], row.key);
+              const difference = right - left;
+              return `
+                <tr>
+                  <td>${row.label}</td>
+                  <td>${row.format(left)}</td>
+                  <td>${row.format(right)}</td>
+                  <td class="compare-difference${difference < 0 ? ' is-negative' : ''}">${difference > 0 ? '+' : ''}${row.format(difference)}</td>
+                </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>`;
   content.innerHTML = `<div class="comparison-cards">${cards}</div>${table}`;
   $('compare-button').disabled = comparisonSnapshots.length >= 2 || !resultGenerated;
 }
