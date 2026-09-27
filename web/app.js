@@ -1990,7 +1990,7 @@ function bindEvents() {
 
 async function init() {
   try {
-    const [baseResponse, whiteResponse] = await Promise.all([fetch('./uc540_doc.json'), fetch('./whiterabbit_data.json?v=20260927-46')]);
+    const [baseResponse, whiteResponse] = await Promise.all([fetch('./uc540_doc.json'), fetch('./whiterabbit_data.json?v=20260927-47')]);
     if (!baseResponse.ok) throw new Error(`数据读取失败（HTTP ${baseResponse.status}）`);
     state.data = await baseResponse.json();
     if (whiteResponse.ok) state.whiteRabbit = await whiteResponse.json();
