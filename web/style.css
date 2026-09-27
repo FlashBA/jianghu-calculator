@@ -1,17 +1,17 @@
 :root {
-  --ink: #1b1917;
-  --muted: #625a52;
-  --line: #332e29;
-  --surface: #e9e0d4;
-  --canvas: #111313;
-  --teal: #87342a;
-  --teal-dark: #4e1c17;
-  --teal-soft: #ead5bd;
-  --amber: #a24625;
-  --amber-soft: #f1dcc7;
-  --rose: #a82b27;
-  --gold: #c49b45;
-  --shadow: 0 10px 24px rgba(0, 0, 0, 0.28);
+  --ink: #16282d;
+  --muted: #64757a;
+  --line: #b9c9c7;
+  --surface: #fbfcfa;
+  --canvas: #eaf0ee;
+  --teal: #0b6d69;
+  --teal-dark: #074d4b;
+  --teal-soft: #dcefeb;
+  --amber: #b77a2e;
+  --amber-soft: #f4e4c5;
+  --rose: #a23d50;
+  --gold: #d6aa51;
+  --shadow: 0 10px 24px rgba(28, 55, 56, 0.12);
   font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Noto Sans CJK SC", "Microsoft YaHei", sans-serif;
   color: var(--ink);
   background: var(--canvas);
@@ -43,7 +43,7 @@ input[type="checkbox"] {
 button:focus-visible,
 input:focus-visible,
 select:focus-visible {
-  outline: 3px solid rgba(13, 107, 104, 0.28);
+  outline: 3px solid rgba(11, 109, 105, 0.24);
   outline-offset: 2px;
 }
 
@@ -1467,5 +1467,221 @@ h2 {
 
   .result-number {
     font-size: 1.65rem;
+  }
+}
+
+/* Visual polish: keep the calculator compact while giving the main states a clearer hierarchy. */
+.app-shell {
+  width: min(820px, calc(100% - 24px));
+  padding-top: 20px;
+  padding-bottom: 36px;
+}
+
+.app-header {
+  margin-bottom: 14px;
+  padding: 13px 16px;
+  border: 1px solid #0b2427;
+  border-bottom: 3px solid var(--gold);
+  border-radius: 8px;
+  background: #102c2e;
+  box-shadow: 0 8px 20px rgba(22, 51, 53, 0.16);
+}
+
+h1 {
+  font-size: 2.15rem;
+  letter-spacing: 0.01em;
+}
+
+.save-status {
+  color: #c7d9d5;
+}
+
+.result-strip {
+  margin-bottom: 14px;
+  border: 1px solid var(--gold);
+  border-radius: 8px;
+  background: #0e2729;
+  box-shadow: 0 10px 24px rgba(22, 51, 53, 0.16);
+}
+
+.result-main {
+  padding: 17px 20px 15px;
+}
+
+.result-attack {
+  background: #173b3a;
+}
+
+.result-number {
+  color: #f3d17a;
+  font-size: 2.6rem;
+  font-weight: 650;
+}
+
+.result-context {
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.result-stat-grid {
+  background: #123031;
+}
+
+.control-section,
+.summary-section,
+.comparison-section,
+.reference-section {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: 0 7px 18px rgba(28, 55, 56, 0.08);
+}
+
+.section-heading {
+  padding-bottom: 10px;
+  border-bottom: 1px solid #dce6e4;
+}
+
+.section-kicker {
+  color: var(--teal);
+}
+
+h2 {
+  color: var(--ink);
+}
+
+.field input,
+.field select {
+  border: 1px solid #b9c9c7;
+  border-radius: 6px;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(22, 49, 51, 0.04);
+}
+
+.field input:focus,
+.field select:focus {
+  border-color: var(--teal);
+  box-shadow: 0 0 0 3px rgba(11, 109, 105, 0.1);
+  outline: 0;
+}
+
+.text-button,
+.primary-button,
+.action-bar .text-button {
+  border-radius: 6px;
+}
+
+.text-button {
+  text-decoration: none;
+}
+
+.primary-button {
+  border: 1px solid var(--teal-dark);
+  box-shadow: 0 4px 10px rgba(7, 77, 75, 0.16);
+}
+
+.action-bar .text-button {
+  border-color: #b9c9c7;
+  background: #ffffff;
+  box-shadow: 0 2px 5px rgba(28, 55, 56, 0.06);
+}
+
+.action-bar .text-button:hover {
+  border-color: var(--teal);
+  background: var(--teal-soft);
+}
+
+.section-count,
+.manual-tag {
+  border: 1px solid var(--teal-dark);
+  border-radius: 4px;
+}
+
+.manual-tag {
+  border-color: #956526;
+}
+
+.equipment-slot-row {
+  border-bottom-color: #d7e2df;
+}
+
+.technique-group,
+.technique-choice,
+.selected-item,
+.comparison-card,
+.reference-row {
+  border-color: #cbd9d7;
+  border-radius: 6px;
+  background: #f7faf9;
+}
+
+.technique-choice:has(input:checked) {
+  border-color: var(--teal);
+  background: var(--teal-soft);
+  box-shadow: inset 3px 0 0 var(--teal);
+}
+
+.selected-item {
+  border-left-color: var(--teal);
+}
+
+.comparison-card {
+  box-shadow: 0 2px 7px rgba(28, 55, 56, 0.06);
+}
+
+.comparison-pair-controls select {
+  border-color: #b9c9c7;
+  border-radius: 6px;
+  background: #ffffff;
+}
+
+.compare-table th,
+.compare-table td {
+  border-bottom-color: #d7e2df;
+}
+
+.comparison-section,
+.reference-section {
+  overflow: hidden;
+}
+
+.reference-tabs {
+  background: #dce8e5;
+  border-radius: 6px;
+}
+
+.reference-tab.active {
+  border-radius: 4px;
+  background: var(--teal);
+}
+
+.error-message {
+  border: 1px solid #b95a68;
+  border-radius: 6px;
+  background: #f9e6e8;
+}
+
+@media (max-width: 480px) {
+  .app-shell {
+    width: calc(100% - 12px);
+    padding-top: 8px;
+    padding-bottom: 20px;
+  }
+
+  .app-header {
+    padding: 10px 12px;
+  }
+
+  h1 {
+    font-size: 1.55rem;
+  }
+
+  .result-number {
+    font-size: 1.8rem;
+  }
+
+  .control-section,
+  .summary-section,
+  .comparison-section {
+    border-radius: 7px;
   }
 }
