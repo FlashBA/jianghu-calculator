@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#172027">
     <title>江湖风云录 · 角色数值模拟</title>
-    <link rel="stylesheet" href="style.css?v=20260927-62">
+    <link rel="stylesheet" href="style.css?v=20260927-64">
   </head>
   <body>
     <main class="app-shell">
@@ -445,6 +445,19 @@
         </div>
       </div>
 
+      <div class="modal-shell" id="team-detail-modal" hidden>
+        <div class="modal-panel team-detail-modal-panel" role="dialog" aria-modal="true" aria-labelledby="team-detail-modal-title">
+          <div class="modal-heading">
+            <div>
+              <p class="section-kicker">TEAM DETAIL</p>
+              <h2 id="team-detail-modal-title">配队详情</h2>
+            </div>
+            <button class="icon-button" id="team-detail-modal-close" type="button" data-close-modal="team-detail-modal" aria-label="关闭">×</button>
+          </div>
+          <div id="team-detail-content" class="team-detail-content"></div>
+        </div>
+      </div>
+
       <div class="modal-shell" id="doc-modal" hidden>
         <div class="modal-panel doc-modal-panel" role="dialog" aria-modal="true" aria-labelledby="doc-modal-title">
           <div class="modal-heading">
@@ -457,7 +470,24 @@
           <div id="doc-content" class="doc-content"></div>
         </div>
       </div>
+
+      <div class="modal-shell" id="confirm-modal" hidden>
+        <div class="modal-panel confirm-modal-panel" role="dialog" aria-modal="true" aria-labelledby="confirm-modal-title">
+          <div class="modal-heading">
+            <div>
+              <p class="section-kicker">CONFIRM</p>
+              <h2 id="confirm-modal-title">确认操作</h2>
+            </div>
+            <button class="icon-button" id="confirm-modal-close" type="button" data-close-modal="confirm-modal" aria-label="关闭">×</button>
+          </div>
+          <p class="confirm-modal-message" id="confirm-modal-message"></p>
+          <div class="modal-actions">
+            <button class="text-button" id="confirm-modal-cancel" type="button">取消</button>
+            <button class="primary-button danger-confirm-button" id="confirm-modal-confirm" type="button">确认删除</button>
+          </div>
+        </div>
+      </div>
     </main>
-    <script src="app.js?v=20260927-62"></script>
+    <script src="app.js?v=20260927-64"></script>
   </body>
 </html>

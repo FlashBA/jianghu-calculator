@@ -2664,8 +2664,37 @@ h2 {
   width: min(600px, 100%);
 }
 
+.team-detail-modal-panel {
+  width: min(620px, 100%);
+}
+
+.team-detail-content {
+  min-width: 0;
+}
+
 .doc-modal-panel {
   width: min(720px, 100%);
+}
+
+.confirm-modal-panel {
+  width: min(420px, 100%);
+}
+
+.confirm-modal-message {
+  margin: 0;
+  color: var(--ink);
+  font-size: 0.82rem;
+  line-height: 1.6;
+}
+
+.danger-confirm-button {
+  color: #fff2dc;
+  background: var(--rose);
+  border-color: #7f1d1a;
+}
+
+.danger-confirm-button:hover {
+  background: #7f1d1a;
 }
 
 .doc-content {

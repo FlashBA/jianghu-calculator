@@ -150,6 +150,7 @@ let teams = [];
 let activeView = 'calculator';
 let pendingNameDialog = null;
 let pendingTeamPicker = null;
+let pendingConfirmation = null;
 let expandedTeamId = null;
 
 const $ = (id) => document.getElementById(id);
@@ -1997,6 +1998,24 @@ function closeNameDialog(value = null) {
   if (request) request.resolve(value);
 }
 
+function openConfirmationDialog(message, onConfirm) {
+  pendingConfirmation = onConfirm;
+  $('confirm-modal-message').textContent = message;
+  $('confirm-modal').hidden = false;
+  requestAnimationFrame(() => $('confirm-modal-confirm').focus());
+}
+
+function closeConfirmationDialog() {
+  pendingConfirmation = null;
+  $('confirm-modal').hidden = true;
+}
+
+function confirmPendingAction() {
+  const action = pendingConfirmation;
+  closeConfirmationDialog();
+  if (action) action();
+}
+
 function validateNameDialog() {
   const value = normalizedName($('name-modal-input').value);
   const error = $('name-modal-error');
@@ -2070,10 +2089,9 @@ function setComparisonSide(index, side) {
   renderSavedCards();
 }
 
-function deleteSavedCard(index) {
+function removeSavedCard(index) {
   const snapshot = comparisonSnapshots[index];
   if (!snapshot) return;
-  if (!window.confirm(`确认删除数据卡片“${snapshot.name || snapshot.roleName}”吗？`)) return;
   const cardId = snapshot.cardId;
   comparisonSnapshots.splice(index, 1);
   teams.forEach((team) => {
@@ -2087,6 +2105,12 @@ function deleteSavedCard(index) {
   renderSavedCards();
   renderTeams();
   setSaveStatus('已删除数据卡片');
+}
+
+function deleteSavedCard(index) {
+  const snapshot = comparisonSnapshots[index];
+  if (!snapshot) return;
+  openConfirmationDialog(`确认删除数据卡片“${snapshot.name || snapshot.roleName}”吗？`, () => removeSavedCard(index));
 }
 
 function renderCardRoleFilter() {
@@ -2224,14 +2248,20 @@ function closeTeamPicker() {
   $('team-picker-modal').hidden = true;
 }
 
-function deleteTeam(teamId) {
+function removeTeam(teamId) {
   const team = teams.find((item) => item.id === teamId);
-  if (!team || !window.confirm(`确认删除配队“${team.name}”吗？`)) return;
+  if (!team) return;
   teams = teams.filter((item) => item.id !== teamId);
   if (expandedTeamId === teamId) expandedTeamId = null;
   saveConfig();
   renderTeams();
   setSaveStatus('已删除配队');
+}
+
+function deleteTeam(teamId) {
+  const team = teams.find((item) => item.id === teamId);
+  if (!team) return;
+  openConfirmationDialog(`确认删除配队“${team.name}”吗？`, () => removeTeam(teamId));
 }
 
 async function renameTeam(teamId) {
@@ -2278,6 +2308,18 @@ function teamCardDetailMarkup(team) {
     : '<div class="team-detail-empty">暂无方案</div>';
 }
 
+function openTeamDetail(teamId) {
+  const team = teams.find((item) => item.id === teamId);
+  if (!team) return;
+  $('team-detail-modal-title').textContent = `${team.name} · 配队详情`;
+  $('team-detail-content').innerHTML = teamCardDetailMarkup(team);
+  $('team-detail-modal').hidden = false;
+}
+
+function closeTeamDetail() {
+  $('team-detail-modal').hidden = true;
+}
+
 function renderTeams() {
   const content = $('team-list');
   if (!content) return;
@@ -2296,9 +2338,9 @@ function renderTeams() {
       <div class="team-card-heading">
         <button class="team-card-toggle" type="button" data-team-toggle="${escapeHtml(team.id)}" aria-expanded="${expanded}" aria-controls="${escapeHtml(detailId)}">
           <span class="team-card-toggle-copy"><strong>${escapeHtml(team.name)}</strong><span>${team.slots.filter(Boolean).length} / ${MAX_TEAM_SLOTS} 个位置</span></span>
-          <span class="team-card-toggle-action">${expanded ? '收起' : '详情'}</span>
+          <span class="team-card-toggle-action">${expanded ? '收起' : '展开'}</span>
         </button>
-        <div class="team-card-actions"><button class="text-button" type="button" data-team-rename="${escapeHtml(team.id)}">改名</button><button class="icon-button card-delete-button" type="button" data-team-delete="${escapeHtml(team.id)}" aria-label="删除配队" title="删除">×</button></div>
+        <div class="team-card-actions"><button class="text-button" type="button" data-team-detail="${escapeHtml(team.id)}">详情</button><button class="text-button" type="button" data-team-rename="${escapeHtml(team.id)}">改名</button><button class="icon-button card-delete-button" type="button" data-team-delete="${escapeHtml(team.id)}" aria-label="删除配队" title="删除">×</button></div>
       </div>
       <div class="team-card-detail" id="${escapeHtml(detailId)}"${expanded ? '' : ' hidden'}>
         <div class="team-slots">${team.slots.map((cardId, slotIndex) => {
@@ -2307,7 +2349,6 @@ function renderTeams() {
           ? `<button class="team-slot is-filled" type="button" data-team-add="${escapeHtml(team.id)}" data-team-slot="${slotIndex}"><small>${String(slotIndex + 1).padStart(2, '0')}</small><strong>${escapeHtml(card.roleName)}</strong><span>${escapeHtml(card.name)}</span><b>${formatNumber(card.hp)} · ${formatNumber(card.attack)}</b></button>`
           : `<button class="team-slot is-empty" type="button" data-team-add="${escapeHtml(team.id)}" data-team-slot="${slotIndex}"><small>${String(slotIndex + 1).padStart(2, '0')}</small><strong>＋</strong><span>添加方案</span></button>`;
         }).join('')}</div>
-        ${teamCardDetailMarkup(team)}
       </div>
     </article>`;
   }).join('');
@@ -2316,6 +2357,7 @@ function renderTeams() {
     expandedTeamId = expandedTeamId === teamId ? null : teamId;
     renderTeams();
   }));
+  content.querySelectorAll('[data-team-detail]').forEach((button) => button.addEventListener('click', () => openTeamDetail(button.dataset.teamDetail)));
   content.querySelectorAll('[data-team-add]').forEach((button) => button.addEventListener('click', () => openTeamPicker(button.dataset.teamAdd, Number(button.dataset.teamSlot))));
   content.querySelectorAll('[data-team-delete]').forEach((button) => button.addEventListener('click', () => deleteTeam(button.dataset.teamDelete)));
   content.querySelectorAll('[data-team-rename]').forEach((button) => button.addEventListener('click', () => renameTeam(button.dataset.teamRename)));
@@ -2672,8 +2714,10 @@ function bindEvents() {
   });
   document.addEventListener('keydown', (event) => {
     if (event.key !== 'Escape') return;
-    if (!$('name-modal').hidden) closeNameDialog();
+    if (!$('confirm-modal').hidden) closeConfirmationDialog();
+    else if (!$('name-modal').hidden) closeNameDialog();
     else if (!$('team-picker-modal').hidden) closeTeamPicker();
+    else if (!$('team-detail-modal').hidden) closeTeamDetail();
     else if (!$('doc-modal').hidden) closeCalculationDocument();
   });
   $('create-team-button').addEventListener('click', createTeam);
@@ -2693,8 +2737,16 @@ function bindEvents() {
   $('name-modal').addEventListener('click', (event) => {
     if (event.target === $('name-modal')) closeNameDialog();
   });
+  $('confirm-modal-cancel').addEventListener('click', closeConfirmationDialog);
+  $('confirm-modal-confirm').addEventListener('click', confirmPendingAction);
+  $('confirm-modal').addEventListener('click', (event) => {
+    if (event.target === $('confirm-modal')) closeConfirmationDialog();
+  });
   $('team-picker-modal').addEventListener('click', (event) => {
     if (event.target === $('team-picker-modal')) closeTeamPicker();
+  });
+  $('team-detail-modal').addEventListener('click', (event) => {
+    if (event.target === $('team-detail-modal')) closeTeamDetail();
   });
   document.addEventListener('click', (event) => {
     const button = event.target.closest?.('[data-close-modal]');
@@ -2703,7 +2755,9 @@ function bindEvents() {
     event.stopPropagation();
     const modalId = button.dataset.closeModal;
     if (modalId === 'name-modal') closeNameDialog();
+    else if (modalId === 'confirm-modal') closeConfirmationDialog();
     else if (modalId === 'team-picker-modal') closeTeamPicker();
+    else if (modalId === 'team-detail-modal') closeTeamDetail();
     else if (modalId === 'doc-modal') closeCalculationDocument();
   });
   $('team-picker-role-filter').addEventListener('change', renderTeamPicker);
@@ -2723,7 +2777,7 @@ function bindEvents() {
 
 async function init() {
   try {
-    const [baseResponse, whiteResponse] = await Promise.all([fetch('./uc540_doc.json'), fetch('./whiterabbit_data.json?v=20260927-62')]);
+    const [baseResponse, whiteResponse] = await Promise.all([fetch('./uc540_doc.json'), fetch('./whiterabbit_data.json?v=20260927-64')]);
     if (!baseResponse.ok) throw new Error(`数据读取失败（HTTP ${baseResponse.status}）`);
     state.data = await baseResponse.json();
     if (whiteResponse.ok) state.whiteRabbit = await whiteResponse.json();
