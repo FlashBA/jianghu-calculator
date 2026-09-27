@@ -687,6 +687,20 @@ function applyTechniqueSelection() {
 function equipmentSlotActive(slot) {
   return Boolean(slot?.id || String(slot?.name || '').trim() || Number(slot?.hp) || Number(slot?.attack));
 }
+function customEquipmentId(slotIndex) { return `custom-equipment:${slotIndex}`; }
+function isCustomEquipmentId(id) { return String(id || '').startsWith('custom-equipment:'); }
+function normalizeCustomEquipment(value, id) {
+  return {
+    id: String(id),
+    name: String(value?.name || ''),
+    hp: Number(value?.hp) || 0,
+    attack: Number(value?.attack) || 0,
+    hpFlat: Number(value?.hpFlat) || 0,
+    attackFlat: Number(value?.attackFlat) || 0,
+    secondary: { ...emptySecondaryStats(), ...(value?.secondary || {}) },
+    extra: String(value?.extra || ''),
+  };
+}
 function weaponActive() {
   return Boolean(String(state.weaponName || '').trim() || state.weaponAffixes.some((affix) => Number(affix.value)));
 }
@@ -709,6 +723,15 @@ function renderWeaponAffixes() {
     $(`weapon-affix-mode-${index}`).value = affix.mode || 'flat';
     $(`weapon-affix-value-${index}`).value = affix.value || 0;
   });
+  updateWeaponSummary();
+}
+function updateWeaponSummary() {
+  const summary = $('weapon-summary');
+  if (!summary) return;
+  const affixCount = state.weaponAffixes.filter((affix) => affix.key && Number(affix.value)).length;
+  summary.textContent = weaponActive()
+    ? `${state.weaponName.trim() || '已配置'}${affixCount ? ` · ${affixCount} 个词条` : ''}`
+    : '未设置';
 }
 function setError(message) {
   $('error-message').textContent = message;
@@ -831,6 +854,7 @@ function normalizeEquipment(value) {
     const rawId = value.id;
     const hasId = rawId !== null && rawId !== undefined && String(rawId) !== '';
     if (hasId) {
+      if (isCustomEquipmentId(rawId)) return normalizeCustomEquipment(value, rawId);
       const item = getEquipment(rawId);
       if (!item) return EMPTY_EQUIPMENT();
       const stats = equipmentStats(item);
@@ -1103,17 +1127,44 @@ function filteredEquipmentForSlot(slotIndex) {
   const category = equipmentCategoryForSlot(slotIndex);
   return filteredEquipment().filter((item) => equipmentCategory(item) === category);
 }
+function renderCustomEquipmentEditor(slotIndex, slot) {
+  const editor = $(`custom-equipment-editor-${slotIndex}`);
+  const active = isCustomEquipmentId(slot?.id) && String(slot.id) === customEquipmentId(slotIndex);
+  editor.hidden = !active;
+  if (!active) {
+    editor.innerHTML = '';
+    return;
+  }
+  const basicFields = [
+    { key: 'name', label: '名称', type: 'text', value: slot.name, inputmode: 'text' },
+    { key: 'hp', label: '生命 %', step: '0.1', value: slot.hp, inputmode: 'decimal' },
+    { key: 'attack', label: '攻击 %', step: '0.1', value: slot.attack, inputmode: 'decimal' },
+    { key: 'hpFlat', label: '固定生命', step: '1', value: slot.hpFlat, inputmode: 'numeric' },
+    { key: 'attackFlat', label: '固定攻击', step: '1', value: slot.attackFlat, inputmode: 'numeric' },
+  ];
+  const renderField = (field) => `<label class="field${field.type === 'text' ? ' field-wide' : ''}"><span>${field.label}</span><input type="${field.type || 'number'}" ${field.type === 'text' ? '' : 'min="-100"'} step="${field.step || '0.1'}" value="${escapeHtml(field.value)}" inputmode="${field.inputmode}" data-custom-equipment-slot="${slotIndex}" data-custom-equipment-field="${field.key}"></label>`;
+  const secondaryFields = SECONDARY_STAT_DEFS.map((definition) => {
+    const isNumber = definition.format === 'number';
+    const value = slot.secondary?.[definition.key] || 0;
+    return `<label class="field"><span>${definition.label}${isNumber ? '' : ' %'}</span><input type="number" min="-100" step="${isNumber ? '1' : '0.1'}" value="${value}" inputmode="${isNumber ? 'numeric' : 'decimal'}" data-custom-equipment-slot="${slotIndex}" data-custom-equipment-secondary="${definition.key}"></label>`;
+  }).join('');
+  editor.innerHTML = `
+    <div class="custom-equipment-heading"><strong>自定义装备属性</strong><span>只对当前部位生效</span></div>
+    <div class="custom-equipment-grid">${basicFields.map(renderField).join('')}</div>
+    <details class="custom-equipment-more"><summary>其他面板属性</summary><div class="custom-equipment-grid">${secondaryFields}</div></details>`;
+}
 function renderEquipmentSlots() {
   state.equipmentSlots = state.equipmentSlots.map((slot) => (
-    slot?.id && !getEquipment(slot.id) ? EMPTY_EQUIPMENT() : slot
+    slot?.id && !isCustomEquipmentId(slot.id) && !getEquipment(slot.id) ? EMPTY_EQUIPMENT() : slot
   ));
   state.equipmentSlots.slice(1, 4).forEach((rawSlot, visibleIndex) => {
     const slotIndex = visibleIndex + 1;
     const category = equipmentCategoryForSlot(slotIndex);
-    const currentItem = rawSlot?.id ? getEquipment(rawSlot.id) : null;
-    const current = currentItem && equipmentCategory(currentItem) === category
-      ? rawSlot
-      : EMPTY_EQUIPMENT();
+    const customId = customEquipmentId(slotIndex);
+    const currentItem = rawSlot?.id && !isCustomEquipmentId(rawSlot.id) ? getEquipment(rawSlot.id) : null;
+    const current = String(rawSlot?.id) === customId
+      ? normalizeCustomEquipment(rawSlot, customId)
+      : currentItem && equipmentCategory(currentItem) === category ? rawSlot : EMPTY_EQUIPMENT();
     state.equipmentSlots[slotIndex] = current;
     const select = $(`equipment-slot-${slotIndex}`);
     const visibleItems = filteredEquipmentForSlot(slotIndex);
@@ -1131,7 +1182,12 @@ function renderEquipmentSlots() {
       option.title = item.access ? `获取：${item.access} · 生效：${item.scope || '佩戴者'}` : '';
       select.appendChild(option);
     });
+    const customOption = document.createElement('option');
+    customOption.value = customId;
+    customOption.textContent = '自定义装备';
+    select.appendChild(customOption);
     select.value = current.id ? String(current.id) : '';
+    renderCustomEquipmentEditor(slotIndex, current);
   });
   const selectedCount = state.equipmentSlots.slice(1).filter(equipmentSlotActive).length + (weaponActive() ? 1 : 0);
   $('equipment-count').textContent = `已装备 ${selectedCount}/4`;
@@ -1521,8 +1577,15 @@ function bindEvents() {
   $('formation-position').addEventListener('change', () => { renderFormationControls(); calculate(); });
   document.querySelectorAll('.equipment-slot').forEach((select) => select.addEventListener('change', () => {
     const slotIndex = Number(select.id.split('-').pop());
+    const customId = customEquipmentId(slotIndex);
     const item = getEquipment(select.value);
-    if (!item) {
+    if (select.value === customId) {
+      const previous = state.equipmentSlots[slotIndex];
+      state.equipmentSlots[slotIndex] = normalizeCustomEquipment(
+        isCustomEquipmentId(previous?.id) ? previous : EMPTY_EQUIPMENT(),
+        customId,
+      );
+    } else if (!item) {
       state.equipmentSlots[slotIndex] = EMPTY_EQUIPMENT();
     } else {
       const stats = equipmentStats(item);
@@ -1540,14 +1603,30 @@ function bindEvents() {
     renderEquipmentSlots();
     calculate();
   }));
+  $('equipment-slot-grid').addEventListener('input', (event) => {
+    const input = event.target.closest('[data-custom-equipment-slot]');
+    if (!input) return;
+    const slotIndex = Number(input.dataset.customEquipmentSlot);
+    const slot = state.equipmentSlots[slotIndex];
+    if (!slot || !isCustomEquipmentId(slot.id)) return;
+    if (input.dataset.customEquipmentSecondary) {
+      slot.secondary[input.dataset.customEquipmentSecondary] = numberValueFrom(input.value);
+    } else if (input.dataset.customEquipmentField === 'name') {
+      slot.name = input.value;
+    } else {
+      slot[input.dataset.customEquipmentField] = numberValueFrom(input.value);
+    }
+    calculate();
+  });
   $('weapon-name').addEventListener('input', (event) => {
     state.weaponName = event.target.value;
+    updateWeaponSummary();
     calculate();
   });
   state.weaponAffixes.forEach((affix, index) => {
-    $(`weapon-affix-key-${index}`).addEventListener('change', (event) => { state.weaponAffixes[index].key = event.target.value; calculate(); });
-    $(`weapon-affix-mode-${index}`).addEventListener('change', (event) => { state.weaponAffixes[index].mode = event.target.value; calculate(); });
-    $(`weapon-affix-value-${index}`).addEventListener('input', (event) => { state.weaponAffixes[index].value = numberValueFrom(event.target.value); calculate(); });
+    $(`weapon-affix-key-${index}`).addEventListener('change', (event) => { state.weaponAffixes[index].key = event.target.value; updateWeaponSummary(); calculate(); });
+    $(`weapon-affix-mode-${index}`).addEventListener('change', (event) => { state.weaponAffixes[index].mode = event.target.value; updateWeaponSummary(); calculate(); });
+    $(`weapon-affix-value-${index}`).addEventListener('input', (event) => { state.weaponAffixes[index].value = numberValueFrom(event.target.value); updateWeaponSummary(); calculate(); });
   });
   $('generate-button').addEventListener('click', () => {
     const result = calculate({ commit: true });

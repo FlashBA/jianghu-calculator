@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#172027">
     <title>江湖风云录 · 角色数值模拟</title>
-    <link rel="stylesheet" href="style.css?v=20260927-5">
+    <link rel="stylesheet" href="style.css?v=20260927-6">
   </head>
   <body>
     <main class="app-shell">
@@ -187,42 +187,49 @@
               <span class="section-count" id="equipment-count">已装备 0/4</span>
             </div>
             <div class="equipment-slot-grid">
-              <div class="equipment-slot-row weapon-row" data-slot="0">
-                <strong class="slot-label">武器</strong>
-                <label class="field slot-name"><span>名称</span><input id="weapon-name" type="text" placeholder="自定义武器" autocomplete="off"></label>
-                <div class="weapon-affix-grid">
-                  <div class="weapon-affix-row">
-                    <strong>词条 1</strong>
-                    <label class="field"><span>属性</span><select id="weapon-affix-key-0" class="weapon-affix-key compact-picker"></select></label>
-                    <label class="field"><span>类型</span><select id="weapon-affix-mode-0" class="weapon-affix-mode compact-picker"><option value="flat">白值</option><option value="percent">百分比</option></select></label>
-                    <label class="field"><span>数值</span><input id="weapon-affix-value-0" class="weapon-affix-value" type="number" step="0.1" value="0" inputmode="decimal"></label>
-                  </div>
-                  <div class="weapon-affix-row">
-                    <strong>词条 2</strong>
-                    <label class="field"><span>属性</span><select id="weapon-affix-key-1" class="weapon-affix-key compact-picker"></select></label>
-                    <label class="field"><span>类型</span><select id="weapon-affix-mode-1" class="weapon-affix-mode compact-picker"><option value="flat">白值</option><option value="percent">百分比</option></select></label>
-                    <label class="field"><span>数值</span><input id="weapon-affix-value-1" class="weapon-affix-value" type="number" step="0.1" value="0" inputmode="decimal"></label>
-                  </div>
-                  <div class="weapon-affix-row">
-                    <strong>词条 3</strong>
-                    <label class="field"><span>属性</span><select id="weapon-affix-key-2" class="weapon-affix-key compact-picker"></select></label>
-                    <label class="field"><span>类型</span><select id="weapon-affix-mode-2" class="weapon-affix-mode compact-picker"><option value="flat">白值</option><option value="percent">百分比</option></select></label>
-                    <label class="field"><span>数值</span><input id="weapon-affix-value-2" class="weapon-affix-value" type="number" step="0.1" value="0" inputmode="decimal"></label>
+              <details class="weapon-editor" id="weapon-editor">
+                <summary><strong>武器设置</strong><span id="weapon-summary">未设置</span></summary>
+                <div class="weapon-editor-content">
+                  <div class="equipment-slot-row weapon-row" data-slot="0">
+                    <label class="field slot-name"><span>名称</span><input id="weapon-name" type="text" placeholder="自定义武器" autocomplete="off"></label>
+                    <div class="weapon-affix-grid">
+                      <div class="weapon-affix-row">
+                        <strong>词条 1</strong>
+                        <label class="field"><span>属性</span><select id="weapon-affix-key-0" class="weapon-affix-key compact-picker"></select></label>
+                        <label class="field"><span>类型</span><select id="weapon-affix-mode-0" class="weapon-affix-mode compact-picker"><option value="flat">白值</option><option value="percent">百分比</option></select></label>
+                        <label class="field"><span>数值</span><input id="weapon-affix-value-0" class="weapon-affix-value" type="number" step="0.1" value="0" inputmode="decimal"></label>
+                      </div>
+                      <div class="weapon-affix-row">
+                        <strong>词条 2</strong>
+                        <label class="field"><span>属性</span><select id="weapon-affix-key-1" class="weapon-affix-key compact-picker"></select></label>
+                        <label class="field"><span>类型</span><select id="weapon-affix-mode-1" class="weapon-affix-mode compact-picker"><option value="flat">白值</option><option value="percent">百分比</option></select></label>
+                        <label class="field"><span>数值</span><input id="weapon-affix-value-1" class="weapon-affix-value" type="number" step="0.1" value="0" inputmode="decimal"></label>
+                      </div>
+                      <div class="weapon-affix-row">
+                        <strong>词条 3</strong>
+                        <label class="field"><span>属性</span><select id="weapon-affix-key-2" class="weapon-affix-key compact-picker"></select></label>
+                        <label class="field"><span>类型</span><select id="weapon-affix-mode-2" class="weapon-affix-mode compact-picker"><option value="flat">白值</option><option value="percent">百分比</option></select></label>
+                        <label class="field"><span>数值</span><input id="weapon-affix-value-2" class="weapon-affix-value" type="number" step="0.1" value="0" inputmode="decimal"></label>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
+              </details>
               <div class="equipment-slot-row direct-equipment-row" data-slot="1">
-                <strong class="slot-label">装备 1 · 衣甲</strong>
-                <label class="field slot-picker"><span>选择衣服 / 护甲</span><select class="equipment-slot compact-picker" id="equipment-slot-1" aria-label="装备 1 衣服护甲"></select></label>
+                <strong class="slot-label">衣甲</strong>
+                <label class="field slot-picker"><span>选择衣甲</span><select class="equipment-slot compact-picker" id="equipment-slot-1" aria-label="选择衣甲"></select></label>
               </div>
+              <div class="custom-equipment-editor" id="custom-equipment-editor-1" hidden></div>
               <div class="equipment-slot-row direct-equipment-row" data-slot="2">
-                <strong class="slot-label">装备 2 · 戒指</strong>
-                <label class="field slot-picker"><span>选择戒指</span><select class="equipment-slot compact-picker" id="equipment-slot-2" aria-label="装备 2 戒指"></select></label>
+                <strong class="slot-label">戒指</strong>
+                <label class="field slot-picker"><span>选择戒指</span><select class="equipment-slot compact-picker" id="equipment-slot-2" aria-label="选择戒指"></select></label>
               </div>
+              <div class="custom-equipment-editor" id="custom-equipment-editor-2" hidden></div>
               <div class="equipment-slot-row direct-equipment-row" data-slot="3">
-                <strong class="slot-label">装备 3 · 护腕</strong>
-                <label class="field slot-picker"><span>选择护腕</span><select class="equipment-slot compact-picker" id="equipment-slot-3" aria-label="装备 3 护腕"></select></label>
+                <strong class="slot-label">护腕</strong>
+                <label class="field slot-picker"><span>选择护腕</span><select class="equipment-slot compact-picker" id="equipment-slot-3" aria-label="选择护腕"></select></label>
               </div>
+              <div class="custom-equipment-editor" id="custom-equipment-editor-3" hidden></div>
             </div>
             <div class="mini-breakdown" id="equipment-breakdown">装备生命 +0% · 装备攻击 +0%</div>
           </section>
@@ -316,6 +323,6 @@
 
       </div>
     </main>
-    <script src="app.js?v=20260927-21"></script>
+    <script src="app.js?v=20260927-22"></script>
   </body>
 </html>
