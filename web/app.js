@@ -1667,7 +1667,7 @@ function calculate({ commit = false } = {}) {
   const baseAttackDetailTerm = baseAttackRaw * baseAttackPercentMultiplier;
   const baseAttackTerm = baseAttackDetailTerm * attackPillMultiplier;
   const martialPowerTerm = martialPower * (
-    1 + (neigongAttack + smallRenAttack + selectedStylePower + martialBonusPercent) / 100
+    1 + (neigongAttack + smallRenAttack + techniqueAttack + selectedStylePower + martialBonusPercent) / 100
   );
   const largeRenAttackTerm = baseAttackRaw * 0.1 * largeRenAttackCount;
   const equipmentPercentTerm = (baseAttackRaw * attackPillMultiplier + martialPower)
@@ -2044,7 +2044,7 @@ function bindEvents() {
 
 async function init() {
   try {
-    const [baseResponse, whiteResponse] = await Promise.all([fetch('./uc540_doc.json'), fetch('./whiterabbit_data.json?v=20260927-53')]);
+    const [baseResponse, whiteResponse] = await Promise.all([fetch('./uc540_doc.json'), fetch('./whiterabbit_data.json?v=20260927-54')]);
     if (!baseResponse.ok) throw new Error(`数据读取失败（HTTP ${baseResponse.status}）`);
     state.data = await baseResponse.json();
     if (whiteResponse.ok) state.whiteRabbit = await whiteResponse.json();
