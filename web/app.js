@@ -1331,10 +1331,11 @@ function calculate({ commit = false } = {}) {
 
 function comparisonSnapshot() {
   if (!currentResult || !resultGenerated) return null;
+  const comparisonName = $('comparison-name').value.trim();
   return {
     ...currentResult,
     stats: { ...currentResult.stats },
-    label: `${currentResult.roleName} · 等级 ${currentResult.level}`,
+    label: comparisonName || `${currentResult.roleName} · 等级 ${currentResult.level}`,
   };
 }
 
@@ -1402,6 +1403,7 @@ function addCurrentComparison() {
   const snapshot = comparisonSnapshot();
   if (!snapshot || comparisonSnapshots.length >= 2) return;
   comparisonSnapshots.push(snapshot);
+  $('comparison-name').value = '';
   renderComparison();
   setSaveStatus(comparisonSnapshots.length === 2 ? '已生成方案差异' : '已保存方案 A');
 }

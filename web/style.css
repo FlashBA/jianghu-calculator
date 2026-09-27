@@ -404,9 +404,21 @@ h2 {
 
 .action-bar {
   display: grid;
-  grid-template-columns: 1.4fr 1fr 1fr;
+  grid-template-columns: minmax(150px, 1.4fr) 1fr 1fr 1fr;
   gap: 8px;
   margin-bottom: 12px;
+}
+
+.comparison-name-field {
+  gap: 4px;
+  align-self: end;
+  font-size: 0.68rem;
+}
+
+.comparison-name-field input {
+  min-height: 42px;
+  padding: 8px 9px;
+  font-size: 0.76rem;
 }
 
 .action-bar .text-button {
@@ -1314,6 +1326,10 @@ h2 {
   .action-bar {
     grid-template-columns: 1.15fr 1fr 1fr;
     gap: 5px;
+  }
+
+  .comparison-name-field {
+    grid-column: 1 / -1;
   }
 
   .action-bar .text-button,
