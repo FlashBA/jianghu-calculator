@@ -1636,7 +1636,7 @@ function calculate({ commit = false } = {}) {
   $('final-hp').textContent = formatNumber(finalHp);
   $('final-attack').textContent = formatNumber(finalAttack);
   $('hp-detail').textContent = `基础 ${formatNumber(baseHp)} · 百分比 ${formatPercent(hpPercent)} · 成就 +${formatNumber(achievementHp)}`;
-  $('attack-detail').textContent = `基础项 ${formatNumber(trunc(baseAttackDetailTerm))} · 武学项 ${formatNumber(trunc(martialPowerTerm))} · S武学 ${formatPercent(learnedSMartialCount * 5)} · 成就 +${formatNumber(achievementAttack)}`;
+  $('attack-detail').textContent = `基础项 ${formatNumber(trunc(baseAttackDetailTerm))} · 武学项 ${formatNumber(trunc(martialPowerTerm))}（原始 ${formatNumber(martialPower)}） · S武学 ${formatPercent(learnedSMartialCount * 5)} · 成就 +${formatNumber(achievementAttack)}`;
   SECONDARY_KEYS.forEach((key) => {
     const domKey = key.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
     $(`final-${domKey}`).textContent = key === 'recovery'
@@ -1990,7 +1990,7 @@ function bindEvents() {
 
 async function init() {
   try {
-    const [baseResponse, whiteResponse] = await Promise.all([fetch('./uc540_doc.json'), fetch('./whiterabbit_data.json?v=20260927-48')]);
+    const [baseResponse, whiteResponse] = await Promise.all([fetch('./uc540_doc.json'), fetch('./whiterabbit_data.json?v=20260927-49')]);
     if (!baseResponse.ok) throw new Error(`数据读取失败（HTTP ${baseResponse.status}）`);
     state.data = await baseResponse.json();
     if (whiteResponse.ok) state.whiteRabbit = await whiteResponse.json();
