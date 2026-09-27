@@ -1681,6 +1681,7 @@ function renderComparison() {
 }
 
 function addCurrentComparison() {
+  calculate({ commit: true });
   const snapshot = comparisonSnapshot();
   if (!snapshot || comparisonSnapshots.length >= MAX_COMPARISON_SNAPSHOTS) return;
   const index = comparisonSnapshots.length;
