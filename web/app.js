@@ -1567,6 +1567,14 @@ function showComparisonSnapshot(index) {
   if (!snapshot) return;
   const hydrated = hydrateLegacySnapshot(snapshot);
   activeComparisonIndex = index;
+  if (comparisonSnapshots.length >= 2) {
+    const currentPair = comparisonPair.map((value) => Number(value));
+    let otherIndex = currentPair.find((value) => value !== index);
+    if (!Number.isInteger(otherIndex) || otherIndex < 0 || otherIndex >= comparisonSnapshots.length) {
+      otherIndex = (index + 1) % comparisonSnapshots.length;
+    }
+    comparisonPair = [index, otherIndex];
+  }
   $('final-hp').textContent = formatNumber(snapshot.hp);
   $('final-attack').textContent = formatNumber(snapshot.attack);
   $('hp-detail').textContent = `方案 ${comparisonCode(index)} · 已保存快照`;
@@ -1584,11 +1592,7 @@ function showComparisonSnapshot(index) {
   }
   $('result-person').textContent = snapshot.roleName || '自定义角色';
   $('result-level').textContent = `等级 ${snapshot.level}`;
-  document.querySelectorAll('[data-comparison-index]').forEach((card) => {
-    card.classList.toggle('is-active', Number(card.dataset.comparisonIndex) === index);
-    card.setAttribute('aria-pressed', String(Number(card.dataset.comparisonIndex) === index));
-  });
-  if (hydrated) renderComparison();
+  if (hydrated || comparisonSnapshots.length >= 2) renderComparison();
 }
 
 function renderComparison() {
