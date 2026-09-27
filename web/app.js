@@ -268,7 +268,7 @@ function getEquipment(id) {
 }
 function getWhiteInner(index) {
   const item = state.whiteRabbit?.inner_skills?.[Number(index)];
-  return isSOrUnknownRank(item?.rank) ? item : null;
+  return item || null;
 }
 function getSelectedMartial() {
   const value = $('martial-select')?.value || '';
@@ -292,6 +292,22 @@ function martialStyle(item) {
 }
 function getCharacterProfile(name = $('person-name')?.value) {
   return state.whiteRabbit?.characters?.find((character) => character.name === name) || null;
+}
+function styleOptionFromMartialStyle(style) {
+  return ({ 拳法: '拳主', 剑法: '剑主', 刀法: '刀主', 棍法: '棍主' })[style] || '';
+}
+function currentMartialStyle() {
+  const personName = $('person-name')?.value.trim() || '自定义角色';
+  const profile = getCharacterProfile(personName);
+  if (personName !== '主角' && profile?.style) {
+    return ['全能', '拳剑刀棍'].includes(profile.style) ? '' : profile.style;
+  }
+  const selectedStyle = $('person-style')?.value || '';
+  return ({ 拳主: '拳法', 剑主: '剑法', 刀主: '刀法', 棍主: '棍法' })[selectedStyle] || selectedStyle;
+}
+function martialStyleEligible(item) {
+  const style = currentMartialStyle();
+  return !style || style === '全能' || style === '拳剑刀棍' || martialStyle(item) === style;
 }
 function applyCharacterDefaults() {
   const profile = getCharacterProfile();
@@ -319,7 +335,11 @@ function applyCharacterDefaults() {
       }
     });
   }
-  if (!profile) return changed;
+  const styleControl = $('person-style');
+  if (!profile) {
+    styleControl.disabled = false;
+    return changed;
+  }
   if (Number.isFinite(Number(profile.hp_factor))) {
     $('hp-factor').value = profile.hp_factor;
     changed = true;
@@ -327,6 +347,16 @@ function applyCharacterDefaults() {
   if (Number.isFinite(Number(profile.power_factor))) {
     $('power-factor').value = profile.power_factor;
     changed = true;
+  }
+  const profileStyle = styleOptionFromMartialStyle(profile.style);
+  if (profileStyle) {
+    if (styleControl.value !== profileStyle) {
+      styleControl.value = profileStyle;
+      changed = true;
+    }
+    styleControl.disabled = true;
+  } else {
+    styleControl.disabled = false;
   }
   return changed;
 }
@@ -1214,6 +1244,8 @@ function restoreConfig() {
     formationPosition: 'formation-position',
   };
   Object.entries(fieldMap).forEach(([key, id]) => { if (config[key] !== undefined) $(id).value = config[key]; });
+  applyCharacterDefaults();
+  populateMartialArts();
   if (typeof config.pillsEnabled === 'boolean') $('pills-enabled').checked = config.pillsEnabled;
   if (typeof config.attackPillsEnabled === 'boolean') $('attack-pills-enabled').checked = config.attackPillsEnabled;
   if (typeof config.speedPillsEnabled === 'boolean') $('speed-pills-enabled').checked = config.speedPillsEnabled;
@@ -1296,7 +1328,7 @@ function populateNeigong() {
     const whiteGroup = document.createElement('optgroup');
     whiteGroup.label = '白兔内功';
     state.whiteRabbit.inner_skills.forEach((skill, index) => {
-      if (!isSOrUnknownRank(skill.rank)) return;
+      if (!String(skill.rank || '').trim()) return;
       const option = document.createElement('option');
       option.value = `wr:${index}`;
       const stats = autoInnerStats({ source: 'white', item: skill });
@@ -1312,22 +1344,34 @@ function populateNeigong() {
 
 function populateMartialArts() {
   const select = $('martial-select');
+  const previousValue = select.value;
   select.innerHTML = '<option value="">无武学（+0速度）</option>';
   const white = (state.whiteRabbit?.martial_arts || [])
     .map((skill, index) => ({ skill, index }))
-    .filter(({ skill }) => isSOrUnknownRank(skill.rank) && Number.isFinite(Number(skill.speed)));
+    .filter(({ skill }) => String(skill.rank || '').trim()
+      && Number.isFinite(Number(skill.speed))
+      && martialStyleEligible(skill));
   if (white.length) {
-    const group = document.createElement('optgroup');
-    group.label = '白兔 S / ？武学';
+    const groups = new Map();
     white.forEach(({ skill, index }) => {
-      const option = document.createElement('option');
-      option.value = `wr-skill:${index}`;
-      option.textContent = `${skill.name || '未命名武学'} · ${skill.rank} · ${Number(skill.speed)}速`;
-      group.appendChild(option);
+      const style = martialStyle(skill) || '其他';
+      if (!groups.has(style)) groups.set(style, []);
+      groups.get(style).push({ skill, index });
     });
-    select.appendChild(group);
+    groups.forEach((items, style) => {
+      const group = document.createElement('optgroup');
+      group.label = `白兔${style}武学`;
+      items.forEach(({ skill, index }) => {
+        const option = document.createElement('option');
+        option.value = `wr-skill:${index}`;
+        option.textContent = `${skill.name || '未命名武学'} · ${skill.rank} · 威力 ${Number(skill.power) || 0} · 速度 ${Number(skill.speed)}`;
+        group.appendChild(option);
+      });
+      select.appendChild(group);
+    });
   }
-  select.value = '';
+  const availableValues = new Set([...select.options].map((option) => option.value));
+  select.value = availableValues.has(previousValue) ? previousValue : '';
   select.disabled = false;
 }
 
@@ -1841,6 +1885,7 @@ function bindEvents() {
     .forEach((id) => $(id).addEventListener('input', calculate));
   const handleCharacterSelection = () => {
     applyCharacterDefaults();
+    populateMartialArts();
     applyDefaultTechniqueSelections();
     refreshTechniqueAvailability();
     renderFormationControls();
@@ -1852,6 +1897,7 @@ function bindEvents() {
   $('person-name').addEventListener('input', handleCharacterSelection);
   $('person-name').addEventListener('change', handleCharacterSelection);
   ['person-style', 'person-gender'].forEach((id) => $(id).addEventListener('change', () => {
+    if (id === 'person-style') populateMartialArts();
     applyDefaultTechniqueSelections();
     refreshTechniqueAvailability();
     renderTechniqueScope();
@@ -1963,6 +2009,8 @@ function bindEvents() {
     state.weaponAffixes = [EMPTY_WEAPON_AFFIX(), EMPTY_WEAPON_AFFIX(), EMPTY_WEAPON_AFFIX()];
     $('person-name').value = '主角'; $('hp-factor').value = 1; $('power-factor').value = 1;
     $('person-style').value = ''; $('person-gender').value = '';
+    applyCharacterDefaults();
+    populateMartialArts();
     $('base-speed').value = 0; $('base-crit').value = 10; $('base-dodge').value = 0; $('base-lifesteal').value = 0;
     $('base-crit-damage').value = 0; $('base-mitigation').value = 0; $('base-block').value = 0;
     $('base-reflect').value = 0; $('base-recovery').value = 0;
@@ -1996,7 +2044,7 @@ function bindEvents() {
 
 async function init() {
   try {
-    const [baseResponse, whiteResponse] = await Promise.all([fetch('./uc540_doc.json'), fetch('./whiterabbit_data.json?v=20260927-51')]);
+    const [baseResponse, whiteResponse] = await Promise.all([fetch('./uc540_doc.json'), fetch('./whiterabbit_data.json?v=20260927-53')]);
     if (!baseResponse.ok) throw new Error(`数据读取失败（HTTP ${baseResponse.status}）`);
     state.data = await baseResponse.json();
     if (whiteResponse.ok) state.whiteRabbit = await whiteResponse.json();
