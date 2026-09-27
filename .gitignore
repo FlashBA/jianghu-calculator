@@ -1,6 +1,7 @@
 # The analysis workspace contains APKs, emulator images and runtime dumps.
 # Only the static calculator under web/ is published.
 *
+FORMULAS*.md
 !/.gitignore
 !/README.md
 !/web/
