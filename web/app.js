@@ -744,6 +744,125 @@ function escapeHtml(value) {
     .replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#39;');
 }
 
+const selectProxyInstances = new Set();
+let selectProxyDocumentEventsBound = false;
+
+function pruneSelectProxies() {
+  selectProxyInstances.forEach((select) => {
+    if (select.isConnected) return;
+    select._selectProxy?.observer?.disconnect();
+    selectProxyInstances.delete(select);
+  });
+}
+function selectedOptionText(select) {
+  return select.selectedOptions?.[0]?.textContent?.trim() || '请选择';
+}
+function closeSelectProxies(except = null) {
+  selectProxyInstances.forEach((select) => {
+    const proxy = select._selectProxy;
+    if (proxy && proxy !== except) proxy.wrapper.classList.remove('is-open');
+  });
+}
+function syncSelectProxy(select, rebuild = false) {
+  const proxy = selectProxyInstances.has(select) ? select._selectProxy : null;
+  if (!proxy) return;
+  proxy.label.textContent = selectedOptionText(select);
+  proxy.trigger.disabled = select.disabled;
+  proxy.wrapper.classList.toggle('is-disabled', select.disabled);
+  proxy.trigger.setAttribute('aria-expanded', String(proxy.wrapper.classList.contains('is-open')));
+  if (!rebuild) return;
+  proxy.list.replaceChildren();
+  [...select.children].forEach((child) => {
+    if (child.tagName === 'OPTGROUP') {
+      const groupLabel = document.createElement('div');
+      groupLabel.className = 'select-proxy-group';
+      groupLabel.textContent = child.label;
+      proxy.list.appendChild(groupLabel);
+      [...child.children].forEach((option) => appendSelectProxyOption(select, proxy, option));
+    } else if (child.tagName === 'OPTION') {
+      appendSelectProxyOption(select, proxy, child);
+    }
+  });
+}
+function appendSelectProxyOption(select, proxy, option) {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'select-proxy-option';
+  button.setAttribute('role', 'option');
+  button.setAttribute('aria-selected', String(select.value === option.value));
+  button.disabled = option.disabled;
+  button.textContent = option.textContent || '未命名选项';
+  if (select.value === option.value) button.classList.add('is-selected');
+  button.addEventListener('click', (event) => {
+    event.preventDefault();
+    if (option.disabled) return;
+    select.value = option.value;
+    select.dispatchEvent(new Event('change', { bubbles: true }));
+    closeSelectProxies();
+    syncSelectProxy(select);
+  });
+  proxy.list.appendChild(button);
+}
+function enhanceSelect(select) {
+  if (!select || selectProxyInstances.has(select)) return;
+  const wrapper = document.createElement('div');
+  wrapper.className = `select-proxy${select.classList.contains('compact-picker') ? ' compact-picker-proxy' : ''}`;
+  const trigger = document.createElement('button');
+  trigger.type = 'button';
+  trigger.className = 'select-proxy-trigger';
+  trigger.setAttribute('aria-haspopup', 'listbox');
+  trigger.setAttribute('aria-expanded', 'false');
+  const label = document.createElement('span');
+  label.className = 'select-proxy-label';
+  trigger.appendChild(label);
+  const list = document.createElement('div');
+  list.className = 'select-proxy-list';
+  list.setAttribute('role', 'listbox');
+  wrapper.appendChild(trigger);
+  wrapper.appendChild(list);
+  select.parentNode.insertBefore(wrapper, select);
+  wrapper.appendChild(select);
+  select.classList.add('native-select-source');
+  select.tabIndex = -1;
+  select.setAttribute('aria-hidden', 'true');
+  const proxy = { wrapper, trigger, label, list };
+  select._selectProxy = proxy;
+  selectProxyInstances.add(select);
+  trigger.addEventListener('click', (event) => {
+    event.preventDefault();
+    if (select.disabled) return;
+    const isOpen = wrapper.classList.contains('is-open');
+    closeSelectProxies(proxy);
+    wrapper.classList.toggle('is-open', !isOpen);
+    syncSelectProxy(select);
+  });
+  select.addEventListener('change', () => {
+    syncSelectProxy(select);
+    wrapper.classList.remove('is-open');
+  });
+  const observer = new MutationObserver(() => syncSelectProxy(select, true));
+  observer.observe(select, { childList: true, subtree: true, attributes: true });
+  proxy.observer = observer;
+  syncSelectProxy(select, true);
+}
+function enhanceSelects(root = document) {
+  pruneSelectProxies();
+  root.querySelectorAll('select').forEach(enhanceSelect);
+  if (!selectProxyDocumentEventsBound) {
+    document.addEventListener('click', (event) => {
+      if (!event.target.closest('.select-proxy')) closeSelectProxies();
+    });
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') closeSelectProxies();
+    });
+    selectProxyDocumentEventsBound = true;
+  }
+}
+function refreshSelectProxies() {
+  pruneSelectProxies();
+  selectProxyInstances.forEach((select) => syncSelectProxy(select));
+}
+
 function saveConfig() {
   const config = {
     personName: $('person-name').value,
@@ -1299,6 +1418,7 @@ function clearGeneratedResult() {
 
 function calculate({ commit = false } = {}) {
   if (!state.data) return;
+  refreshSelectProxies();
   setError('');
   if (!commit) {
     if (resultGenerated || currentResult) clearGeneratedResult();
@@ -1497,6 +1617,7 @@ function renderComparison() {
         </table>
       </div>`;
   content.innerHTML = `<div class="comparison-cards">${cards}</div>${pairControls}${table}`;
+  enhanceSelects(content);
   if (comparisonSnapshots.length >= 2) {
     $('comparison-left').addEventListener('change', (event) => {
       const next = Number(event.target.value);
@@ -1687,7 +1808,7 @@ async function init() {
     if (innerStatsMode() === 'auto') syncAutoInnerStats();
     if (techniqueStatsMode() === 'auto') syncTechniqueStats();
     renderTechniqueScope();
-    renderWeaponAffixes(); renderEquipmentSlots(); calculate();
+    renderWeaponAffixes(); renderEquipmentSlots(); enhanceSelects(); refreshSelectProxies(); calculate();
   } catch (error) {
     setError(`${error.message}。请通过本地 HTTP 服务打开页面，不要直接双击 HTML 文件。`);
   }
