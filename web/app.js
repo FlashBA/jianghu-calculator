@@ -1616,6 +1616,7 @@ function calculate({ commit = false } = {}) {
     ? (innerDetails?.stylePower?.[selectedMartialStyle] || 0) + (selectedTechniqueStats.stylePower?.[selectedMartialStyle] || 0)
     : 0;
   const martialBonusPercent = numberValue('martial-bonus-percent');
+  // 技艺攻击百分比（包括朱雀之力）同时作用于基础攻击项和武学项。
   const baseAttackPercentMultiplier = 1 + (
     neigongAttack + techniqueAttack + activeFormation.attack + selectedStylePower
   ) / 100;
