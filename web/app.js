@@ -925,6 +925,7 @@ function saveConfig() {
     powerFactor: $('power-factor').value,
     baseSpeed: $('base-speed').value,
     baseSpeedRoleDefaultsVersion: 1,
+    speedPillsDefaultVersion: 1,
     baseCrit: $('base-crit').value,
     baseDodge: $('base-dodge').value,
     baseLifesteal: $('base-lifesteal').value,
@@ -968,6 +969,7 @@ function saveConfig() {
     formationId: $('formation-select').value,
     formationPosition: $('formation-position').value,
     pillsEnabled: $('pills-enabled').checked,
+    attackPillsEnabled: $('attack-pills-enabled').checked,
     pillsRange: 30,
     smallRenEnabled: $('small-ren-enabled').checked,
     largeRenEnabled: $('large-ren-enabled').checked,
@@ -1123,6 +1125,7 @@ function restoreConfig() {
     && Number(config.baseSpeed) === 10) {
     config.baseSpeed = '0';
   }
+  if (config.speedPillsDefaultVersion !== 1) config.speedPillsEnabled = true;
   if (storedKey !== STORAGE_KEY) {
     if (Number(config.baseCrit) === 1) config.baseCrit = '0';
     if (Number(config.baseDodge) === 1) config.baseDodge = '0';
@@ -1166,6 +1169,7 @@ function restoreConfig() {
   };
   Object.entries(fieldMap).forEach(([key, id]) => { if (config[key] !== undefined) $(id).value = config[key]; });
   if (typeof config.pillsEnabled === 'boolean') $('pills-enabled').checked = config.pillsEnabled;
+  if (typeof config.attackPillsEnabled === 'boolean') $('attack-pills-enabled').checked = config.attackPillsEnabled;
   if (typeof config.speedPillsEnabled === 'boolean') $('speed-pills-enabled').checked = config.speedPillsEnabled;
   if (typeof config.smallRenEnabled === 'boolean') $('small-ren-enabled').checked = config.smallRenEnabled;
   if (typeof config.largeRenEnabled === 'boolean') $('large-ren-enabled').checked = config.largeRenEnabled;
@@ -1568,7 +1572,8 @@ function calculate({ commit = false } = {}) {
   const finalHpRaw = bloodPillBaseHp * (100 + postPillHpPercent) / 100 + largeRenHpBonus;
   const hpPercent = baseHpRaw ? (finalHpRaw / baseHpRaw - 1) * 100 : 0;
   const finalHp = Math.round(finalHpRaw) + trunc(achievementHp) + trunc(weaponTotals.hpFlat) + trunc(equipmentHpFlat);
-  const attackPillCount = Math.max(0, Math.min(30, numberValue('attack-pill-count', 30)));
+  const attackPillsEnabled = $('attack-pills-enabled').checked;
+  const attackPillCount = attackPillsEnabled ? Math.max(0, Math.min(30, numberValue('attack-pill-count', 30))) : 0;
   const attackPillMultiplier = 1 + attackPillCount / 100;
   const selectedMartialStyle = martialStyle(selectedMartial?.item);
   const martialPower = Number(selectedMartial?.item?.power) || 0;
@@ -1838,6 +1843,7 @@ function bindEvents() {
   }));
   INNER_MANUAL_FIELD_IDS.forEach((id) => $(id).addEventListener('input', () => { setInnerStatsMode('manual'); calculate(); }));
   $('pills-enabled').addEventListener('change', calculate);
+  $('attack-pills-enabled').addEventListener('change', calculate);
   $('speed-pills-enabled').addEventListener('change', calculate);
   $('small-ren-enabled').addEventListener('change', calculate);
   $('large-ren-enabled').addEventListener('change', calculate);
@@ -1938,7 +1944,8 @@ function bindEvents() {
     $('formation-position').value = '1';
     renderFormationControls();
     $('pills-enabled').checked = true;
-    $('speed-pills-enabled').checked = false;
+    $('attack-pills-enabled').checked = true;
+    $('speed-pills-enabled').checked = true;
     $('small-ren-enabled').checked = true;
     $('large-ren-enabled').checked = true;
     comparisonSnapshots = [];
