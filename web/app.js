@@ -729,8 +729,9 @@ function updateWeaponSummary() {
   const summary = $('weapon-summary');
   if (!summary) return;
   const affixCount = state.weaponAffixes.filter((affix) => affix.key && Number(affix.value)).length;
+  const weaponName = String(state.weaponName || '').trim();
   summary.textContent = weaponActive()
-    ? `${state.weaponName.trim() || '已配置'}${affixCount ? ` · ${affixCount} 个词条` : ''}`
+    ? `${weaponName || '已配置'}${affixCount ? ` · ${affixCount} 个词条` : ''}`
     : '未设置';
 }
 function setError(message) {
@@ -1129,6 +1130,7 @@ function filteredEquipmentForSlot(slotIndex) {
 }
 function renderCustomEquipmentEditor(slotIndex, slot) {
   const editor = $(`custom-equipment-editor-${slotIndex}`);
+  if (!editor) return;
   const active = isCustomEquipmentId(slot?.id) && String(slot.id) === customEquipmentId(slotIndex);
   editor.hidden = !active;
   if (!active) {
