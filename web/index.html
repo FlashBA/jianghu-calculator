@@ -158,17 +158,12 @@
             </div>
           </details>
 
-          <details class="control-section advanced-section">
-            <summary>攻击计算参数</summary>
-            <div class="advanced-section-content">
-              <div class="field-grid two-up stat-input-grid">
-                <label class="field"><span>龙虎丹数量</span><input id="attack-pill-count" type="number" min="0" max="30" step="1" value="30" inputmode="numeric"></label>
-                <label class="field"><span>小任督武学攻击 %</span><input id="small-ren-attack-percent" type="number" min="0" max="10" step="0.1" value="10" inputmode="decimal"></label>
-                <label class="field"><span>大任督攻击内功数</span><input id="large-ren-attack-count" type="number" min="0" step="1" value="10" inputmode="numeric"></label>
-                <label class="field"><span>武学额外威力 %</span><input id="martial-bonus-percent" type="number" step="0.1" value="0" inputmode="decimal"></label>
-              </div>
-            </div>
-          </details>
+          <div class="calculation-defaults" hidden aria-hidden="true">
+            <input id="attack-pill-count" type="number" value="30">
+            <input id="small-ren-attack-percent" type="number" value="10">
+            <input id="large-ren-attack-count" type="number" value="10">
+            <input id="martial-bonus-percent" type="number" value="0">
+          </div>
 
           <section class="control-section">
             <div class="section-heading">
@@ -344,6 +339,6 @@
 
       </div>
     </main>
-    <script src="app.js?v=20260927-41"></script>
+    <script src="app.js?v=20260927-42"></script>
   </body>
 </html>

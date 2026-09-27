@@ -1,4 +1,5 @@
 const STORAGE_KEY = 'jianghu-stat-simulator:character:v6';
+const BASE_SPEED_DEFAULTS_VERSION = 2;
 const LEGACY_STORAGE_KEYS = [
   'jianghu-stat-simulator:character:v5',
   'jianghu-stat-simulator:character:v4',
@@ -279,7 +280,7 @@ function applyCharacterDefaults() {
   const profile = getCharacterProfile();
   let changed = false;
   const personName = $('person-name').value.trim() || '自定义角色';
-  const defaultSpeed = personName === '主角' ? 0 : 10;
+  const defaultSpeed = 0;
   if (Number($('base-speed').value) !== defaultSpeed) {
     $('base-speed').value = defaultSpeed;
     changed = true;
@@ -936,7 +937,7 @@ function saveConfig() {
     hpFactor: $('hp-factor').value,
     powerFactor: $('power-factor').value,
     baseSpeed: $('base-speed').value,
-    baseSpeedRoleDefaultsVersion: 1,
+    baseSpeedRoleDefaultsVersion: BASE_SPEED_DEFAULTS_VERSION,
     speedPillsDefaultVersion: 1,
     baseCrit: $('base-crit').value,
     baseDodge: $('base-dodge').value,
@@ -1132,8 +1133,7 @@ function restoreConfig() {
     return;
   }
   if (!config || typeof config !== 'object') return;
-  if (config.baseSpeedRoleDefaultsVersion !== 1
-    && config.personName === '主角'
+  if (config.baseSpeedRoleDefaultsVersion !== BASE_SPEED_DEFAULTS_VERSION
     && Number(config.baseSpeed) === 10) {
     config.baseSpeed = '0';
   }
@@ -1144,7 +1144,7 @@ function restoreConfig() {
     if (Number(config.baseLifesteal) === 1) config.baseLifesteal = '0';
     if (Number(config.baseCritDamage) === 200) config.baseCritDamage = '0';
   }
-  if (storedKey !== STORAGE_KEY && Number(config.baseSpeed) === 64) config.baseSpeed = '10';
+  if (storedKey !== STORAGE_KEY && Number(config.baseSpeed) === 64) config.baseSpeed = '0';
   if (isBuiltInExampleConfig(config)) config = makeBlankConfig(config);
   if (typeof config.personName === 'string') {
     const select = $('person-name');
@@ -1175,7 +1175,8 @@ function restoreConfig() {
     neigongBlock: 'neigong-block', neigongReflect: 'neigong-reflect', neigongRecovery: 'neigong-recovery',
     techniqueHp: 'technique-hp', techniqueAttack: 'technique-attack',
     attackPillCount: 'attack-pill-count', smallRenAttackPercent: 'small-ren-attack-percent',
-    largeRenAttackCount: 'large-ren-attack-count', learnedSMartialCount: 'learned-s-martial-count',
+    largeRenAttackCount: 'large-ren-attack-count',
+    learnedSMartialCount: 'learned-s-martial-count',
     martialBonusPercent: 'martial-bonus-percent',
     formationPosition: 'formation-position',
   };
@@ -1498,12 +1499,18 @@ function clearGeneratedResult() {
   $('attack-detail').textContent = '等待确认生成';
   $('result-person').textContent = '--';
   $('result-level').textContent = '等级 --';
-  $('factor-line').textContent = '生命系数 -- · 攻击系数 --';
+  renderCharacterFactorLine();
   SECONDARY_KEYS.forEach((key) => {
     const domKey = key.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
     $(`final-${domKey}`).textContent = '--';
   });
   $('compare-button').disabled = true;
+}
+
+function renderCharacterFactorLine() {
+  const hpFactor = numberValue('hp-factor', 1);
+  const powerFactor = numberValue('power-factor', 1);
+  $('factor-line').textContent = `生命系数 ${hpFactor} · 攻击系数 ${powerFactor}`;
 }
 
 function calculate({ commit = false } = {}) {
@@ -1543,7 +1550,7 @@ function calculate({ commit = false } = {}) {
   const activeFormation = formationStats();
   const weaponTotals = weaponAffixTotals();
   const secondaryStats = {
-    speed: numberValue('base-speed', 10) + martialSpeed(selectedMartial),
+    speed: numberValue('base-speed', 0) + martialSpeed(selectedMartial),
     mitigation: numberValue('base-mitigation'),
     crit: numberValue('base-crit', 0),
     dodge: numberValue('base-dodge', 0),
@@ -1625,7 +1632,7 @@ function calculate({ commit = false } = {}) {
   });
   $('result-person').textContent = roleName;
   $('result-level').textContent = `等级 ${level}`;
-  $('factor-line').textContent = `生命系数 ${hpFactor} · 攻击系数 ${powerFactor}`;
+  renderCharacterFactorLine();
   $('equipment-breakdown').textContent = `装备生命 +${formatPercent(equipmentHp)}${equipmentHpFlat ? ` · 固定 +${formatNumber(equipmentHpFlat)}` : ''} · 装备攻击 +${formatPercent(equipmentAttack)}${equipmentAttackFlat ? ` · 固定 +${formatNumber(equipmentAttackFlat)}` : ''}`;
   currentResult = {
     hp: finalHp,
