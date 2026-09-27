@@ -971,6 +971,7 @@ function saveConfig() {
     pillsRange: 30,
     smallRenEnabled: $('small-ren-enabled').checked,
     largeRenEnabled: $('large-ren-enabled').checked,
+    martialLargeRenEnabled: $('martial-large-ren-enabled').checked,
     comparisonSnapshots,
   };
   try {
@@ -1169,6 +1170,7 @@ function restoreConfig() {
   if (typeof config.speedPillsEnabled === 'boolean') $('speed-pills-enabled').checked = config.speedPillsEnabled;
   if (typeof config.smallRenEnabled === 'boolean') $('small-ren-enabled').checked = config.smallRenEnabled;
   if (typeof config.largeRenEnabled === 'boolean') $('large-ren-enabled').checked = config.largeRenEnabled;
+  if (typeof config.martialLargeRenEnabled === 'boolean') $('martial-large-ren-enabled').checked = config.martialLargeRenEnabled;
   if (config.formationId !== undefined) $('formation-select').value = String(config.formationId);
   comparisonSnapshots = normalizeComparisonSnapshots(config.comparisonSnapshots);
   if (Array.isArray(config.equipmentSlots)) {
@@ -1558,6 +1560,7 @@ function calculate({ commit = false } = {}) {
   const largeRenHp = largeRenEnabled ? 110 : 0;
   const largeRenAttackCount = largeRenEnabled ? Math.max(0, numberValue('large-ren-attack-count', 10)) : 0;
   const largeRenSpeed = largeRenEnabled ? 8 : 0;
+  const martialLargeRenEnabled = $('martial-large-ren-enabled').checked;
   secondaryStats.speed += largeRenSpeed;
   // Blood pills form their own base-life multiplier. Other life percentages
   // share that post-pill base, while large Ren Du uses the pre-pill base.
@@ -1587,7 +1590,9 @@ function calculate({ commit = false } = {}) {
     * (equipmentAttack + weaponTotals.attackPercent) / 100;
   const attackBeforeSMultiplier = baseAttackTerm + martialPowerTerm + largeRenAttackTerm
     + equipmentAttackFlat + weaponTotals.attackFlat + equipmentPercentTerm;
-  const learnedSMartialCount = Math.max(0, numberValue('learned-s-martial-count', 5));
+  const learnedSMartialCount = martialLargeRenEnabled
+    ? Math.max(0, numberValue('learned-s-martial-count', 5))
+    : 0;
   const sMartialMultiplier = 1 + learnedSMartialCount * 0.05;
   const finalAttack = trunc(attackBeforeSMultiplier * sMartialMultiplier) + trunc(achievementAttack);
   // 回复按 APK 面板口径：基础生命先乘内功生命加成，再乘总回复比例。
@@ -1841,6 +1846,7 @@ function bindEvents() {
   $('speed-pills-enabled').addEventListener('change', calculate);
   $('small-ren-enabled').addEventListener('change', calculate);
   $('large-ren-enabled').addEventListener('change', calculate);
+  $('martial-large-ren-enabled').addEventListener('change', calculate);
   $('formation-select').addEventListener('change', () => { renderFormationControls(); calculate(); });
   $('formation-position').addEventListener('change', () => { renderFormationControls(); calculate(); });
   document.querySelectorAll('.equipment-slot').forEach((select) => select.addEventListener('change', () => {
@@ -1941,6 +1947,7 @@ function bindEvents() {
     $('speed-pills-enabled').checked = false;
     $('small-ren-enabled').checked = true;
     $('large-ren-enabled').checked = true;
+    $('martial-large-ren-enabled').checked = true;
     comparisonSnapshots = [];
     comparisonPair = [0, 1];
     activeComparisonIndex = null;
