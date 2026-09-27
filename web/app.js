@@ -1,5 +1,6 @@
 const STORAGE_KEY = 'jianghu-stat-simulator:character:v6';
 const BASE_SPEED_DEFAULTS_VERSION = 2;
+const BASE_CRIT_DEFAULTS_VERSION = 1;
 const LEGACY_STORAGE_KEYS = [
   'jianghu-stat-simulator:character:v5',
   'jianghu-stat-simulator:character:v4',
@@ -281,8 +282,13 @@ function applyCharacterDefaults() {
   let changed = false;
   const personName = $('person-name').value.trim() || '自定义角色';
   const defaultSpeed = 0;
+  const defaultCrit = 10;
   if (Number($('base-speed').value) !== defaultSpeed) {
     $('base-speed').value = defaultSpeed;
+    changed = true;
+  }
+  if (Number($('base-crit').value) !== defaultCrit) {
+    $('base-crit').value = defaultCrit;
     changed = true;
   }
   if (personName !== '自定义角色') {
@@ -938,6 +944,7 @@ function saveConfig() {
     powerFactor: $('power-factor').value,
     baseSpeed: $('base-speed').value,
     baseSpeedRoleDefaultsVersion: BASE_SPEED_DEFAULTS_VERSION,
+    baseCritDefaultsVersion: BASE_CRIT_DEFAULTS_VERSION,
     speedPillsDefaultVersion: 1,
     baseCrit: $('base-crit').value,
     baseDodge: $('base-dodge').value,
@@ -1143,6 +1150,10 @@ function restoreConfig() {
     if (Number(config.baseDodge) === 1) config.baseDodge = '0';
     if (Number(config.baseLifesteal) === 1) config.baseLifesteal = '0';
     if (Number(config.baseCritDamage) === 200) config.baseCritDamage = '0';
+  }
+  if (config.baseCritDefaultsVersion !== BASE_CRIT_DEFAULTS_VERSION
+    && (config.baseCrit === undefined || Number(config.baseCrit) === 0)) {
+    config.baseCrit = '10';
   }
   if (storedKey !== STORAGE_KEY && Number(config.baseSpeed) === 64) config.baseSpeed = '0';
   if (isBuiltInExampleConfig(config)) config = makeBlankConfig(config);
@@ -1552,7 +1563,7 @@ function calculate({ commit = false } = {}) {
   const secondaryStats = {
     speed: numberValue('base-speed', 0) + martialSpeed(selectedMartial),
     mitigation: numberValue('base-mitigation'),
-    crit: numberValue('base-crit', 0),
+    crit: numberValue('base-crit', 10),
     dodge: numberValue('base-dodge', 0),
     lifesteal: numberValue('base-lifesteal', 0),
     critDamage: numberValue('base-crit-damage', 0),
@@ -1944,7 +1955,7 @@ function bindEvents() {
     state.weaponAffixes = [EMPTY_WEAPON_AFFIX(), EMPTY_WEAPON_AFFIX(), EMPTY_WEAPON_AFFIX()];
     $('person-name').value = '主角'; $('hp-factor').value = 1; $('power-factor').value = 1;
     $('person-style').value = ''; $('person-gender').value = '';
-    $('base-speed').value = 0; $('base-crit').value = 0; $('base-dodge').value = 0; $('base-lifesteal').value = 0;
+    $('base-speed').value = 0; $('base-crit').value = 10; $('base-dodge').value = 0; $('base-lifesteal').value = 0;
     $('base-crit-damage').value = 0; $('base-mitigation').value = 0; $('base-block').value = 0;
     $('base-reflect').value = 0; $('base-recovery').value = 0;
     $('achievement-hp').value = 292; $('achievement-attack').value = 292;
