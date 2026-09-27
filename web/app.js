@@ -43,7 +43,10 @@ const DEFAULT_CHARACTER_BASE_STATS = {
   reflect: 0,
   recovery: 0,
 };
-const MAX_COMPARISON_SNAPSHOTS = 20;
+const MAX_COMPARISON_SNAPSHOTS = 300;
+const MAX_CARD_NAME_LENGTH = 20;
+const MAX_TEAM_NAME_LENGTH = 20;
+const MAX_TEAM_SLOTS = 9;
 const INNER_MANUAL_FIELD_IDS = ['neigong-hp', 'neigong-attack', ...SECONDARY_KEYS.map((key) => (
   `neigong-${key.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}`
 ))];
@@ -81,11 +84,36 @@ let comparisonSnapshots = [];
 let comparisonPair = [0, 1];
 let activeComparisonIndex = null;
 let techniqueSelectionCustomized = false;
+let teams = [];
+let activeView = 'calculator';
+let pendingNameDialog = null;
+let pendingTeamPicker = null;
 
 const $ = (id) => document.getElementById(id);
 
 function trunc(value) { return Math.trunc(value); }
 function formatNumber(value) { return Number(value).toLocaleString('zh-CN'); }
+function localId(prefix) {
+  return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+}
+function characterCardCount(roleName, cards = comparisonSnapshots, excludeIndex = -1) {
+  return cards.filter((card, index) => index !== excludeIndex && card?.roleName === roleName).length;
+}
+function defaultCardName(roleName, cards = comparisonSnapshots, excludeIndex = -1) {
+  const sequence = characterCardCount(roleName, cards, excludeIndex) + 1;
+  return `${roleName}${String(sequence).padStart(3, '0')}`.slice(0, MAX_CARD_NAME_LENGTH);
+}
+function defaultTeamName() {
+  return `配队${String(teams.length + 1).padStart(3, '0')}`.slice(0, MAX_TEAM_NAME_LENGTH);
+}
+function normalizedName(value) {
+  return Array.from(String(value || '').trim()).slice(0, MAX_CARD_NAME_LENGTH).join('');
+}
+function isDuplicateCardName(name, excludeIndex = -1) {
+  const normalized = name.toLocaleLowerCase();
+  return comparisonSnapshots.some((card, index) => index !== excludeIndex
+    && String(card.name || '').trim().toLocaleLowerCase() === normalized);
+}
 function formatPercent(value) {
   const number = Number(value);
   return `${Number.isInteger(number) ? number : number.toFixed(1)}%`;
@@ -1004,6 +1032,7 @@ function refreshSelectProxies() {
 }
 
 function currentConfig() {
+  const selectedText = (id) => $(id)?.selectedOptions?.[0]?.textContent?.trim() || '';
   return {
     personName: $('person-name').value,
     personStyle: $('person-style').value,
@@ -1038,8 +1067,11 @@ function currentConfig() {
     weaponName: $('weapon-name').value,
     weaponAffixes: state.weaponAffixes.map((affix) => ({ ...affix })),
     martialId: $('martial-select').value,
+    martialName: selectedText('martial-select'),
     speedPillsEnabled: $('speed-pills-enabled').checked,
     neigongId: $('neigong-select').value,
+    neigongName: selectedText('neigong-select'),
+    equipmentNames: state.equipmentSlots.map((slot) => slot?.name || '').filter(Boolean),
     neigongLevel: $('neigong-level').value,
     neigongHp: $('neigong-hp').value,
     neigongAttack: $('neigong-attack').value,
@@ -1072,8 +1104,10 @@ function currentConfig() {
 function saveConfig() {
   const config = {
     ...currentConfig(),
-    comparisonSnapshots,
+    savedCards: comparisonSnapshots,
     comparisonPair,
+    teams,
+    activeView,
   };
   try {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
@@ -1192,25 +1226,52 @@ function isOldSampleEquipment(slots) {
 
 function normalizeComparisonSnapshots(value) {
   if (!Array.isArray(value)) return [];
+  const roleCounts = new Map();
   return value.slice(0, MAX_COMPARISON_SNAPSHOTS).map((snapshot) => {
     const roleName = String(snapshot?.roleName || '自定义角色');
     const level = Number(snapshot?.level) || 1;
+    const roleCount = (roleCounts.get(roleName) || 0) + 1;
+    roleCounts.set(roleName, roleCount);
     const hasStats = Boolean(snapshot?.stats && typeof snapshot.stats === 'object'
       && SECONDARY_KEYS.some((key) => Object.prototype.hasOwnProperty.call(snapshot.stats, key)));
+    const name = normalizedName(snapshot?.name || `${roleName}${String(roleCount).padStart(3, '0')}`)
+      || `${roleName}${String(roleCount).padStart(3, '0')}`.slice(0, MAX_CARD_NAME_LENGTH);
     return {
       hp: Number(snapshot?.hp) || 0,
       attack: Number(snapshot?.attack) || 0,
       roleName,
       level,
+      cardId: String(snapshot?.cardId || snapshot?.id || localId('card')),
+      name,
       config: snapshot?.config && typeof snapshot.config === 'object' ? snapshot.config : null,
       stats: Object.fromEntries(SECONDARY_KEYS.map((key) => [
         key,
         hasStats ? (Number(snapshot.stats[key]) || 0) : null,
       ])),
       statsAvailable: hasStats,
-      label: roleName,
+      label: name,
+      martialName: String(snapshot?.martialName || snapshot?.config?.martialName || ''),
+      innerName: String(snapshot?.innerName || snapshot?.config?.neigongName || ''),
+      equipmentNames: Array.isArray(snapshot?.equipmentNames)
+        ? snapshot.equipmentNames.map((item) => String(item)).filter(Boolean)
+        : Array.isArray(snapshot?.config?.equipmentNames) ? snapshot.config.equipmentNames.map((item) => String(item)).filter(Boolean) : [],
     };
   });
+}
+
+function normalizeTeams(value) {
+  if (!Array.isArray(value)) return [];
+  return value.map((team, index) => ({
+    id: String(team?.id || localId(`team${index}`)),
+    name: normalizedName(team?.name || `配队${String(index + 1).padStart(3, '0')}`)
+      || `配队${String(index + 1).padStart(3, '0')}`,
+    slots: Array.from({ length: MAX_TEAM_SLOTS }, (_, slotIndex) => {
+      const cardId = Array.isArray(team?.slots) ? team.slots[slotIndex] : null;
+      return cardId ? String(cardId) : null;
+    }),
+    createdAt: Number(team?.createdAt) || Date.now(),
+    updatedAt: Number(team?.updatedAt) || Date.now(),
+  }));
 }
 
 function normalizeComparisonPair(value, snapshotCount = comparisonSnapshots.length) {
@@ -1322,8 +1383,11 @@ function restoreConfig(sourceConfig = null) {
   if (typeof config.smallRenEnabled === 'boolean') $('small-ren-enabled').checked = config.smallRenEnabled;
   if (typeof config.largeRenEnabled === 'boolean') $('large-ren-enabled').checked = config.largeRenEnabled;
   if (config.formationId !== undefined) $('formation-select').value = String(config.formationId);
-  comparisonSnapshots = normalizeComparisonSnapshots(config.comparisonSnapshots);
+  comparisonSnapshots = normalizeComparisonSnapshots(
+    Array.isArray(config.savedCards) ? config.savedCards : config.comparisonSnapshots,
+  );
   comparisonPair = normalizeComparisonPair(config.comparisonPair);
+  teams = normalizeTeams(config.teams);
   if (Array.isArray(config.equipmentSlots)) {
     state.equipmentSlots = config.equipmentSlots.slice(0, 4).map(normalizeEquipment);
     while (state.equipmentSlots.length < 4) state.equipmentSlots.push(EMPTY_EQUIPMENT());
@@ -1389,6 +1453,9 @@ function restoreConfig(sourceConfig = null) {
   setInnerStatsMode(config.neigongStatsMode === 'manual' && getSelectedInner()?.source === 'custom' ? 'manual' : 'auto');
   renderInnerEditor();
   renderComparison();
+  renderSavedCards();
+  renderTeams();
+  switchView(config.activeView || 'calculator', { persist: false });
   setSaveStatus('已加载本机配置');
 }
 
@@ -1792,12 +1859,18 @@ function calculate({ commit = false } = {}) {
 
 function comparisonSnapshot() {
   if (!currentResult || !resultGenerated) return null;
+  const config = currentConfig();
   return {
     ...currentResult,
-    config: currentConfig(),
+    config,
     stats: { ...currentResult.stats },
     statsAvailable: true,
-    label: currentResult.roleName,
+    cardId: localId('card'),
+    name: defaultCardName(currentResult.roleName),
+    label: defaultCardName(currentResult.roleName),
+    martialName: config.martialName,
+    innerName: config.neigongName,
+    equipmentNames: config.equipmentNames,
   };
 }
 
@@ -1812,15 +1885,355 @@ function restoreSnapshotConfiguration(snapshot) {
     };
   restoreConfig({
     ...snapshotConfig,
-    comparisonSnapshots,
+    savedCards: comparisonSnapshots,
     comparisonPair,
+    teams,
   });
   calculate({ commit: true });
   return true;
 }
 
 function comparisonCode(index) {
-  return String.fromCharCode(65 + index);
+  return String(index + 1).padStart(3, '0');
+}
+
+function nextCardName(roleName) {
+  let sequence = characterCardCount(roleName) + 1;
+  let candidate = `${roleName}${String(sequence).padStart(3, '0')}`.slice(0, MAX_CARD_NAME_LENGTH);
+  while (isDuplicateCardName(candidate)) {
+    sequence += 1;
+    candidate = `${roleName}${String(sequence).padStart(3, '0')}`.slice(0, MAX_CARD_NAME_LENGTH);
+  }
+  return candidate;
+}
+
+function openNameDialog({ title, label = '名称', defaultValue = '', kind = 'card', confirmLabel = '保存', excludeId = '' }) {
+  return new Promise((resolve) => {
+    pendingNameDialog = { resolve, kind, excludeId };
+    $('name-modal-title').textContent = title;
+    $('name-modal-label').textContent = label;
+    $('name-modal-confirm').textContent = confirmLabel;
+    $('name-modal-input').value = defaultValue;
+    $('name-modal-error').textContent = '';
+    $('name-modal').hidden = false;
+    requestAnimationFrame(() => {
+      $('name-modal-input').focus();
+      $('name-modal-input').select();
+    });
+  });
+}
+
+function closeNameDialog(value = null) {
+  const request = pendingNameDialog;
+  pendingNameDialog = null;
+  $('name-modal').hidden = true;
+  if (request) request.resolve(value);
+}
+
+function validateNameDialog() {
+  const value = normalizedName($('name-modal-input').value);
+  const error = $('name-modal-error');
+  if (!value) {
+    error.textContent = '名称不能为空';
+    return null;
+  }
+  const duplicate = pendingNameDialog?.kind === 'team'
+    ? teams.some((team) => team.id !== pendingNameDialog.excludeId && team.name.toLocaleLowerCase() === value.toLocaleLowerCase())
+    : isDuplicateCardName(value);
+  if (duplicate) {
+    error.textContent = '名称已存在，请换一个名称';
+    return null;
+  }
+  return value;
+}
+
+function snapshotDisplayText(snapshot) {
+  const config = snapshot?.config || {};
+  return [
+    snapshot?.martialName || config.martialName,
+    snapshot?.innerName || config.neigongName,
+    ...(snapshot?.equipmentNames || config.equipmentNames || []),
+  ].filter((value) => value && !/^无武学|^无内功/.test(String(value))).join(' · ');
+}
+
+function saveCardSnapshot(snapshot, name, { addToComparison = false } = {}) {
+  if (!snapshot || comparisonSnapshots.length >= MAX_COMPARISON_SNAPSHOTS) return -1;
+  const previousIndex = comparisonSnapshots.length - 1;
+  snapshot.name = name;
+  snapshot.label = name;
+  comparisonSnapshots.push(snapshot);
+  const index = comparisonSnapshots.length - 1;
+  if (addToComparison && previousIndex >= 0) comparisonPair = [previousIndex, index];
+  activeComparisonIndex = index;
+  saveConfig();
+  renderComparison();
+  renderSavedCards();
+  renderTeams();
+  return index;
+}
+
+async function saveCurrentCard({ automaticName = false, addToComparison = false } = {}) {
+  if (comparisonSnapshots.length >= MAX_COMPARISON_SNAPSHOTS) {
+    setSaveStatus('数据卡片已达到 300 张上限');
+    return -1;
+  }
+  calculate({ commit: true });
+  const snapshot = comparisonSnapshot();
+  if (!snapshot) return -1;
+  const name = automaticName
+    ? nextCardName(snapshot.roleName)
+    : await openNameDialog({
+      title: '保存数据卡片',
+      label: '卡片名称',
+      defaultValue: nextCardName(snapshot.roleName),
+      kind: 'card',
+    });
+  if (!name) return -1;
+  const index = saveCardSnapshot(snapshot, name, { addToComparison });
+  if (index >= 0) {
+    setSaveStatus(`已保存 ${name}`);
+    renderCardRoleFilter();
+  }
+  return index;
+}
+
+function setComparisonSide(index, side) {
+  if (!comparisonSnapshots[index]) return;
+  if (side === 'left') comparisonPair[0] = index;
+  else comparisonPair[1] = index;
+  comparisonPair = normalizeComparisonPair(comparisonPair);
+  saveConfig();
+  renderComparison();
+  renderSavedCards();
+}
+
+function deleteSavedCard(index) {
+  const snapshot = comparisonSnapshots[index];
+  if (!snapshot) return;
+  if (!window.confirm(`确认删除数据卡片“${snapshot.name || snapshot.roleName}”吗？`)) return;
+  const cardId = snapshot.cardId;
+  comparisonSnapshots.splice(index, 1);
+  teams.forEach((team) => {
+    team.slots = team.slots.map((slot) => slot === cardId ? null : slot);
+  });
+  const shift = (value) => value === index ? 0 : value > index ? value - 1 : value;
+  comparisonPair = normalizeComparisonPair(comparisonPair.map(shift));
+  activeComparisonIndex = null;
+  saveConfig();
+  renderComparison();
+  renderSavedCards();
+  renderTeams();
+  setSaveStatus('已删除数据卡片');
+}
+
+function loadSavedCard(index) {
+  if (!comparisonSnapshots[index]) return;
+  showComparisonSnapshot(index);
+  switchView('calculator');
+  setSaveStatus(`已载入 ${comparisonSnapshots[index].name}`);
+}
+
+function renderCardRoleFilter() {
+  const select = $('card-role-filter');
+  if (!select) return;
+  const previous = select.value;
+  const roles = [...new Set(comparisonSnapshots.map((card) => card.roleName).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'zh-CN'));
+  select.innerHTML = '<option value="">全部角色</option>'
+    + roles.map((role) => `<option value="${escapeHtml(role)}">${escapeHtml(role)}</option>`).join('');
+  select.value = roles.includes(previous) ? previous : '';
+}
+
+function cardStatsMarkup(snapshot) {
+  const stats = SECONDARY_STAT_DEFS.map((definition) => {
+    const value = snapshot.stats?.[definition.key];
+    if (value === null || value === undefined || Number(value) === 0) return '';
+    return `<span>${definition.label} <b>${formatSecondaryValue(definition.key, value)}</b></span>`;
+  }).filter(Boolean).join('');
+  return `<div class="saved-card-stats"><span>生命 <b>${formatNumber(snapshot.hp)}</b></span><span>攻击 <b>${formatNumber(snapshot.attack)}</b></span>${stats}</div>`;
+}
+
+function renderSavedCards() {
+  const content = $('saved-card-list');
+  if (!content) return;
+  renderCardRoleFilter();
+  const role = $('card-role-filter')?.value || '';
+  const query = ($('card-search')?.value || '').trim().toLocaleLowerCase();
+  const visible = comparisonSnapshots.map((card, index) => ({ card, index })).filter(({ card }) => {
+    if (role && card.roleName !== role) return false;
+    if (!query) return true;
+    return [card.name, card.roleName, card.martialName, card.innerName, ...(card.equipmentNames || [])]
+      .filter(Boolean).join(' ').toLocaleLowerCase().includes(query);
+  });
+  $('card-count').textContent = `${comparisonSnapshots.length} / ${MAX_COMPARISON_SNAPSHOTS}`;
+  if (!visible.length) {
+    content.innerHTML = `<div class="empty-collection"><strong>${comparisonSnapshots.length ? '没有匹配的数据卡片' : '还没有数据卡片'}</strong><span>${comparisonSnapshots.length ? '更换筛选条件试试' : '在计算器生成结果后，保存为数据卡片'}</span></div>`;
+    return;
+  }
+  content.innerHTML = visible.map(({ card, index }) => `
+    <article class="saved-data-card${activeComparisonIndex === index ? ' is-active' : ''}">
+      <div class="saved-card-heading">
+        <div class="saved-card-title"><strong>${escapeHtml(card.name || `${card.roleName}${comparisonCode(index)}`)}</strong><span>${escapeHtml(card.roleName)} · 等级 ${card.level}</span></div>
+        <button class="icon-button card-delete-button" type="button" data-card-delete="${index}" aria-label="删除${escapeHtml(card.name || '数据卡片')}" title="删除">×</button>
+      </div>
+      ${cardStatsMarkup(card)}
+      <div class="saved-card-loadout">${escapeHtml(snapshotDisplayText(card) || '未记录武学、内功或装备')}</div>
+      <div class="saved-card-actions">
+        <button class="text-button" type="button" data-card-load="${index}">载入</button>
+        <button class="text-button" type="button" data-card-left="${index}">设为左侧</button>
+        <button class="text-button" type="button" data-card-right="${index}">设为右侧</button>
+      </div>
+    </article>`).join('');
+  content.querySelectorAll('[data-card-delete]').forEach((button) => button.addEventListener('click', () => deleteSavedCard(Number(button.dataset.cardDelete))));
+  content.querySelectorAll('[data-card-load]').forEach((button) => button.addEventListener('click', () => loadSavedCard(Number(button.dataset.cardLoad))));
+  content.querySelectorAll('[data-card-left]').forEach((button) => button.addEventListener('click', () => setComparisonSide(Number(button.dataset.cardLeft), 'left')));
+  content.querySelectorAll('[data-card-right]').forEach((button) => button.addEventListener('click', () => setComparisonSide(Number(button.dataset.cardRight), 'right')));
+}
+
+function teamCardFromId(cardId) {
+  return comparisonSnapshots.find((card) => card.cardId === cardId) || null;
+}
+
+function renderTeamRoleFilter() {
+  const selects = [$('team-picker-role-filter')].filter(Boolean);
+  const roles = [...new Set(comparisonSnapshots.map((card) => card.roleName).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'zh-CN'));
+  selects.forEach((select) => {
+    const previous = select.value;
+    select.innerHTML = '<option value="">全部角色</option>'
+      + roles.map((role) => `<option value="${escapeHtml(role)}">${escapeHtml(role)}</option>`).join('');
+    select.value = roles.includes(previous) ? previous : '';
+  });
+}
+
+function renderTeamPicker() {
+  const content = $('team-picker-list');
+  if (!content || !pendingTeamPicker) return;
+  const team = teams.find((item) => item.id === pendingTeamPicker.teamId);
+  if (!team) return;
+  const currentCardId = team.slots[pendingTeamPicker.slotIndex];
+  const usedCardIds = new Set(team.slots.filter(Boolean));
+  usedCardIds.delete(currentCardId);
+  const usedRoles = new Set(team.slots.filter(Boolean).map((cardId) => teamCardFromId(cardId)?.roleName).filter(Boolean));
+  if (currentCardId) usedRoles.delete(teamCardFromId(currentCardId)?.roleName);
+  const role = $('team-picker-role-filter')?.value || '';
+  const query = ($('team-picker-search')?.value || '').trim().toLocaleLowerCase();
+  const currentCard = teamCardFromId(currentCardId);
+  const currentDetail = currentCard ? `<div class="team-picker-current">
+    <div class="saved-card-heading"><div class="saved-card-title"><strong>${escapeHtml(currentCard.name)}</strong><span>${escapeHtml(currentCard.roleName)} · 等级 ${currentCard.level}</span></div><span class="manual-tag">当前位置</span></div>
+    ${cardStatsMarkup(currentCard)}
+    <div class="saved-card-loadout">${escapeHtml(snapshotDisplayText(currentCard) || '未记录武学、内功或装备')}</div>
+  </div>` : '';
+  const cards = comparisonSnapshots.filter((card) => {
+    if (role && card.roleName !== role) return false;
+    if (query && ![card.name, card.roleName, card.martialName, card.innerName].filter(Boolean).join(' ').toLocaleLowerCase().includes(query)) return false;
+    return true;
+  });
+  if (!cards.length) {
+    content.innerHTML = `${currentDetail}<div class="empty-collection"><strong>没有匹配的方案</strong><span>先保存数据卡片，再加入配队</span></div>`;
+    return;
+  }
+  content.innerHTML = currentDetail + cards.map((card) => {
+    const unavailable = usedCardIds.has(card.cardId) || usedRoles.has(card.roleName);
+    const reason = usedRoles.has(card.roleName) ? '该角色已在队伍中' : usedCardIds.has(card.cardId) ? '已加入此队伍' : '';
+    return `<button class="team-picker-card${unavailable ? ' is-unavailable' : ''}" type="button" data-team-card="${escapeHtml(card.cardId)}" ${unavailable ? 'disabled' : ''}>
+      <span><strong>${escapeHtml(card.name)}</strong><em>${escapeHtml(card.roleName)}${reason ? ` · ${reason}` : ''}</em></span>
+      <b>${formatNumber(card.hp)} / ${formatNumber(card.attack)}</b>
+    </button>`;
+  }).join('');
+  content.querySelectorAll('[data-team-card]').forEach((button) => button.addEventListener('click', () => {
+    const selected = teamCardFromId(button.dataset.teamCard);
+    if (!selected) return;
+    team.slots[pendingTeamPicker.slotIndex] = selected.cardId;
+    team.updatedAt = Date.now();
+    saveConfig();
+    closeTeamPicker();
+    renderTeams();
+  }));
+}
+
+function openTeamPicker(teamId, slotIndex) {
+  pendingTeamPicker = { teamId, slotIndex };
+  renderTeamRoleFilter();
+  $('team-picker-role-filter').value = '';
+  $('team-picker-search').value = '';
+  $('team-picker-modal').hidden = false;
+  renderTeamPicker();
+}
+
+function closeTeamPicker() {
+  pendingTeamPicker = null;
+  $('team-picker-modal').hidden = true;
+}
+
+function deleteTeam(teamId) {
+  const team = teams.find((item) => item.id === teamId);
+  if (!team || !window.confirm(`确认删除配队“${team.name}”吗？`)) return;
+  teams = teams.filter((item) => item.id !== teamId);
+  saveConfig();
+  renderTeams();
+  setSaveStatus('已删除配队');
+}
+
+async function renameTeam(teamId) {
+  const team = teams.find((item) => item.id === teamId);
+  if (!team) return;
+  const previousName = team.name;
+  const name = await openNameDialog({ title: '修改配队名称', label: '配队名称', defaultValue: team.name, kind: 'team', confirmLabel: '修改', excludeId: team.id });
+  if (!name || name === previousName) return;
+  if (teams.some((item) => item !== team && item.name === name)) return;
+  team.name = name;
+  team.updatedAt = Date.now();
+  saveConfig();
+  renderTeams();
+}
+
+async function createTeam() {
+  const name = await openNameDialog({ title: '新建配队', label: '配队名称', defaultValue: defaultTeamName(), kind: 'team' });
+  if (!name) return;
+  teams.push({ id: localId('team'), name, slots: Array(MAX_TEAM_SLOTS).fill(null), createdAt: Date.now(), updatedAt: Date.now() });
+  saveConfig();
+  renderTeams();
+  setSaveStatus(`已创建 ${name}`);
+}
+
+function renderTeams() {
+  const content = $('team-list');
+  if (!content) return;
+  const query = ($('team-search')?.value || '').trim().toLocaleLowerCase();
+  const visible = teams.filter((team) => !query || team.name.toLocaleLowerCase().includes(query));
+  $('team-count').textContent = `${teams.length} 个配队`;
+  if (!visible.length) {
+    content.innerHTML = `<div class="empty-collection"><strong>${teams.length ? '没有匹配的配队' : '配队还是空的'}</strong><span>${teams.length ? '更换搜索内容试试' : '点击右上角“新建配队”，再用加号填入数据卡片'}</span></div>`;
+    return;
+  }
+  content.innerHTML = visible.map((team) => `
+    <article class="team-card">
+      <div class="team-card-heading">
+        <div><strong>${escapeHtml(team.name)}</strong><span>${team.slots.filter(Boolean).length} / ${MAX_TEAM_SLOTS} 个位置</span></div>
+        <div class="team-card-actions"><button class="text-button" type="button" data-team-rename="${escapeHtml(team.id)}">改名</button><button class="icon-button card-delete-button" type="button" data-team-delete="${escapeHtml(team.id)}" aria-label="删除配队" title="删除">×</button></div>
+      </div>
+      <div class="team-slots">${team.slots.map((cardId, slotIndex) => {
+        const card = teamCardFromId(cardId);
+        return card
+          ? `<button class="team-slot is-filled" type="button" data-team-add="${escapeHtml(team.id)}" data-team-slot="${slotIndex}"><small>${String(slotIndex + 1).padStart(2, '0')}</small><strong>${escapeHtml(card.roleName)}</strong><span>${escapeHtml(card.name)}</span><b>${formatNumber(card.hp)} · ${formatNumber(card.attack)}</b></button>`
+          : `<button class="team-slot is-empty" type="button" data-team-add="${escapeHtml(team.id)}" data-team-slot="${slotIndex}"><small>${String(slotIndex + 1).padStart(2, '0')}</small><strong>＋</strong><span>添加方案</span></button>`;
+      }).join('')}</div>
+    </article>`).join('');
+  content.querySelectorAll('[data-team-add]').forEach((button) => button.addEventListener('click', () => openTeamPicker(button.dataset.teamAdd, Number(button.dataset.teamSlot))));
+  content.querySelectorAll('[data-team-delete]').forEach((button) => button.addEventListener('click', () => deleteTeam(button.dataset.teamDelete)));
+  content.querySelectorAll('[data-team-rename]').forEach((button) => button.addEventListener('click', () => renameTeam(button.dataset.teamRename)));
+}
+
+function switchView(view, { persist = true } = {}) {
+  activeView = ['calculator', 'teams', 'cards'].includes(view) ? view : 'calculator';
+  ['calculator', 'teams', 'cards'].forEach((name) => {
+    const element = $(`${name}-view`);
+    if (element) element.hidden = name !== activeView;
+    const button = document.querySelector(`[data-view="${name}"]`);
+    button?.classList.toggle('is-active', name === activeView);
+  });
+  if (activeView === 'teams') renderTeams();
+  if (activeView === 'cards') renderSavedCards();
+  if (persist) saveConfig();
 }
 
 function hydrateLegacySnapshot(snapshot) {
@@ -1890,15 +2303,19 @@ function renderComparison() {
     ? snapshot.stats?.[key.slice(6)]
     : snapshot[key];
   const formatRowValue = (row, value) => value === null || value === undefined ? '--' : row.format(value);
-  const cards = comparisonSnapshots.map((snapshot, index) => `
-    <button class="comparison-card${activeComparisonIndex === index ? ' is-active' : ''}" type="button" data-comparison-index="${index}" aria-pressed="${activeComparisonIndex === index}">
-      <strong>方案 ${comparisonCode(index)} · ${escapeHtml(snapshot.roleName || '自定义角色')}</strong>
-    </button>
-  `).join('');
   const pair = normalizeComparisonPair(comparisonPair);
   comparisonPair = pair;
+  const cardIndexes = [...new Set(pair.filter((index) => comparisonSnapshots[index]))];
+  const cards = cardIndexes.map((index) => {
+    const snapshot = comparisonSnapshots[index];
+    return `
+    <button class="comparison-card${activeComparisonIndex === index ? ' is-active' : ''}" type="button" data-comparison-index="${index}" aria-pressed="${activeComparisonIndex === index}">
+      <strong>方案 ${comparisonCode(index)} · ${escapeHtml(snapshot.name || snapshot.roleName || '自定义角色')}</strong>
+    </button>
+  `;
+  }).join('');
   const comparisonOptions = (selected) => comparisonSnapshots.map((snapshot, index) => `
-    <option value="${index}"${index === selected ? ' selected' : ''}>方案 ${comparisonCode(index)} · ${escapeHtml(snapshot.roleName || '自定义角色')}</option>
+    <option value="${index}"${index === selected ? ' selected' : ''}>方案 ${comparisonCode(index)} · ${escapeHtml(snapshot.name || snapshot.roleName || '自定义角色')}</option>
   `).join('');
   const pairControls = comparisonSnapshots.length < 2 ? '' : `
     <div class="comparison-pair-controls">
@@ -1911,7 +2328,7 @@ function renderComparison() {
     : `
       <div class="comparison-table-wrap">
         <table class="compare-table">
-          <thead><tr><th>属性</th><th>方案 ${comparisonCode(pair[0])} · ${escapeHtml(comparisonSnapshots[pair[0]].roleName || '自定义角色')}</th><th>方案 ${comparisonCode(pair[1])} · ${escapeHtml(comparisonSnapshots[pair[1]].roleName || '自定义角色')}</th><th>差值</th></tr></thead>
+          <thead><tr><th>属性</th><th>方案 ${comparisonCode(pair[0])} · ${escapeHtml(comparisonSnapshots[pair[0]].name || comparisonSnapshots[pair[0]].roleName || '自定义角色')}</th><th>方案 ${comparisonCode(pair[1])} · ${escapeHtml(comparisonSnapshots[pair[1]].name || comparisonSnapshots[pair[1]].roleName || '自定义角色')}</th><th>差值</th></tr></thead>
           <tbody>
             ${rows.map((row) => {
               const left = valueAt(comparisonSnapshots[pair[0]], row.key);
@@ -1952,23 +2369,14 @@ function renderComparison() {
       renderComparison();
     });
   }
-  $('compare-button').disabled = comparisonSnapshots.length >= MAX_COMPARISON_SNAPSHOTS || !resultGenerated;
+  $('compare-button').disabled = !resultGenerated || comparisonSnapshots.length >= MAX_COMPARISON_SNAPSHOTS;
+  $('save-current-button').disabled = comparisonSnapshots.length >= MAX_COMPARISON_SNAPSHOTS;
 }
 
 function addCurrentComparison() {
-  calculate({ commit: true });
-  const snapshot = comparisonSnapshot();
-  if (!snapshot || comparisonSnapshots.length >= MAX_COMPARISON_SNAPSHOTS) return;
-  const index = comparisonSnapshots.length;
-  comparisonSnapshots.push(snapshot);
-  activeComparisonIndex = index;
-  if (index > 0) comparisonPair = [index - 1, index];
-  saveConfig();
-  renderComparison();
-  showComparisonSnapshot(index);
-  setSaveStatus(comparisonSnapshots.length >= MAX_COMPARISON_SNAPSHOTS
-    ? '已保存 20 套方案，已达上限'
-    : `已保存方案 ${comparisonCode(comparisonSnapshots.length - 1)}`);
+  saveCurrentCard({ automaticName: true, addToComparison: true }).then((index) => {
+    if (index >= 0) setSaveStatus(`已保存并加入对比 ${comparisonSnapshots[index].name}`);
+  });
 }
 
 function bindEvents() {
@@ -2085,18 +2493,15 @@ function bindEvents() {
     const result = calculate({ commit: true });
     if (result) setSaveStatus('已生成当前结果');
   });
-  $('save-current-button').addEventListener('click', () => {
-    saveConfig();
-    setSaveStatus('已保存当前配置');
-  });
+  $('save-current-button').addEventListener('click', () => { saveCurrentCard(); });
   $('compare-button').addEventListener('click', addCurrentComparison);
   $('clear-comparison-button').addEventListener('click', () => {
-    comparisonSnapshots = [];
-    comparisonPair = [0, 1];
+    comparisonPair = normalizeComparisonPair([0, 1]);
     activeComparisonIndex = null;
     saveConfig();
     renderComparison();
-    setSaveStatus('已清空模拟对比');
+    renderSavedCards();
+    setSaveStatus('已重置对比选择，数据卡片仍保留');
   });
   $('reset-button').addEventListener('click', () => {
     state.equipmentSlots = [EMPTY_EQUIPMENT(), EMPTY_EQUIPMENT(), EMPTY_EQUIPMENT(), EMPTY_EQUIPMENT()];
@@ -2130,16 +2535,51 @@ function bindEvents() {
     $('speed-pills-enabled').checked = true;
     $('small-ren-enabled').checked = true;
     $('large-ren-enabled').checked = true;
-    comparisonSnapshots = [];
-    comparisonPair = [0, 1];
     activeComparisonIndex = null;
     renderWeaponAffixes(); renderEquipmentSlots(); renderComparison(); calculate();
+  });
+
+  document.querySelectorAll('[data-view]').forEach((button) => button.addEventListener('click', () => switchView(button.dataset.view)));
+  $('create-team-button').addEventListener('click', createTeam);
+  $('team-search').addEventListener('input', renderTeams);
+  $('card-search').addEventListener('input', renderSavedCards);
+  $('card-role-filter').addEventListener('change', renderSavedCards);
+
+  $('name-modal-confirm').addEventListener('click', () => {
+    const value = validateNameDialog();
+    if (value) closeNameDialog(value);
+  });
+  $('name-modal-cancel').addEventListener('click', () => closeNameDialog());
+  $('name-modal-close').addEventListener('click', () => closeNameDialog());
+  $('name-modal-input').addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') $('name-modal-confirm').click();
+    if (event.key === 'Escape') closeNameDialog();
+  });
+  $('name-modal').addEventListener('click', (event) => {
+    if (event.target === $('name-modal')) closeNameDialog();
+  });
+  $('team-picker-close').addEventListener('click', closeTeamPicker);
+  $('team-picker-modal').addEventListener('click', (event) => {
+    if (event.target === $('team-picker-modal')) closeTeamPicker();
+  });
+  $('team-picker-role-filter').addEventListener('change', renderTeamPicker);
+  $('team-picker-search').addEventListener('input', renderTeamPicker);
+  $('team-picker-clear').addEventListener('click', () => {
+    if (!pendingTeamPicker) return;
+    const team = teams.find((item) => item.id === pendingTeamPicker.teamId);
+    if (team) {
+      team.slots[pendingTeamPicker.slotIndex] = null;
+      team.updatedAt = Date.now();
+      saveConfig();
+      renderTeams();
+    }
+    closeTeamPicker();
   });
 }
 
 async function init() {
   try {
-    const [baseResponse, whiteResponse] = await Promise.all([fetch('./uc540_doc.json'), fetch('./whiterabbit_data.json?v=20260927-58')]);
+    const [baseResponse, whiteResponse] = await Promise.all([fetch('./uc540_doc.json'), fetch('./whiterabbit_data.json?v=20260927-59')]);
     if (!baseResponse.ok) throw new Error(`数据读取失败（HTTP ${baseResponse.status}）`);
     state.data = await baseResponse.json();
     if (whiteResponse.ok) state.whiteRabbit = await whiteResponse.json();

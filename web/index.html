@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#172027">
     <title>江湖风云录 · 角色数值模拟</title>
-    <link rel="stylesheet" href="style.css?v=20260927-10">
+    <link rel="stylesheet" href="style.css?v=20260927-59">
   </head>
   <body>
     <main class="app-shell">
@@ -17,6 +17,14 @@
           <div class="save-status" id="save-status" aria-live="polite">本机自动保存</div>
         </div>
       </header>
+
+      <nav class="app-nav" id="app-nav" aria-label="功能页面">
+        <button class="app-nav-button is-active" type="button" data-view="calculator">计算器</button>
+        <button class="app-nav-button" type="button" data-view="teams">配队</button>
+        <button class="app-nav-button" type="button" data-view="cards">数据卡片</button>
+      </nav>
+
+      <div id="calculator-view" class="app-view">
 
       <section class="result-strip" aria-label="计算结果">
         <div class="result-main">
@@ -50,7 +58,7 @@
 
       <div class="action-bar" aria-label="计算操作">
         <button class="primary-button" id="generate-button" type="button">确认生成</button>
-        <button class="text-button" id="save-current-button" type="button">保存当前</button>
+        <button class="text-button" id="save-current-button" type="button">保存数据卡片</button>
         <button class="text-button" id="compare-button" type="button" disabled>加入对比</button>
       </div>
 
@@ -60,7 +68,7 @@
             <p class="section-kicker">COMPARE</p>
             <h2>模拟对比</h2>
           </div>
-          <button class="text-button" id="clear-comparison-button" type="button">清空</button>
+          <button class="text-button" id="clear-comparison-button" type="button">重置对比</button>
         </div>
         <div id="comparison-content"></div>
       </section>
@@ -344,7 +352,96 @@
         </section>
 
       </div>
+
+      </div>
+
+      <section class="collection-view" id="teams-view" hidden aria-label="配队">
+        <div class="section-heading collection-heading">
+          <div>
+            <p class="section-kicker">TEAM BUILDER</p>
+            <h2>配队</h2>
+          </div>
+          <button class="primary-button compact-action" id="create-team-button" type="button">＋ 新建配队</button>
+        </div>
+        <div class="collection-toolbar">
+          <label class="field">
+            <span>筛选配队</span>
+            <input id="team-search" type="search" placeholder="输入配队名称" autocomplete="off">
+          </label>
+          <span class="collection-count" id="team-count">0 个配队</span>
+        </div>
+        <div id="team-list" class="team-list"></div>
+      </section>
+
+      <section class="collection-view" id="cards-view" hidden aria-label="数据卡片">
+        <div class="section-heading collection-heading">
+          <div>
+            <p class="section-kicker">SAVED DATA</p>
+            <h2>数据卡片</h2>
+          </div>
+          <span class="collection-count" id="card-count">0 / 300</span>
+        </div>
+        <div class="collection-toolbar cards-toolbar">
+          <label class="field">
+            <span>角色筛选</span>
+            <select id="card-role-filter"><option value="">全部角色</option></select>
+          </label>
+          <label class="field">
+            <span>搜索卡片</span>
+            <input id="card-search" type="search" placeholder="名称、武功或内功" autocomplete="off">
+          </label>
+        </div>
+        <div id="saved-card-list" class="saved-card-list"></div>
+      </section>
+
+      <div class="modal-shell" id="name-modal" hidden>
+        <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="name-modal-title">
+          <div class="modal-heading">
+            <div>
+              <p class="section-kicker">SAVE</p>
+              <h2 id="name-modal-title">保存名称</h2>
+            </div>
+            <button class="icon-button" id="name-modal-close" type="button" aria-label="关闭">×</button>
+          </div>
+          <label class="field">
+            <span id="name-modal-label">名称</span>
+            <input id="name-modal-input" type="text" maxlength="20" autocomplete="off">
+          </label>
+          <p class="modal-hint" id="name-modal-hint">最多 20 个字符</p>
+          <p class="modal-error" id="name-modal-error" aria-live="polite"></p>
+          <div class="modal-actions">
+            <button class="text-button" id="name-modal-cancel" type="button">取消</button>
+            <button class="primary-button" id="name-modal-confirm" type="button">保存</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-shell" id="team-picker-modal" hidden>
+        <div class="modal-panel team-picker-panel" role="dialog" aria-modal="true" aria-labelledby="team-picker-title">
+          <div class="modal-heading">
+            <div>
+              <p class="section-kicker">TEAM SLOT</p>
+              <h2 id="team-picker-title">选择方案</h2>
+            </div>
+            <button class="icon-button" id="team-picker-close" type="button" aria-label="关闭">×</button>
+          </div>
+          <div class="picker-toolbar">
+            <label class="field">
+              <span>角色筛选</span>
+              <select id="team-picker-role-filter"><option value="">全部角色</option></select>
+            </label>
+            <label class="field">
+              <span>搜索</span>
+              <input id="team-picker-search" type="search" placeholder="方案名称或角色" autocomplete="off">
+            </label>
+          </div>
+          <div id="team-picker-list" class="team-picker-list"></div>
+          <div class="modal-actions">
+            <button class="text-button danger-button" id="team-picker-clear" type="button">清空此位置</button>
+          </div>
+        </div>
+      </div>
     </main>
-    <script src="app.js?v=20260927-58"></script>
+    <script src="app.js?v=20260927-59"></script>
   </body>
 </html>
