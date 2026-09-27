@@ -832,14 +832,16 @@ h2 {
 }
 
 .field select.compact-picker {
-  min-height: 40px;
-  padding: 7px 8px;
-  font-size: 0.74rem;
+  min-height: 36px;
+  padding: 6px 7px;
+  font-size: 0.68rem;
+  line-height: 1.1;
 }
 
 .field select.compact-picker option {
-  padding: 4px 6px;
-  font-size: 0.74rem;
+  padding: 3px 5px;
+  font-size: 0.68rem;
+  line-height: 1.1;
 }
 
 .custom-inner-editor[open] {
@@ -1403,6 +1405,11 @@ h2 {
   .field select {
     min-height: 40px;
     padding: 7px 8px;
+  }
+
+  .field select.compact-picker {
+    min-height: 36px;
+    padding: 6px 7px;
   }
 
   .equipment-slot-grid {
