@@ -1565,14 +1565,6 @@ function renderComparison() {
   const cards = comparisonSnapshots.map((snapshot, index) => `
     <div class="comparison-card">
       <strong>方案 ${comparisonCode(index)} · ${escapeHtml(snapshot.roleName || '自定义角色')}</strong>
-      <div class="comparison-card-values">
-        ${rows.map((row) => `
-          <span class="comparison-card-value">
-            <em>${row.label}</em>
-            <b>${row.format(valueAt(snapshot, row.key))}</b>
-          </span>
-        `).join('')}
-      </div>
     </div>
   `).join('');
   const pair = comparisonSnapshots.length >= 2
