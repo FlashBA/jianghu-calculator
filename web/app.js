@@ -768,6 +768,7 @@ function saveConfig() {
     pillsRange: 30,
     smallRenEnabled: $('small-ren-enabled').checked,
     largeRenEnabled: $('large-ren-enabled').checked,
+    comparisonSnapshots,
   };
   try {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
@@ -876,6 +877,22 @@ function isOldSampleEquipment(slots) {
     && slots.slice(1).every((slot) => !equipmentSlotActive(slot));
 }
 
+function normalizeComparisonSnapshots(value) {
+  if (!Array.isArray(value)) return [];
+  return value.slice(0, 2).map((snapshot) => {
+    const roleName = String(snapshot?.roleName || '自定义角色');
+    const level = Number(snapshot?.level) || 1;
+    return {
+      hp: Number(snapshot?.hp) || 0,
+      attack: Number(snapshot?.attack) || 0,
+      roleName,
+      level,
+      stats: Object.fromEntries(SECONDARY_KEYS.map((key) => [key, Number(snapshot?.stats?.[key]) || 0])),
+      label: String(snapshot?.label || `${roleName} · 等级 ${level}`),
+    };
+  });
+}
+
 function restoreConfig() {
   let config;
   let storedKey;
@@ -934,6 +951,7 @@ function restoreConfig() {
   if (typeof config.smallRenEnabled === 'boolean') $('small-ren-enabled').checked = config.smallRenEnabled;
   if (typeof config.largeRenEnabled === 'boolean') $('large-ren-enabled').checked = config.largeRenEnabled;
   if (config.formationId !== undefined) $('formation-select').value = String(config.formationId);
+  comparisonSnapshots = normalizeComparisonSnapshots(config.comparisonSnapshots);
   if (Array.isArray(config.equipmentSlots)) {
     state.equipmentSlots = config.equipmentSlots.slice(0, 4).map(normalizeEquipment);
     while (state.equipmentSlots.length < 4) state.equipmentSlots.push(EMPTY_EQUIPMENT());
@@ -984,6 +1002,7 @@ function restoreConfig() {
   renderTechniqueScope();
   setInnerStatsMode(config.neigongStatsMode === 'manual' && getSelectedInner()?.source === 'custom' ? 'manual' : 'auto');
   renderInnerEditor();
+  renderComparison();
   setSaveStatus('已加载本机配置');
 }
 
@@ -1404,6 +1423,7 @@ function addCurrentComparison() {
   if (!snapshot || comparisonSnapshots.length >= 2) return;
   comparisonSnapshots.push(snapshot);
   $('comparison-name').value = '';
+  saveConfig();
   renderComparison();
   setSaveStatus(comparisonSnapshots.length === 2 ? '已生成方案差异' : '已保存方案 A');
 }
@@ -1501,6 +1521,7 @@ function bindEvents() {
   $('compare-button').addEventListener('click', addCurrentComparison);
   $('clear-comparison-button').addEventListener('click', () => {
     comparisonSnapshots = [];
+    saveConfig();
     renderComparison();
     setSaveStatus('已清空模拟对比');
   });
@@ -1510,6 +1531,7 @@ function bindEvents() {
     state.weaponAffixes = [EMPTY_WEAPON_AFFIX(), EMPTY_WEAPON_AFFIX(), EMPTY_WEAPON_AFFIX()];
     $('person-name').value = '主角'; $('hp-factor').value = 1; $('power-factor').value = 1;
     $('person-style').value = ''; $('person-gender').value = '';
+    $('comparison-name').value = '';
     $('base-speed').value = 10; $('base-crit').value = 0; $('base-dodge').value = 0; $('base-lifesteal').value = 0;
     $('base-crit-damage').value = 0; $('base-mitigation').value = 0; $('base-block').value = 0;
     $('base-reflect').value = 0; $('base-recovery').value = 0;
