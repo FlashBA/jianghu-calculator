@@ -6,7 +6,14 @@ APP_DIR="$ROOT_DIR/android-app"
 BUILD_DIR="$APP_DIR/build"
 ASSET_DIR="$APP_DIR/src/main/assets"
 SDK_ROOT=${ANDROID_SDK_ROOT:-/opt/homebrew/share/android-commandlinetools}
-JAVA_HOME=${JAVA_HOME:-/private/tmp/temurin17-root/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home}
+JAVA_HOME=${JAVA_HOME:-}
+if [ -z "$JAVA_HOME" ] && [ -x /usr/libexec/java_home ]; then
+  JAVA_HOME=$(/usr/libexec/java_home -v 17 2>/dev/null || true)
+fi
+if [ -z "$JAVA_HOME" ]; then
+  echo "Set JAVA_HOME to a JDK 17 installation before building." >&2
+  exit 1
+fi
 PLATFORM="$SDK_ROOT/platforms/android-35/android.jar"
 BUILD_TOOLS="$SDK_ROOT/build-tools/35.0.0"
 JAVAC="$JAVA_HOME/bin/javac"
@@ -29,7 +36,7 @@ cp "$ROOT_DIR/web/index.html" "$ROOT_DIR/web/app.js" "$ROOT_DIR/web/style.css" \
 "$JAVAC" --release 8 -classpath "$PLATFORM" -d "$BUILD_DIR/classes" \
   "$APP_DIR/src/main/java/com/flashba/jianghucalculator/MainActivity.java"
 "$BUILD_TOOLS/d8" --lib "$PLATFORM" --min-api 23 --output "$BUILD_DIR/dex" \
-  "$BUILD_DIR/classes/com/flashba/jianghucalculator/MainActivity.class"
+  "$BUILD_DIR/classes/com/flashba/jianghucalculator/"*.class
 
 "$BUILD_TOOLS/aapt2" compile --dir "$APP_DIR/src/main/res" -o "$BUILD_DIR/res/resources.zip"
 "$BUILD_TOOLS/aapt2" link \
