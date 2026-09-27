@@ -53,6 +53,7 @@ let resultGenerated = false;
 let currentResult = null;
 let comparisonSnapshots = [];
 let comparisonPair = [0, 1];
+let activeComparisonIndex = null;
 let techniqueSelectionCustomized = false;
 
 const $ = (id) => document.getElementById(id);
@@ -1402,6 +1403,7 @@ function weaponAffixTotals() {
 function clearGeneratedResult() {
   resultGenerated = false;
   currentResult = null;
+  activeComparisonIndex = null;
   $('final-hp').textContent = '--';
   $('final-attack').textContent = '--';
   $('hp-detail').textContent = '等待确认生成';
@@ -1541,6 +1543,28 @@ function comparisonCode(index) {
   return String.fromCharCode(65 + index);
 }
 
+function showComparisonSnapshot(index) {
+  const snapshot = comparisonSnapshots[index];
+  if (!snapshot) return;
+  activeComparisonIndex = index;
+  $('final-hp').textContent = formatNumber(snapshot.hp);
+  $('final-attack').textContent = formatNumber(snapshot.attack);
+  $('hp-detail').textContent = `方案 ${comparisonCode(index)} · 已保存快照`;
+  $('attack-detail').textContent = `方案 ${comparisonCode(index)} · 已保存快照`;
+  SECONDARY_KEYS.forEach((key) => {
+    const domKey = key.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
+    $(`final-${domKey}`).textContent = key === 'recovery'
+      ? formatNumber(snapshot.stats?.[key] || 0)
+      : formatSecondaryValue(key, snapshot.stats?.[key] || 0);
+  });
+  $('result-person').textContent = snapshot.roleName || '自定义角色';
+  $('result-level').textContent = `等级 ${snapshot.level}`;
+  document.querySelectorAll('[data-comparison-index]').forEach((card) => {
+    card.classList.toggle('is-active', Number(card.dataset.comparisonIndex) === index);
+    card.setAttribute('aria-pressed', String(Number(card.dataset.comparisonIndex) === index));
+  });
+}
+
 function renderComparison() {
   const section = $('comparison-section');
   const content = $('comparison-content');
@@ -1563,9 +1587,9 @@ function renderComparison() {
     ? Number(snapshot.stats?.[key.slice(7)]) || 0
     : snapshot[key];
   const cards = comparisonSnapshots.map((snapshot, index) => `
-    <div class="comparison-card">
+    <button class="comparison-card${activeComparisonIndex === index ? ' is-active' : ''}" type="button" data-comparison-index="${index}" aria-pressed="${activeComparisonIndex === index}">
       <strong>方案 ${comparisonCode(index)} · ${escapeHtml(snapshot.roleName || '自定义角色')}</strong>
-    </div>
+    </button>
   `).join('');
   const pair = comparisonSnapshots.length >= 2
     ? [
@@ -1609,6 +1633,9 @@ function renderComparison() {
       </div>`;
   content.innerHTML = `<div class="comparison-cards">${cards}</div>${pairControls}${table}`;
   enhanceSelects(content);
+  content.querySelectorAll('[data-comparison-index]').forEach((card) => {
+    card.addEventListener('click', () => showComparisonSnapshot(Number(card.dataset.comparisonIndex)));
+  });
   if (comparisonSnapshots.length >= 2) {
     $('comparison-left').addEventListener('change', (event) => {
       const next = Number(event.target.value);
@@ -1629,9 +1656,12 @@ function renderComparison() {
 function addCurrentComparison() {
   const snapshot = comparisonSnapshot();
   if (!snapshot || comparisonSnapshots.length >= MAX_COMPARISON_SNAPSHOTS) return;
+  const index = comparisonSnapshots.length;
   comparisonSnapshots.push(snapshot);
+  activeComparisonIndex = index;
   saveConfig();
   renderComparison();
+  showComparisonSnapshot(index);
   setSaveStatus(comparisonSnapshots.length >= MAX_COMPARISON_SNAPSHOTS
     ? '已保存 20 套方案，已达上限'
     : `已保存方案 ${comparisonCode(comparisonSnapshots.length - 1)}`);
@@ -1754,6 +1784,7 @@ function bindEvents() {
   $('clear-comparison-button').addEventListener('click', () => {
     comparisonSnapshots = [];
     comparisonPair = [0, 1];
+    activeComparisonIndex = null;
     saveConfig();
     renderComparison();
     setSaveStatus('已清空模拟对比');
@@ -1785,6 +1816,7 @@ function bindEvents() {
     $('large-ren-enabled').checked = true;
     comparisonSnapshots = [];
     comparisonPair = [0, 1];
+    activeComparisonIndex = null;
     renderWeaponAffixes(); renderEquipmentSlots(); renderComparison(); calculate();
   });
 }

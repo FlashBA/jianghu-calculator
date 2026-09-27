@@ -1910,6 +1910,25 @@ h2 {
 .custom-equipment-editor,
 .custom-equipment-more { border-color: #b7a895; }
 
+.comparison-card {
+  width: 100%;
+  color: var(--teal-dark);
+  text-align: left;
+  cursor: pointer;
+}
+
+.comparison-card:hover,
+.comparison-card:focus-visible {
+  border-color: var(--teal);
+  background: #ead5bd;
+  outline: 0;
+}
+
+.comparison-card.is-active {
+  border-color: var(--teal);
+  box-shadow: inset 3px 0 0 var(--teal);
+}
+
 /* Compact in-page selects keep long equipment and skill lists readable on phones. */
 .comparison-section { overflow: visible; }
 
