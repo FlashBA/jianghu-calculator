@@ -144,6 +144,7 @@ let currentResult = null;
 let comparisonSnapshots = [];
 let comparisonPair = [0, 1];
 let activeComparisonIndex = null;
+let comparisonExpanded = false;
 let techniqueSelectionCustomized = false;
 let teams = [];
 let activeView = 'calculator';
@@ -1763,7 +1764,6 @@ function clearGeneratedResult() {
     const domKey = key.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
     $(`final-${domKey}`).textContent = '--';
   });
-  $('compare-button').disabled = true;
 }
 
 function renderCharacterFactorLine() {
@@ -1913,7 +1913,6 @@ function calculate({ commit = false } = {}) {
     stats: Object.fromEntries(SECONDARY_KEYS.map((key) => [key, key === 'recovery' ? recoveryValue : secondaryStats[key]])),
   };
   resultGenerated = true;
-  $('compare-button').disabled = false;
   saveConfig();
   return currentResult;
 }
@@ -2017,14 +2016,12 @@ function snapshotDisplayText(snapshot) {
   ].filter((value) => value && !/^无武学|^无内功/.test(String(value))).join(' · ');
 }
 
-function saveCardSnapshot(snapshot, name, { addToComparison = false } = {}) {
+function saveCardSnapshot(snapshot, name) {
   if (!snapshot || comparisonSnapshots.length >= MAX_COMPARISON_SNAPSHOTS) return -1;
-  const previousIndex = comparisonSnapshots.length - 1;
   snapshot.name = name;
   snapshot.label = name;
   comparisonSnapshots.push(snapshot);
   const index = comparisonSnapshots.length - 1;
-  if (addToComparison && previousIndex >= 0) comparisonPair = [previousIndex, index];
   activeComparisonIndex = index;
   saveConfig();
   renderComparison();
@@ -2033,7 +2030,7 @@ function saveCardSnapshot(snapshot, name, { addToComparison = false } = {}) {
   return index;
 }
 
-async function saveCurrentCard({ automaticName = false, addToComparison = false } = {}) {
+async function saveCurrentCard() {
   if (comparisonSnapshots.length >= MAX_COMPARISON_SNAPSHOTS) {
     setSaveStatus('数据卡片已达到 300 张上限');
     return -1;
@@ -2041,16 +2038,14 @@ async function saveCurrentCard({ automaticName = false, addToComparison = false 
   calculate({ commit: true });
   const snapshot = comparisonSnapshot();
   if (!snapshot) return -1;
-  const name = automaticName
-    ? nextCardName(snapshot.roleName)
-    : await openNameDialog({
-      title: '保存数据卡片',
-      label: '卡片名称',
-      defaultValue: nextCardName(snapshot.roleName),
-      kind: 'card',
-    });
+  const name = await openNameDialog({
+    title: '保存数据卡片',
+    label: '卡片名称',
+    defaultValue: nextCardName(snapshot.roleName),
+    kind: 'card',
+  });
   if (!name) return -1;
-  const index = saveCardSnapshot(snapshot, name, { addToComparison });
+  const index = saveCardSnapshot(snapshot, name);
   if (index >= 0) {
     setSaveStatus(`已保存 ${name}`);
     renderCardRoleFilter();
@@ -2085,13 +2080,6 @@ function deleteSavedCard(index) {
   renderSavedCards();
   renderTeams();
   setSaveStatus('已删除数据卡片');
-}
-
-function loadSavedCard(index) {
-  if (!comparisonSnapshots[index]) return;
-  showComparisonSnapshot(index);
-  switchView('calculator');
-  setSaveStatus(`已载入 ${comparisonSnapshots[index].name}`);
 }
 
 function renderCardRoleFilter() {
@@ -2139,13 +2127,11 @@ function renderSavedCards() {
       ${cardStatsMarkup(card)}
       <div class="saved-card-loadout">${escapeHtml(snapshotDisplayText(card) || '未记录武学、内功或装备')}</div>
       <div class="saved-card-actions">
-        <button class="text-button" type="button" data-card-load="${index}">载入</button>
         <button class="text-button" type="button" data-card-left="${index}">设为左侧</button>
         <button class="text-button" type="button" data-card-right="${index}">设为右侧</button>
       </div>
     </article>`).join('');
   content.querySelectorAll('[data-card-delete]').forEach((button) => button.addEventListener('click', () => deleteSavedCard(Number(button.dataset.cardDelete))));
-  content.querySelectorAll('[data-card-load]').forEach((button) => button.addEventListener('click', () => loadSavedCard(Number(button.dataset.cardLoad))));
   content.querySelectorAll('[data-card-left]').forEach((button) => button.addEventListener('click', () => setComparisonSide(Number(button.dataset.cardLeft), 'left')));
   content.querySelectorAll('[data-card-right]').forEach((button) => button.addEventListener('click', () => setComparisonSide(Number(button.dataset.cardRight), 'right')));
 }
@@ -2362,12 +2348,25 @@ function showComparisonSnapshot(index) {
   renderComparison();
 }
 
+function setComparisonExpanded(expanded) {
+  comparisonExpanded = Boolean(expanded);
+  const section = $('comparison-section');
+  const content = $('comparison-content');
+  const toggle = $('comparison-toggle');
+  const label = $('comparison-toggle-label');
+  if (content) content.hidden = !comparisonExpanded;
+  if (section) section.classList.toggle('is-expanded', comparisonExpanded);
+  if (toggle) toggle.setAttribute('aria-expanded', String(comparisonExpanded));
+  if (label) label.textContent = comparisonExpanded ? '收起' : '展开';
+}
+
 function renderComparison() {
   const section = $('comparison-section');
   const content = $('comparison-content');
   if (!comparisonSnapshots.length) {
     section.hidden = true;
     content.replaceChildren();
+    setComparisonExpanded(false);
     return;
   }
   section.hidden = false;
@@ -2430,6 +2429,7 @@ function renderComparison() {
         </table>
       </div>`;
   content.innerHTML = `<div class="comparison-cards">${cards}</div>${pairControls}${table}`;
+  setComparisonExpanded(comparisonExpanded);
   enhanceSelects(content);
   content.querySelectorAll('[data-comparison-index]').forEach((card) => {
     card.addEventListener('click', () => showComparisonSnapshot(Number(card.dataset.comparisonIndex)));
@@ -2450,14 +2450,7 @@ function renderComparison() {
       renderComparison();
     });
   }
-  $('compare-button').disabled = !resultGenerated || comparisonSnapshots.length >= MAX_COMPARISON_SNAPSHOTS;
   $('save-current-button').disabled = comparisonSnapshots.length >= MAX_COMPARISON_SNAPSHOTS;
-}
-
-function addCurrentComparison() {
-  saveCurrentCard({ automaticName: true, addToComparison: true }).then((index) => {
-    if (index >= 0) setSaveStatus(`已保存并加入对比 ${comparisonSnapshots[index].name}`);
-  });
 }
 
 function bindEvents() {
@@ -2575,10 +2568,11 @@ function bindEvents() {
     if (result) setSaveStatus('已生成当前结果');
   });
   $('save-current-button').addEventListener('click', () => { saveCurrentCard(); });
-  $('compare-button').addEventListener('click', addCurrentComparison);
+  $('comparison-toggle').addEventListener('click', () => setComparisonExpanded(!comparisonExpanded));
   $('clear-comparison-button').addEventListener('click', () => {
     comparisonPair = normalizeComparisonPair([0, 1]);
     activeComparisonIndex = null;
+    setComparisonExpanded(false);
     saveConfig();
     renderComparison();
     renderSavedCards();
@@ -2622,12 +2616,14 @@ function bindEvents() {
 
   document.querySelectorAll('[data-view]').forEach((button) => button.addEventListener('click', () => switchView(button.dataset.view)));
   $('doc-button').addEventListener('click', openCalculationDocument);
-  $('doc-modal-close').addEventListener('click', closeCalculationDocument);
   $('doc-modal').addEventListener('click', (event) => {
     if (event.target === $('doc-modal')) closeCalculationDocument();
   });
   document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape') closeCalculationDocument();
+    if (event.key !== 'Escape') return;
+    if (!$('name-modal').hidden) closeNameDialog();
+    else if (!$('team-picker-modal').hidden) closeTeamPicker();
+    else if (!$('doc-modal').hidden) closeCalculationDocument();
   });
   $('create-team-button').addEventListener('click', createTeam);
   $('team-search').addEventListener('input', renderTeams);
@@ -2639,7 +2635,6 @@ function bindEvents() {
     if (value) closeNameDialog(value);
   });
   $('name-modal-cancel').addEventListener('click', () => closeNameDialog());
-  $('name-modal-close').addEventListener('click', () => closeNameDialog());
   $('name-modal-input').addEventListener('keydown', (event) => {
     if (event.key === 'Enter') $('name-modal-confirm').click();
     if (event.key === 'Escape') closeNameDialog();
@@ -2647,9 +2642,18 @@ function bindEvents() {
   $('name-modal').addEventListener('click', (event) => {
     if (event.target === $('name-modal')) closeNameDialog();
   });
-  $('team-picker-close').addEventListener('click', closeTeamPicker);
   $('team-picker-modal').addEventListener('click', (event) => {
     if (event.target === $('team-picker-modal')) closeTeamPicker();
+  });
+  document.addEventListener('click', (event) => {
+    const button = event.target.closest?.('[data-close-modal]');
+    if (!button) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const modalId = button.dataset.closeModal;
+    if (modalId === 'name-modal') closeNameDialog();
+    else if (modalId === 'team-picker-modal') closeTeamPicker();
+    else if (modalId === 'doc-modal') closeCalculationDocument();
   });
   $('team-picker-role-filter').addEventListener('change', renderTeamPicker);
   $('team-picker-search').addEventListener('input', renderTeamPicker);
@@ -2668,7 +2672,7 @@ function bindEvents() {
 
 async function init() {
   try {
-    const [baseResponse, whiteResponse] = await Promise.all([fetch('./uc540_doc.json'), fetch('./whiterabbit_data.json?v=20260927-59')]);
+    const [baseResponse, whiteResponse] = await Promise.all([fetch('./uc540_doc.json'), fetch('./whiterabbit_data.json?v=20260927-61')]);
     if (!baseResponse.ok) throw new Error(`数据读取失败（HTTP ${baseResponse.status}）`);
     state.data = await baseResponse.json();
     if (whiteResponse.ok) state.whiteRabbit = await whiteResponse.json();

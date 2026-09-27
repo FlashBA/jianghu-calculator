@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#172027">
     <title>江湖风云录 · 角色数值模拟</title>
-    <link rel="stylesheet" href="style.css?v=20260927-60">
+    <link rel="stylesheet" href="style.css?v=20260927-61">
   </head>
   <body>
     <main class="app-shell">
@@ -60,18 +60,20 @@
       <div class="action-bar" aria-label="计算操作">
         <button class="primary-button" id="generate-button" type="button">确认生成</button>
         <button class="text-button" id="save-current-button" type="button">保存数据卡片</button>
-        <button class="text-button" id="compare-button" type="button" disabled>加入对比</button>
       </div>
 
       <section class="comparison-section" id="comparison-section" hidden aria-label="模拟对比">
         <div class="section-heading compact-heading">
-          <div>
-            <p class="section-kicker">COMPARE</p>
-            <h2>模拟对比</h2>
-          </div>
+          <button class="comparison-toggle" id="comparison-toggle" type="button" aria-expanded="false" aria-controls="comparison-content">
+            <span class="comparison-toggle-copy">
+              <span class="section-kicker">COMPARE</span>
+              <strong>模拟对比</strong>
+            </span>
+            <span id="comparison-toggle-label">展开</span>
+          </button>
           <button class="text-button" id="clear-comparison-button" type="button">重置对比</button>
         </div>
-        <div id="comparison-content"></div>
+        <div id="comparison-content" hidden></div>
       </section>
 
       <div class="workspace-grid">
@@ -402,7 +404,7 @@
               <p class="section-kicker">SAVE</p>
               <h2 id="name-modal-title">保存名称</h2>
             </div>
-            <button class="icon-button" id="name-modal-close" type="button" aria-label="关闭">×</button>
+            <button class="icon-button" id="name-modal-close" type="button" data-close-modal="name-modal" aria-label="关闭">×</button>
           </div>
           <label class="field">
             <span id="name-modal-label">名称</span>
@@ -424,7 +426,7 @@
               <p class="section-kicker">TEAM SLOT</p>
               <h2 id="team-picker-title">选择方案</h2>
             </div>
-            <button class="icon-button" id="team-picker-close" type="button" aria-label="关闭">×</button>
+            <button class="icon-button" id="team-picker-close" type="button" data-close-modal="team-picker-modal" aria-label="关闭">×</button>
           </div>
           <div class="picker-toolbar">
             <label class="field">
@@ -450,12 +452,12 @@
               <p class="section-kicker">REFERENCE</p>
               <h2 id="doc-modal-title">数值计算文档</h2>
             </div>
-            <button class="icon-button" id="doc-modal-close" type="button" aria-label="关闭">×</button>
+            <button class="icon-button" id="doc-modal-close" type="button" data-close-modal="doc-modal" aria-label="关闭">×</button>
           </div>
           <div id="doc-content" class="doc-content"></div>
         </div>
       </div>
     </main>
-    <script src="app.js?v=20260927-60"></script>
+    <script src="app.js?v=20260927-61"></script>
   </body>
 </html>
