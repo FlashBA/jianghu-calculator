@@ -1003,8 +1003,8 @@ function refreshSelectProxies() {
   selectProxyInstances.forEach((select) => syncSelectProxy(select));
 }
 
-function saveConfig() {
-  const config = {
+function currentConfig() {
+  return {
     personName: $('person-name').value,
     personStyle: $('person-style').value,
     personGender: $('person-gender').value,
@@ -1031,9 +1031,12 @@ function saveConfig() {
     largeRenAttackCount: $('large-ren-attack-count').value,
     learnedSMartialCount: $('learned-s-martial-count').value,
     martialBonusPercent: $('martial-bonus-percent').value,
-    equipmentSlots: state.equipmentSlots,
+    equipmentSlots: state.equipmentSlots.map((slot) => ({
+      ...slot,
+      secondary: { ...slot.secondary },
+    })),
     weaponName: $('weapon-name').value,
-    weaponAffixes: state.weaponAffixes,
+    weaponAffixes: state.weaponAffixes.map((affix) => ({ ...affix })),
     martialId: $('martial-select').value,
     speedPillsEnabled: $('speed-pills-enabled').checked,
     neigongId: $('neigong-select').value,
@@ -1063,6 +1066,12 @@ function saveConfig() {
     pillsRange: 30,
     smallRenEnabled: $('small-ren-enabled').checked,
     largeRenEnabled: $('large-ren-enabled').checked,
+  };
+}
+
+function saveConfig() {
+  const config = {
+    ...currentConfig(),
     comparisonSnapshots,
     comparisonPair,
   };
@@ -1193,6 +1202,7 @@ function normalizeComparisonSnapshots(value) {
       attack: Number(snapshot?.attack) || 0,
       roleName,
       level,
+      config: snapshot?.config && typeof snapshot.config === 'object' ? snapshot.config : null,
       stats: Object.fromEntries(SECONDARY_KEYS.map((key) => [
         key,
         hasStats ? (Number(snapshot.stats[key]) || 0) : null,
@@ -1216,18 +1226,23 @@ function normalizeComparisonPair(value, snapshotCount = comparisonSnapshots.leng
   return [left, right];
 }
 
-function restoreConfig() {
+function restoreConfig(sourceConfig = null) {
   let config;
   let storedKey;
-  try {
-    storedKey = [STORAGE_KEY, ...LEGACY_STORAGE_KEYS]
-      .find((key) => window.localStorage.getItem(key));
-    const raw = storedKey ? window.localStorage.getItem(storedKey) : null;
-    if (!raw) { setSaveStatus('首次使用，修改后自动保存'); return; }
-    config = JSON.parse(raw);
-  } catch (error) {
-    setSaveStatus('保存数据无法读取');
-    return;
+  if (sourceConfig && typeof sourceConfig === 'object') {
+    config = sourceConfig;
+    storedKey = STORAGE_KEY;
+  } else {
+    try {
+      storedKey = [STORAGE_KEY, ...LEGACY_STORAGE_KEYS]
+        .find((key) => window.localStorage.getItem(key));
+      const raw = storedKey ? window.localStorage.getItem(storedKey) : null;
+      if (!raw) { setSaveStatus('首次使用，修改后自动保存'); return; }
+      config = JSON.parse(raw);
+    } catch (error) {
+      setSaveStatus('保存数据无法读取');
+      return;
+    }
   }
   if (!config || typeof config !== 'object') return;
   if (config.baseSpeedRoleDefaultsVersion !== BASE_SPEED_DEFAULTS_VERSION
@@ -1368,7 +1383,7 @@ function restoreConfig() {
     hasSavedTechniqueSelection ? techniqueIds : defaultTechniqueIds(),
     { customized: hasSavedTechniqueSelection },
   );
-  setTechniqueStatsMode('manual');
+  setTechniqueStatsMode(config.techniqueStatsMode === 'auto' ? 'auto' : 'manual');
   renderFormationControls();
   renderTechniqueScope();
   setInnerStatsMode(config.neigongStatsMode === 'manual' && getSelectedInner()?.source === 'custom' ? 'manual' : 'auto');
@@ -1779,10 +1794,29 @@ function comparisonSnapshot() {
   if (!currentResult || !resultGenerated) return null;
   return {
     ...currentResult,
+    config: currentConfig(),
     stats: { ...currentResult.stats },
     statsAvailable: true,
     label: currentResult.roleName,
   };
+}
+
+function restoreSnapshotConfiguration(snapshot) {
+  const snapshotConfig = snapshot?.config && typeof snapshot.config === 'object'
+    ? snapshot.config
+    : {
+      // Older snapshots only contain result values. Restore their role and
+      // level at minimum while keeping the comparison record usable.
+      personName: snapshot?.roleName || '自定义角色',
+      level: String(snapshot?.level || 1),
+    };
+  restoreConfig({
+    ...snapshotConfig,
+    comparisonSnapshots,
+    comparisonPair,
+  });
+  calculate({ commit: true });
+  return true;
 }
 
 function comparisonCode(index) {
@@ -1802,8 +1836,10 @@ function hydrateLegacySnapshot(snapshot) {
 }
 
 function showComparisonSnapshot(index) {
-  const snapshot = comparisonSnapshots[index];
+  let snapshot = comparisonSnapshots[index];
   if (!snapshot) return;
+  restoreSnapshotConfiguration(snapshot);
+  snapshot = comparisonSnapshots[index] || snapshot;
   hydrateLegacySnapshot(snapshot);
   activeComparisonIndex = index;
   if (comparisonSnapshots.length >= 2) {
@@ -2103,7 +2139,7 @@ function bindEvents() {
 
 async function init() {
   try {
-    const [baseResponse, whiteResponse] = await Promise.all([fetch('./uc540_doc.json'), fetch('./whiterabbit_data.json?v=20260927-57')]);
+    const [baseResponse, whiteResponse] = await Promise.all([fetch('./uc540_doc.json'), fetch('./whiterabbit_data.json?v=20260927-58')]);
     if (!baseResponse.ok) throw new Error(`数据读取失败（HTTP ${baseResponse.status}）`);
     state.data = await baseResponse.json();
     if (whiteResponse.ok) state.whiteRabbit = await whiteResponse.json();
