@@ -1611,9 +1611,11 @@ function calculate({ commit = false } = {}) {
     ? (innerDetails?.stylePower?.[selectedMartialStyle] || 0) + (selectedTechniqueStats.stylePower?.[selectedMartialStyle] || 0)
     : 0;
   const martialBonusPercent = numberValue('martial-bonus-percent');
-  const baseAttackTerm = baseAttackRaw * attackPillMultiplier * (
-    1 + (neigongAttack + techniqueAttack + activeFormation.attack + selectedStylePower) / 100
-  );
+  const baseAttackPercentMultiplier = 1 + (
+    neigongAttack + techniqueAttack + activeFormation.attack + selectedStylePower
+  ) / 100;
+  const baseAttackDetailTerm = baseAttackRaw * baseAttackPercentMultiplier;
+  const baseAttackTerm = baseAttackDetailTerm * attackPillMultiplier;
   const martialPowerTerm = martialPower * (
     1 + (neigongAttack + smallRenAttack + selectedStylePower + martialBonusPercent) / 100
   );
@@ -1634,7 +1636,7 @@ function calculate({ commit = false } = {}) {
   $('final-hp').textContent = formatNumber(finalHp);
   $('final-attack').textContent = formatNumber(finalAttack);
   $('hp-detail').textContent = `基础 ${formatNumber(baseHp)} · 百分比 ${formatPercent(hpPercent)} · 成就 +${formatNumber(achievementHp)}`;
-  $('attack-detail').textContent = `基础项 ${formatNumber(trunc(baseAttackTerm))} · 武学项 ${formatNumber(trunc(martialPowerTerm))} · S武学 ${formatPercent(learnedSMartialCount * 5)} · 成就 +${formatNumber(achievementAttack)}`;
+  $('attack-detail').textContent = `基础项 ${formatNumber(trunc(baseAttackDetailTerm))} · 武学项 ${formatNumber(trunc(martialPowerTerm))} · S武学 ${formatPercent(learnedSMartialCount * 5)} · 成就 +${formatNumber(achievementAttack)}`;
   SECONDARY_KEYS.forEach((key) => {
     const domKey = key.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
     $(`final-${domKey}`).textContent = key === 'recovery'
