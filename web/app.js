@@ -1551,20 +1551,21 @@ function comparisonCode(index) {
 }
 
 function hydrateLegacySnapshot(snapshot) {
-  if (snapshot.statsAvailable !== false) return;
+  if (snapshot.statsAvailable !== false) return false;
   if (!currentResult || currentResult.hp !== snapshot.hp || currentResult.attack !== snapshot.attack) {
     calculate({ commit: true });
   }
-  if (currentResult?.hp !== snapshot.hp || currentResult?.attack !== snapshot.attack) return;
+  if (currentResult?.hp !== snapshot.hp || currentResult?.attack !== snapshot.attack) return false;
   snapshot.stats = { ...currentResult.stats };
   snapshot.statsAvailable = true;
   saveConfig();
+  return true;
 }
 
 function showComparisonSnapshot(index) {
   const snapshot = comparisonSnapshots[index];
   if (!snapshot) return;
-  hydrateLegacySnapshot(snapshot);
+  const hydrated = hydrateLegacySnapshot(snapshot);
   activeComparisonIndex = index;
   $('final-hp').textContent = formatNumber(snapshot.hp);
   $('final-attack').textContent = formatNumber(snapshot.attack);
@@ -1587,6 +1588,7 @@ function showComparisonSnapshot(index) {
     card.classList.toggle('is-active', Number(card.dataset.comparisonIndex) === index);
     card.setAttribute('aria-pressed', String(Number(card.dataset.comparisonIndex) === index));
   });
+  if (hydrated) renderComparison();
 }
 
 function renderComparison() {
@@ -1687,6 +1689,7 @@ function addCurrentComparison() {
   const index = comparisonSnapshots.length;
   comparisonSnapshots.push(snapshot);
   activeComparisonIndex = index;
+  if (index > 0) comparisonPair = [index - 1, index];
   saveConfig();
   renderComparison();
   showComparisonSnapshot(index);
