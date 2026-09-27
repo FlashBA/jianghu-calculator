@@ -59,6 +59,10 @@
       "hp_factor": 1.15,
       "power_factor": 1.52,
       "style": "剑法",
+      "base_stats": {
+        "speed": 20,
+        "dodge": 10
+      },
       "access": "男号人生目标后宫",
       "talent": "速度+20，闪避+10%，每次成功闪避可以积累速度条，50%概率无视破闪；入队后可在金陵茕茕处领取一本S内功金顶莲华经，增加十号替补位"
     },
@@ -67,6 +71,9 @@
       "hp_factor": 1.32,
       "power_factor": 1.35,
       "style": "刀法",
+      "base_stats": {
+        "crit": 10
+      },
       "access": "初始三选一",
       "talent": "天赋+专属技艺总计速度增加10，暴击率增加30%，暴击伤害增加20%"
     },
@@ -83,6 +90,9 @@
       "hp_factor": 1.25,
       "power_factor": 1.4,
       "style": "剑法",
+      "base_stats": {
+        "critDamage": 30
+      },
       "access": "原版三周年限定",
       "talent": "暴击伤害提高30%，免疫眩晕"
     },
@@ -187,6 +197,7 @@
       "hp_factor": 1.38,
       "power_factor": 0.98,
       "style": "剑法",
+      "reflect_to_recovery_ratio": 0.4,
       "access": "聚宝阁2000元宝",
       "talent": "每10%反伤增加4%生命回复"
     },

@@ -1,6 +1,7 @@
 const STORAGE_KEY = 'jianghu-stat-simulator:character:v6';
 const BASE_SPEED_DEFAULTS_VERSION = 2;
 const BASE_CRIT_DEFAULTS_VERSION = 1;
+const CHARACTER_BASE_DEFAULTS_VERSION = 1;
 const LEGACY_STORAGE_KEYS = [
   'jianghu-stat-simulator:character:v5',
   'jianghu-stat-simulator:character:v4',
@@ -20,6 +21,28 @@ const SECONDARY_STAT_DEFS = [
   { key: 'recovery', label: '回复', format: 'number', aliases: ['回复', '恢复', '疗伤'] },
 ];
 const SECONDARY_KEYS = SECONDARY_STAT_DEFS.map((stat) => stat.key);
+const CHARACTER_BASE_STAT_FIELDS = {
+  speed: 'base-speed',
+  mitigation: 'base-mitigation',
+  crit: 'base-crit',
+  dodge: 'base-dodge',
+  lifesteal: 'base-lifesteal',
+  critDamage: 'base-crit-damage',
+  block: 'base-block',
+  reflect: 'base-reflect',
+  recovery: 'base-recovery',
+};
+const DEFAULT_CHARACTER_BASE_STATS = {
+  speed: 0,
+  mitigation: 0,
+  crit: 10,
+  dodge: 0,
+  lifesteal: 0,
+  critDamage: 0,
+  block: 0,
+  reflect: 0,
+  recovery: 0,
+};
 const MAX_COMPARISON_SNAPSHOTS = 20;
 const INNER_MANUAL_FIELD_IDS = ['neigong-hp', 'neigong-attack', ...SECONDARY_KEYS.map((key) => (
   `neigong-${key.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}`
@@ -309,19 +332,19 @@ function martialStyleEligible(item) {
   const style = currentMartialStyle();
   return !style || style === '全能' || style === '拳剑刀棍' || martialStyle(item) === style;
 }
-function applyCharacterDefaults() {
+function applyCharacterDefaults({ resetBaseStats = true } = {}) {
   const profile = getCharacterProfile();
   let changed = false;
   const personName = $('person-name').value.trim() || '自定义角色';
-  const defaultSpeed = 0;
-  const defaultCrit = 10;
-  if (Number($('base-speed').value) !== defaultSpeed) {
-    $('base-speed').value = defaultSpeed;
-    changed = true;
-  }
-  if (Number($('base-crit').value) !== defaultCrit) {
-    $('base-crit').value = defaultCrit;
-    changed = true;
+  if (resetBaseStats) {
+    const baseStats = { ...DEFAULT_CHARACTER_BASE_STATS, ...(profile?.base_stats || {}) };
+    Object.entries(CHARACTER_BASE_STAT_FIELDS).forEach(([key, id]) => {
+      const value = Number(baseStats[key]) || 0;
+      if (Number($(id).value) !== value) {
+        $(id).value = value;
+        changed = true;
+      }
+    });
   }
   if (personName !== '自定义角色') {
     const achievementDefault = personName === '主角' ? 292 : 177;
@@ -991,6 +1014,7 @@ function saveConfig() {
     baseSpeed: $('base-speed').value,
     baseSpeedRoleDefaultsVersion: BASE_SPEED_DEFAULTS_VERSION,
     baseCritDefaultsVersion: BASE_CRIT_DEFAULTS_VERSION,
+    characterBaseDefaultsVersion: CHARACTER_BASE_DEFAULTS_VERSION,
     speedPillsDefaultVersion: 1,
     baseCrit: $('base-crit').value,
     baseDodge: $('base-dodge').value,
@@ -1223,6 +1247,23 @@ function restoreConfig() {
     // character defaults before the remaining saved fields are restored.
     applyCharacterDefaults();
   }
+  if (config.characterBaseDefaultsVersion !== CHARACTER_BASE_DEFAULTS_VERSION) {
+    const profile = getCharacterProfile();
+    const baseStats = { ...DEFAULT_CHARACTER_BASE_STATS, ...(profile?.base_stats || {}) };
+    const configKeys = Object.fromEntries(Object.entries(CHARACTER_BASE_STAT_FIELDS).map(([key]) => [
+      key,
+      key.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`),
+    ]));
+    Object.entries(configKeys).forEach(([key, suffix]) => {
+      const configKey = `base${suffix.split('-').map((part, index) => index === 0
+        ? part.charAt(0).toUpperCase() + part.slice(1)
+        : part.charAt(0).toUpperCase() + part.slice(1)).join('')}`;
+      if (config[configKey] === undefined || Number(config[configKey]) === DEFAULT_CHARACTER_BASE_STATS[key]) {
+        config[configKey] = baseStats[key];
+      }
+    });
+    config.characterBaseDefaultsVersion = CHARACTER_BASE_DEFAULTS_VERSION;
+  }
   const fieldMap = {
     personStyle: 'person-style', personGender: 'person-gender',
     level: 'level-input', hpFactor: 'hp-factor', powerFactor: 'power-factor',
@@ -1244,7 +1285,7 @@ function restoreConfig() {
     formationPosition: 'formation-position',
   };
   Object.entries(fieldMap).forEach(([key, id]) => { if (config[key] !== undefined) $(id).value = config[key]; });
-  applyCharacterDefaults();
+  applyCharacterDefaults({ resetBaseStats: false });
   populateMartialArts();
   if (typeof config.pillsEnabled === 'boolean') $('pills-enabled').checked = config.pillsEnabled;
   if (typeof config.attackPillsEnabled === 'boolean') $('attack-pills-enabled').checked = config.attackPillsEnabled;
@@ -1630,6 +1671,10 @@ function calculate({ commit = false } = {}) {
   activeEquipment.forEach((slot) => {
     addSecondaryStats(secondaryStats, slot.secondary || secondaryStatsFromEquipment(getRawEquipment(slot.id)));
   });
+  const reflectToRecoveryRatio = Number(getCharacterProfile(roleName)?.reflect_to_recovery_ratio) || 0;
+  if (reflectToRecoveryRatio) {
+    secondaryStats.recovery += secondaryStats.reflect * reflectToRecoveryRatio;
+  }
   const pillsEnabled = $('pills-enabled').checked;
   const pillCount = 30;
   const pills = pillsEnabled ? pillCount : 0;
@@ -2049,7 +2094,7 @@ function bindEvents() {
 
 async function init() {
   try {
-    const [baseResponse, whiteResponse] = await Promise.all([fetch('./uc540_doc.json'), fetch('./whiterabbit_data.json?v=20260927-55')]);
+    const [baseResponse, whiteResponse] = await Promise.all([fetch('./uc540_doc.json'), fetch('./whiterabbit_data.json?v=20260927-56')]);
     if (!baseResponse.ok) throw new Error(`数据读取失败（HTTP ${baseResponse.status}）`);
     state.data = await baseResponse.json();
     if (whiteResponse.ok) state.whiteRabbit = await whiteResponse.json();
