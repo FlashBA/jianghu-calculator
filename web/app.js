@@ -242,8 +242,14 @@ function getCharacterProfile(name = $('person-name')?.value) {
 }
 function applyCharacterDefaults() {
   const profile = getCharacterProfile();
-  if (!profile) return false;
   let changed = false;
+  const personName = $('person-name').value.trim() || '自定义角色';
+  const defaultSpeed = personName === '主角' ? 0 : 10;
+  if (Number($('base-speed').value) !== defaultSpeed) {
+    $('base-speed').value = defaultSpeed;
+    changed = true;
+  }
+  if (!profile) return changed;
   if (Number.isFinite(Number(profile.hp_factor))) {
     $('hp-factor').value = profile.hp_factor;
     changed = true;
@@ -470,6 +476,7 @@ function techniqueScopeStatus(technique) {
   const personName = $('person-name').value.trim() || '自定义角色';
   const restrictedGroup = technique?.group === 'jiuyin' || technique?.group === 'wolong';
   if (restrictedGroup && personName !== '主角' && personName !== '陆仁甲') return false;
+  if (personName === '陆仁甲' && technique?.name === '沧浪斩') return false;
   const style = $('person-style').value;
   if (scope.includes('学习千山寂雪')) return false;
   if (!techniqueGenderEligible(technique)) return false;
@@ -499,6 +506,7 @@ function techniqueAccountEligible(technique) {
   const personName = $('person-name').value.trim() || '自定义角色';
   const restrictedGroup = technique?.group === 'jiuyin' || technique?.group === 'wolong';
   if (restrictedGroup && personName !== '主角' && personName !== '陆仁甲') return false;
+  if (personName === '陆仁甲' && technique?.name === '沧浪斩') return false;
   const gender = $('person-gender').value;
   const style = $('person-style').value;
   if (scope.includes('学习千山寂雪')) return false;
@@ -550,6 +558,7 @@ function defaultTechniqueIds() {
   return techniqueOptionEntries()
     .filter((technique) => {
       if (excluded.has(technique.name) || technique.group === 'jiuyin' || technique.group === 'wolong') return false;
+      if (isLuRenJia && technique.name === '沧浪斩') return false;
       if (!techniqueAccountEligible(technique)) return false;
       const scope = String(technique.scope || '').replace(/\s/g, '');
       if (scope.includes('女号') && gender !== '女号') return false;
@@ -873,6 +882,7 @@ function saveConfig() {
     hpFactor: $('hp-factor').value,
     powerFactor: $('power-factor').value,
     baseSpeed: $('base-speed').value,
+    baseSpeedRoleDefaultsVersion: 1,
     baseCrit: $('base-crit').value,
     baseDodge: $('base-dodge').value,
     baseLifesteal: $('base-lifesteal').value,
@@ -953,6 +963,7 @@ function isBuiltInExampleConfig(config) {
 function makeBlankConfig(config) {
   return {
     ...config,
+    baseSpeed: '0',
     neigongId: '',
     neigongName: '',
     neigongHp: '0',
@@ -1060,6 +1071,11 @@ function restoreConfig() {
     return;
   }
   if (!config || typeof config !== 'object') return;
+  if (config.baseSpeedRoleDefaultsVersion !== 1
+    && config.personName === '主角'
+    && Number(config.baseSpeed) === 10) {
+    config.baseSpeed = '0';
+  }
   if (storedKey !== STORAGE_KEY) {
     if (Number(config.baseCrit) === 1) config.baseCrit = '0';
     if (Number(config.baseDodge) === 1) config.baseDodge = '0';
@@ -1830,7 +1846,7 @@ function bindEvents() {
     state.weaponAffixes = [EMPTY_WEAPON_AFFIX(), EMPTY_WEAPON_AFFIX(), EMPTY_WEAPON_AFFIX()];
     $('person-name').value = '主角'; $('hp-factor').value = 1; $('power-factor').value = 1;
     $('person-style').value = ''; $('person-gender').value = '';
-    $('base-speed').value = 10; $('base-crit').value = 0; $('base-dodge').value = 0; $('base-lifesteal').value = 0;
+    $('base-speed').value = 0; $('base-crit').value = 0; $('base-dodge').value = 0; $('base-lifesteal').value = 0;
     $('base-crit-damage').value = 0; $('base-mitigation').value = 0; $('base-block').value = 0;
     $('base-reflect').value = 0; $('base-recovery').value = 0;
     $('level-input').value = 90; $('martial-select').value = ''; $('neigong-select').value = '';
