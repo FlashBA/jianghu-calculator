@@ -65,6 +65,67 @@ const FORMATION_POSITION_OPTIONS = Array.from({ length: 9 }, (_, index) => ({
   label: `${index + 1}号位`,
 }));
 const MARTIAL_STYLE_KEYS = ['拳法', '剑法', '刀法', '棍法'];
+const CALCULATION_DOCUMENT = [
+  {
+    title: '基础数值',
+    formulas: [
+      '基础生命 = trunc(等级生命表[等级] × 生命系数)',
+      '基础攻击 = 等级攻击表[等级] × 攻击系数',
+    ],
+    notes: ['百分比计算使用基础攻击原值，面板展示时再截断为整数。'],
+  },
+  {
+    title: '生命',
+    formulas: [
+      '血丹乘区 = 1 + 血丹数量 × 2%',
+      '血丹后生命 = 血丹后基础生命 × (1 + 内功生命% + 技艺生命% + 装备生命% + 武器/阵法生命% + 小任督生命%)',
+      '内功大任督生命 = 基础生命 × (110% + 补充生命%)',
+      '最终生命 = round(血丹后生命 + 内功大任督生命) + 成就固定生命 + 装备/武器白值生命',
+    ],
+    notes: ['血丹最多按 30 颗计算。内功大任督按血丹前基础生命计算，不吃装备白值和成就固定值。'],
+  },
+  {
+    title: '任督',
+    formulas: [
+      '小任督生命% = min(未装备九重内功品阶贡献之和, 20%)',
+      '小任督攻击% = min(未装备九重武学品阶贡献之和, 10%)',
+      '内功大任督攻击 = 基础攻击 × (100% + 补充攻击%)',
+      '武学大任督乘区 = 1 + 九重 S 武学数量 × 5%',
+    ],
+    notes: ['小任督只统计九重且未装备的项目；武学大任督按已学九重 S 武学数量计算，默认数量为 5。'],
+  },
+  {
+    title: '攻击',
+    formulas: [
+      '基础攻击项 = B × 攻击丹乘区 × (1 + 内功攻击% + 技艺攻击% + 武学威力加成%)',
+      '武学项 = P × (1 + 内功攻击% + 小任督攻击% + 技艺攻击% + 武学威力加成%)',
+      '内功大任督攻击项 = B × (10% × 大任督数量 + 补充攻击%)',
+      '装备百分比项 = (B × 攻击丹乘区 + P) × (装备攻击% + 武器铸造攻击%)',
+      '最终攻击 = trunc((基础攻击项 + 武学项 + 大任督攻击项 + 装备百分比项 + 固定攻击) × 武学大任督乘区) + 成就固定攻击',
+    ],
+    notes: ['B 为基础攻击原值，P 为当前武学原始威力。朱雀之力等生效技艺攻击%同时进入基础攻击项和武学项；小任督攻击%只进入武学项。'],
+  },
+  {
+    title: '面板属性与回复',
+    formulas: [
+      '速度 = 初始速度 + 武学速度 + 速度丹 + 内功大任督速度',
+      '其他面板属性 = 基础属性 + 内功属性 + 技艺属性 + 阵法属性 + 装备属性 + 武器属性',
+      '回复基础生命 = 基础生命 × (1 + 内功生命%)',
+      '最终回复 = trunc(回复基础生命 × 回复% + 回复基础生命 × 技艺回复基础生命%)',
+    ],
+    notes: ['主角初始速度为 0，其他角色默认 10；速度丹默认 +30，内功大任督默认 +8。玄武类回复使用乘以内功生命加成后的基础生命。'],
+  },
+  {
+    title: '伤害结算',
+    formulas: [
+      '攻击方战斗值 = trunc(攻击基础值 × 武功倍率 × 战斗模式倍率 ÷ 100)',
+      '有效免伤 = min(目标免伤, 50%)',
+      '实际伤害 = trunc(攻击方战斗值 × (1 - 有效免伤))',
+      '当前生命 = clamp(当前生命 + 生命变化, 0, 最大生命)',
+    ],
+    notes: ['暴击率、等级差、武功和装备的特殊效果在战斗判定阶段生效，不改变面板攻击力公式。'],
+  },
+];
 
 const EMPTY_EQUIPMENT = () => ({
   id: null, name: '', hp: 0, attack: 0, hpFlat: 0, attackFlat: 0,
@@ -2236,6 +2297,26 @@ function switchView(view, { persist = true } = {}) {
   if (persist) saveConfig();
 }
 
+function renderCalculationDocument() {
+  const content = $('doc-content');
+  if (!content) return;
+  content.innerHTML = CALCULATION_DOCUMENT.map((section, index) => `
+    <section class="doc-section">
+      <div class="doc-section-heading"><span>${String(index + 1).padStart(2, '0')}</span><h3>${escapeHtml(section.title)}</h3></div>
+      <div class="doc-formulas">${section.formulas.map((formula) => `<code>${escapeHtml(formula)}</code>`).join('')}</div>
+      ${section.notes.map((note) => `<p>${escapeHtml(note)}</p>`).join('')}
+    </section>`).join('');
+}
+
+function openCalculationDocument() {
+  renderCalculationDocument();
+  $('doc-modal').hidden = false;
+}
+
+function closeCalculationDocument() {
+  $('doc-modal').hidden = true;
+}
+
 function hydrateLegacySnapshot(snapshot) {
   if (snapshot.statsAvailable !== false) return false;
   if (!currentResult || currentResult.hp !== snapshot.hp || currentResult.attack !== snapshot.attack) {
@@ -2540,6 +2621,14 @@ function bindEvents() {
   });
 
   document.querySelectorAll('[data-view]').forEach((button) => button.addEventListener('click', () => switchView(button.dataset.view)));
+  $('doc-button').addEventListener('click', openCalculationDocument);
+  $('doc-modal-close').addEventListener('click', closeCalculationDocument);
+  $('doc-modal').addEventListener('click', (event) => {
+    if (event.target === $('doc-modal')) closeCalculationDocument();
+  });
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') closeCalculationDocument();
+  });
   $('create-team-button').addEventListener('click', createTeam);
   $('team-search').addEventListener('input', renderTeams);
   $('card-search').addEventListener('input', renderSavedCards);

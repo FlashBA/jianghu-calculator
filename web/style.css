@@ -2235,7 +2235,7 @@ h2 {
 /* Saved cards and team builder stay dense so the collection pages remain useful on phones. */
 .app-nav {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 2px;
   margin-bottom: 12px;
   padding: 3px;
@@ -2519,6 +2519,65 @@ h2 {
 
 .team-picker-panel {
   width: min(600px, 100%);
+}
+
+.doc-modal-panel {
+  width: min(720px, 100%);
+}
+
+.doc-content {
+  display: grid;
+  gap: 10px;
+}
+
+.doc-section {
+  padding: 11px 12px;
+  border: 1px solid #b7a895;
+  background: #f5eee5;
+}
+
+.doc-section-heading {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.doc-section-heading span {
+  color: var(--gold);
+  font-size: 0.68rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.doc-section-heading h3 {
+  margin: 0;
+  color: var(--teal-dark);
+  font-size: 0.88rem;
+}
+
+.doc-formulas {
+  display: grid;
+  gap: 4px;
+}
+
+.doc-formulas code {
+  display: block;
+  overflow-wrap: anywhere;
+  padding: 6px 7px;
+  color: var(--ink);
+  border-left: 3px solid var(--gold);
+  background: #eadfce;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.68rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
+
+.doc-section p {
+  margin: 7px 0 0;
+  color: var(--muted);
+  font-size: 0.7rem;
+  line-height: 1.5;
 }
 
 .modal-heading {
