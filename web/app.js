@@ -1614,11 +1614,11 @@ function calculate({ commit = false } = {}) {
   const learnedSMartialCount = Math.max(0, numberValue('learned-s-martial-count', 5));
   const sMartialMultiplier = 1 + learnedSMartialCount * 0.05;
   const finalAttack = trunc(attackBeforeSMultiplier * sMartialMultiplier) + trunc(achievementAttack);
-  // 回复按 APK 面板口径：基础生命先乘内功生命加成，再乘总回复比例。
+  // 回复按 APK 面板口径：玄武的基础回复量也要乘内功生命加成。
   const recoveryBase = baseHpRaw * (100 + neigongHp) / 100;
   const recoveryValue = trunc(
     recoveryBase * secondaryStats.recovery / 100
-      + baseHpRaw * selectedTechniqueStats.recoveryBasePercent / 100,
+      + recoveryBase * selectedTechniqueStats.recoveryBasePercent / 100,
   );
   $('final-hp').textContent = formatNumber(finalHp);
   $('final-attack').textContent = formatNumber(finalAttack);
