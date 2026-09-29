@@ -37,6 +37,7 @@ import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 public final class MainActivity extends Activity {
@@ -113,7 +114,7 @@ public final class MainActivity extends Activity {
         }, "jianghu-update-check").start();
     }
 
-    private static JSONObject fetchLatestRelease() throws IOException {
+    private static JSONObject fetchLatestRelease() throws IOException, JSONException {
         HttpURLConnection connection = (HttpURLConnection) new URL(RELEASES_API_URL).openConnection();
         connection.setConnectTimeout(4500);
         connection.setReadTimeout(4500);
