@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#171411">
+    <meta name="theme-color" content="#f4f1ea">
     <title>白兔江湖宝典 · v0.3</title>
     <link rel="stylesheet" href="../style.css?v=20260930-01">
     <style>
@@ -12,19 +12,7 @@
   </head>
   <body>
     <main class="app-shell">
-      <div class="v03-statusbar" aria-hidden="true">
-        <span>18:41</span>
-        <span class="v03-status-icons"><span>5G</span><span class="v03-signal"><i></i><i></i><i></i><i></i></span><span>45%</span></span>
-      </div>
-      <header class="app-header">
-        <div>
-          <h1>白兔江湖宝典</h1>
-          <p class="v03-header-subtitle">3.1 攻略资料与数值工具</p>
-        </div>
-        <div class="header-status-group">
-          <div class="save-status" id="save-status" aria-live="polite">本机自动保存</div>
-        </div>
-      </header>
+      <div id="save-status" hidden aria-live="polite"></div>
 
       <nav class="app-nav" id="app-nav" aria-label="功能页面">
         <button class="app-nav-button is-active" type="button" data-view="calculator">计算器</button>
@@ -37,7 +25,6 @@
       <section id="home-view" class="v03-home-view" aria-label="主页">
         <div class="v03-home-title">
           <div>
-            <p class="section-kicker">JIANGHU COMPENDIUM</p>
             <h2>资料入口</h2>
             <p>角色、武学、掉落和面板计算，统一在这里查。</p>
           </div>
@@ -57,7 +44,7 @@
         <div class="v03-entry-list">
           <button class="v03-entry-card" type="button" data-v03-target="calculator">
             <span class="v03-entry-icon v03-entry-icon-red"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3h12v18H6z"></path><path d="M9 7h6M9 12h2M13 12h2M9 16h2M13 16h2"></path></svg></span>
-            <span><strong>数值计算</strong><small>完整复用原版公式、装备、技艺与伤害预览</small></span>
+            <span><strong>数值计算</strong><small>等级、装备、武学与战斗结果</small></span>
             <b>›</b>
           </button>
           <button class="v03-entry-card" type="button" data-v03-target="teams">
@@ -76,7 +63,6 @@
             <b>›</b>
           </button>
         </div>
-        <div class="v03-home-note"><strong>当前版本</strong><span>v0.3 UI 迁移中 · 数据与计算沿用原版</span></div>
       </section>
 
       <div id="calculator-view" class="app-view" hidden>
