@@ -163,10 +163,10 @@ public final class MainActivity extends Activity {
         cancelDownload = false;
         downloadProgress = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
         downloadProgress.setIndeterminate(true);
-        downloadProgress.setPadding(0, 0, 0, 0);
+        downloadProgress.setPadding(48, 0, 48, 0);
         downloadDialog = new AlertDialog.Builder(this)
             .setTitle("正在下载 " + version)
-            .setView(downloadProgress, 24, 0, 24, 0)
+            .setView(downloadProgress)
             .setNegativeButton("取消", (dialog, which) -> cancelDownload = true)
             .create();
         downloadDialog.setOnCancelListener(dialog -> cancelDownload = true);
