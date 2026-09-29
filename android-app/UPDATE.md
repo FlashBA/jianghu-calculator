@@ -52,6 +52,6 @@ test -r android-app/build/jianghu-debug.keystore.backup
 git status --short
 ```
 
-`jianghu-debug.keystore` 和 `.backup` 必须保留，且不能提交到仓库。更换签名密钥会导致用户无法覆盖安装更新。当前 `v0.1.9` 已验证发布成功，APK 的本地备份位于 `android-app/artifacts/jianghu-calculator-0.1.9.apk`。
+`jianghu-debug.keystore` 和 `.backup` 必须保留，且不能提交到仓库。更换签名密钥会导致用户无法覆盖安装更新。当前 `v0.1.10` 已验证发布成功，APK 的本地备份位于 `android-app/artifacts/jianghu-calculator-0.1.10.apk`。
 
 APK 启动时会检查 `FlashBA/jianghu-calculator` 的最新 GitHub Release。发现更高版本且 Release 包含 APK 时，会显示更新公告；点击“立即更新”后，APK 会在应用内下载并交给系统安装器。Android 首次安装外部 APK 时仍需用户确认，不能静默安装。图鉴数据则会在 APK 启动时优先从 GitHub 最新 JSON 获取，网络不可用时继续使用内置数据。
