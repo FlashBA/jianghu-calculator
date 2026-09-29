@@ -1,5 +1,6 @@
 const STORAGE_KEY = 'jianghu-stat-simulator:character:v6';
 const REMOTE_WHITE_RABBIT_URL = 'https://raw.githubusercontent.com/FlashBA/jianghu-calculator/main/web/whiterabbit_data.json';
+const APP_DATA_BASE = window.APP_DATA_BASE || './';
 const BASE_SPEED_DEFAULTS_VERSION = 2;
 const BASE_CRIT_DEFAULTS_VERSION = 1;
 const CHARACTER_BASE_DEFAULTS_VERSION = 1;
@@ -3862,7 +3863,7 @@ function fetchJsonWithTimeout(url, timeoutMs = 3500) {
 }
 
 async function loadWhiteRabbitData() {
-  const localUrl = `./whiterabbit_data.json?updated=${Date.now()}`;
+  const localUrl = `${APP_DATA_BASE}whiterabbit_data.json?updated=${Date.now()}`;
   const remoteUrl = `${REMOTE_WHITE_RABBIT_URL}?updated=${Date.now()}`;
   const embeddedApp = window.location.hostname === 'appassets.androidplatform.net';
   const sources = embeddedApp ? [remoteUrl, localUrl] : [localUrl, remoteUrl];
@@ -3880,7 +3881,7 @@ async function loadWhiteRabbitData() {
 async function init() {
   try {
     const [baseResponse, whiteData] = await Promise.all([
-      fetch('./uc540_doc.json', { cache: 'no-store' }),
+      fetch(`${APP_DATA_BASE}uc540_doc.json`, { cache: 'no-store' }),
       loadWhiteRabbitData(),
     ]);
     if (!baseResponse.ok) throw new Error(`数据读取失败（HTTP ${baseResponse.status}）`);
@@ -3891,6 +3892,7 @@ async function init() {
     if (techniqueStatsMode() === 'auto') syncTechniqueStats();
     renderTechniqueScope();
     renderWeaponAffixes(); renderEquipmentSlots(); enhanceSelects(); refreshSelectProxies(); calculate();
+    window.dispatchEvent(new CustomEvent('jianghu-app-ready'));
   } catch (error) {
     setError(`${error.message}。请通过本地 HTTP 服务打开页面，不要直接双击 HTML 文件。`);
   }
