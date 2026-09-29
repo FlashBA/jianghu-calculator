@@ -365,6 +365,19 @@
         text-align: left;
       }
 
+      .wiki-card > summary {
+        cursor: pointer;
+        list-style: none;
+      }
+
+      .wiki-card > summary::-webkit-details-marker {
+        display: none;
+      }
+
+      .wiki-card[open] {
+        border-color: var(--line-strong);
+      }
+
       .wiki-card + .wiki-card {
         margin-top: 12px;
       }
@@ -438,6 +451,55 @@
 
       .meta-line b {
         color: var(--red);
+      }
+
+      .wiki-body {
+        padding-top: 12px;
+      }
+
+      .wiki-body p {
+        margin: 8px 0 0;
+        color: #2c2b28;
+        font-size: 14px;
+        line-height: 1.5;
+      }
+
+      .wiki-body p:first-child {
+        margin-top: 0;
+      }
+
+      .wiki-body strong {
+        color: var(--red);
+      }
+
+      .drop-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 10px;
+        padding: 10px 0;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .drop-row:last-child {
+        border-bottom: 0;
+      }
+
+      .drop-row strong,
+      .drop-row span {
+        display: block;
+      }
+
+      .drop-row span {
+        margin-top: 3px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .drop-meta {
+        color: var(--red);
+        font-size: 13px;
+        font-weight: 800;
+        text-align: right;
       }
 
       .bottom-nav {
@@ -577,6 +639,358 @@
         font-size: 25px;
       }
 
+      .page-note {
+        margin: -8px 0 18px;
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1.5;
+      }
+
+      .section-label {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin: 22px 0 10px;
+        color: var(--muted);
+        font-size: 14px;
+        font-weight: 750;
+      }
+
+      .segmented {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 4px;
+        margin-bottom: 16px;
+        padding: 4px;
+        border: 2px solid var(--line);
+        background: var(--field);
+      }
+
+      .segment {
+        min-height: 38px;
+        padding: 0 10px;
+        border: 0;
+        background: transparent;
+        color: var(--muted);
+        font-size: 14px;
+        font-weight: 750;
+      }
+
+      .segment.is-active {
+        background: var(--panel);
+        color: var(--red);
+        box-shadow: 0 1px 5px rgba(0, 0, 0, 0.08);
+      }
+
+      .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+
+      .field {
+        display: grid;
+        gap: 6px;
+      }
+
+      .field label {
+        color: var(--muted);
+        font-size: 13px;
+        font-weight: 700;
+      }
+
+      .field input,
+      .field select {
+        width: 100%;
+        min-height: 44px;
+        padding: 0 10px;
+        border: 2px solid var(--line);
+        border-radius: 0;
+        outline: 0;
+        background: var(--field);
+        color: var(--ink);
+        font-size: 16px;
+      }
+
+      .field input:focus,
+      .field select:focus,
+      .search:focus-within {
+        border-color: var(--red);
+      }
+
+      .range-line {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 58px;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .range-line input {
+        min-height: 0;
+        padding: 0;
+        border: 0;
+        accent-color: var(--red);
+        background: transparent;
+      }
+
+      .range-value {
+        min-height: 30px;
+        display: grid;
+        place-items: center;
+        border: 2px solid var(--line);
+        background: var(--panel);
+        color: var(--red);
+        font-size: 14px;
+        font-weight: 800;
+      }
+
+      .action-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 16px;
+      }
+
+      .primary-button,
+      .quiet-button {
+        min-height: 42px;
+        padding: 0 14px;
+        border: 2px solid var(--red);
+        background: var(--red);
+        color: white;
+        font-size: 14px;
+        font-weight: 800;
+      }
+
+      .quiet-button {
+        border-color: var(--line);
+        background: var(--panel);
+        color: var(--muted);
+      }
+
+      .helper-line {
+        margin: 12px 0 0;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.45;
+      }
+
+      .accordion {
+        border: 2px solid var(--line);
+        background: var(--panel);
+      }
+
+      .accordion + .accordion {
+        margin-top: 10px;
+      }
+
+      .accordion summary {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        min-height: 52px;
+        padding: 0 14px;
+        cursor: pointer;
+        color: var(--ink);
+        font-size: 15px;
+        font-weight: 800;
+        list-style: none;
+      }
+
+      .accordion summary::-webkit-details-marker {
+        display: none;
+      }
+
+      .accordion summary::after {
+        content: "+";
+        color: var(--red);
+        font-size: 22px;
+        font-weight: 500;
+      }
+
+      .accordion[open] summary::after {
+        content: "−";
+      }
+
+      .accordion-body {
+        padding: 0 14px 14px;
+        border-top: 1px solid var(--line);
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1.55;
+      }
+
+      .team-slots {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 7px;
+        margin-top: 16px;
+      }
+
+      .team-slot {
+        display: grid;
+        align-content: center;
+        gap: 5px;
+        min-height: 92px;
+        padding: 8px 4px;
+        border: 2px solid var(--line);
+        background: var(--field);
+        text-align: center;
+      }
+
+      .team-slot.is-filled {
+        border-color: #e5beb9;
+        background: var(--red-soft);
+      }
+
+      .slot-index {
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 750;
+      }
+
+      .slot-name {
+        overflow: hidden;
+        color: var(--ink);
+        font-size: 13px;
+        font-weight: 800;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .slot-role {
+        color: var(--red);
+        font-size: 11px;
+        font-weight: 700;
+      }
+
+      .preset-row {
+        display: flex;
+        gap: 8px;
+        margin: 0 -18px 8px;
+        padding: 0 18px 4px;
+        overflow-x: auto;
+        scrollbar-width: none;
+      }
+
+      .preset-row::-webkit-scrollbar {
+        display: none;
+      }
+
+      .preset {
+        flex: 0 0 auto;
+        min-height: 34px;
+        padding: 0 11px;
+        border: 2px solid var(--line);
+        background: var(--panel);
+        color: var(--muted);
+        font-size: 13px;
+        font-weight: 750;
+        white-space: nowrap;
+      }
+
+      .preset.is-active {
+        border-color: var(--red);
+        color: var(--red);
+      }
+
+      .filter-row {
+        display: flex;
+        gap: 8px;
+        margin: 0 -18px 16px;
+        padding: 0 18px 3px;
+        overflow-x: auto;
+        scrollbar-width: none;
+      }
+
+      .filter-row::-webkit-scrollbar {
+        display: none;
+      }
+
+      .filter-chip {
+        flex: 0 0 auto;
+        min-height: 32px;
+        padding: 0 11px;
+        border: 2px solid var(--line);
+        background: var(--panel);
+        color: var(--muted);
+        font-size: 13px;
+        font-weight: 750;
+      }
+
+      .filter-chip.is-active {
+        border-color: var(--red);
+        background: var(--red);
+        color: white;
+      }
+
+      .empty-state {
+        display: none;
+        padding: 26px 16px;
+        border: 2px dashed var(--line-strong);
+        color: var(--muted);
+        text-align: center;
+        font-size: 14px;
+      }
+
+      .empty-state.is-visible {
+        display: block;
+      }
+
+      .wiki-card[hidden] {
+        display: none;
+      }
+
+      .guide-list {
+        display: grid;
+        gap: 10px;
+      }
+
+      .guide-item {
+        padding: 0;
+      }
+
+      .guide-item summary {
+        min-height: 62px;
+        padding: 0 16px;
+      }
+
+      .guide-item .accordion-body {
+        padding: 12px 16px 16px;
+      }
+
+      .guide-item strong {
+        color: var(--red);
+      }
+
+      @media (max-width: 370px) {
+        .page {
+          padding-inline: 14px;
+        }
+
+        .quick-row,
+        .tab-row,
+        .preset-row,
+        .filter-row {
+          margin-inline: -14px;
+          padding-inline: 14px;
+        }
+
+        .title {
+          font-size: 28px;
+        }
+
+        .team-slots {
+          gap: 4px;
+        }
+
+        .team-slot {
+          min-height: 84px;
+        }
+      }
+
       @media (min-width: 700px) {
         .phone {
           min-height: 860px;
@@ -635,7 +1049,7 @@
             </span>
             <span>
               <strong class="card-title">伙伴随从图鉴</strong>
-              <span class="card-copy">收录全部 29 位角色成长数值与天赋说明</span>
+              <span class="card-copy">收录全部 <b id="character-count">29</b> 位角色成长数值与天赋说明</span>
             </span>
             <span class="chevron">›</span>
           </button>
@@ -646,7 +1060,7 @@
             </span>
             <span>
               <strong class="card-title">武学秘籍资料库</strong>
-              <span class="card-copy">拳、剑、刀、棍外功及心法内功数值与获取途径</span>
+              <span class="card-copy">收录 <b id="martial-count">84</b> 门武学与 <b id="inner-count">36</b> 门内功</span>
             </span>
             <span class="chevron">›</span>
           </button>
@@ -657,7 +1071,7 @@
             </span>
             <span>
               <strong class="card-title">副本掉落查询</strong>
-              <span class="card-copy">冥离地宫等副本各层首领、掉落物品与概率</span>
+              <span class="card-copy">收录 <b id="drop-count">56</b> 条副本首领与掉落记录</span>
             </span>
             <span class="chevron">›</span>
           </button>
@@ -668,7 +1082,7 @@
             </span>
             <span>
               <strong class="card-title">技艺获取与升级</strong>
-              <span class="card-copy">音律、厨艺等技艺的获取方式与升级路线</span>
+              <span class="card-copy">收录 <b id="technique-count-home">43</b> 条技艺获取与升级路线</span>
             </span>
             <span class="chevron">›</span>
           </button>
@@ -690,7 +1104,7 @@
             </span>
             <span>
               <strong>开局选择提示</strong>
-              <span>人生目标建议选择盖世武功，初始随从与内功选择注意...</span>
+              <span><b id="guide-count-home">8</b> 条原版攻略提示，点击攻略查看完整内容...</span>
             </span>
             <span class="chevron">›</span>
           </div>
@@ -701,105 +1115,157 @@
         <button class="back" type="button" data-open-page="home-page">‹ 返回首页</button>
         <div class="list-title-row">
           <div>
-            <h1 class="title">避坑指南与资料索引</h1>
-            <p class="subtitle">汇总开局注意事项、副本掉落概率、技艺升级与菜谱配方</p>
+            <h1 class="title">技艺资料</h1>
+            <p class="subtitle">来自原版攻略数据的获取方式与升级路线</p>
           </div>
-          <span class="list-count">45 条</span>
+          <span class="list-count" id="technique-count">43 条</span>
         </div>
 
+        <label class="search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"></circle><path d="m16.5 16.5 4 4"></path></svg>
+          <input id="technique-search" type="search" placeholder="搜索技艺、效果或获取方式...">
+        </label>
         <div class="tab-row">
-          <button class="tab" type="button">避坑事项 (14)</button>
-          <button class="tab" type="button">副本掉落 (104)</button>
-          <button class="tab is-active" type="button">技艺升级 (45)</button>
-          <button class="tab" type="button">菜谱</button>
+          <button class="tab is-active" type="button" data-technique-filter="">全部技艺</button>
+          <button class="tab" type="button" data-technique-filter="主角">主角</button>
+          <button class="tab" type="button" data-technique-filter="全队">全队</button>
+          <button class="tab" type="button" data-technique-filter="拳主">职业技艺</button>
         </div>
-
-        <button class="wiki-card" type="button" data-detail="丹青">
-          <div class="wiki-head">
-            <div>
-              <h2 class="wiki-name">丹青</h2>
-              <div class="tags"><span class="tag">地图获取</span></div>
-            </div>
-            <span class="level">上限 1级</span>
-          </div>
-          <div class="effect-box"><b>满级效果：</b>10%爆伤</div>
-          <p class="meta-line"><b>获取方式：</b>原版临安碧罗庄吸星大法支线任务途中找画非画拼酒成功后打听丹青传授</p>
-          <p class="meta-line"><b>升级路线：</b>学习即满级</p>
-        </button>
-
-        <button class="wiki-card" type="button" data-detail="佛法禅理">
-          <div class="wiki-head">
-            <div>
-              <h2 class="wiki-name">佛法禅理</h2>
-              <div class="tags"><span class="tag">地图获取</span></div>
-            </div>
-            <span class="level">上限 300级</span>
-          </div>
-          <div class="effect-box"><b>满级效果：</b>25%基础气血</div>
-          <p class="meta-line"><b>获取方式：</b>少林寺 7.12 大雄宝殿参佛</p>
-          <p class="meta-line"><b>升级路线：</b>1-150级：大雄宝殿参佛；151-200级：7.7 藏经阁书架读般若经</p>
-        </button>
-
-        <button class="wiki-card" type="button" data-detail="浩然正气">
-          <div class="wiki-head">
-            <div>
-              <h2 class="wiki-name">浩然正气</h2>
-              <div class="tags"><span class="tag">地图获取</span></div>
-            </div>
-            <span class="level">上限 300级</span>
-          </div>
-          <div class="effect-box"><b>满级效果：</b>10%攻击</div>
-          <p class="meta-line"><b>获取方式：</b>华山派 11.6 静室读正气诀</p>
-          <p class="meta-line"><b>升级路线：</b>1-200级：静室读正气诀；201-300级：与华山派 15.6 梁海交谈</p>
-        </button>
+        <div class="entry-stack" id="technique-list"></div>
+        <div class="empty-state" id="technique-empty">没有匹配的技艺条目</div>
       </main>
 
       <main id="calculator-page" class="page">
         <div class="top-row">
           <div>
             <h1 class="title">数值计算器</h1>
-            <p class="subtitle">保留原工具能力，但入口与资料库分开</p>
+            <p class="subtitle">先看面板结果，再进入战斗模拟</p>
           </div>
+          <button class="quiet-button" type="button" data-reset-calc>重置</button>
         </div>
+
         <div class="calculator-card">
-          <strong class="card-title">当前方案</strong>
-          <span class="card-copy">主角 · 90级 · 九宫八卦阵 · 独孤剑诀</span>
-          <div class="result-band">
-            <div class="result-cell"><span>最终生命</span><strong>62,480</strong></div>
-            <div class="result-cell"><span>最终攻击</span><strong>18,936</strong></div>
+          <div class="segmented" role="tablist" aria-label="计算模式">
+            <button class="segment is-active" type="button" data-calc-mode="panel" role="tab" aria-selected="true">面板计算</button>
+            <button class="segment" type="button" data-calc-mode="battle" role="tab" aria-selected="false">战斗模拟</button>
           </div>
+          <div class="form-grid">
+            <div class="field">
+              <label for="calc-role">原版角色</label>
+              <select id="calc-role" data-calc-input></select>
+            </div>
+            <div class="field">
+              <label for="calc-level">角色等级</label>
+            <input id="calc-level" type="number" min="1" max="90" value="90" data-calc-input>
+            </div>
+            <div class="field">
+              <label for="calc-attack">成长攻击</label>
+              <input id="calc-attack" type="number" min="0" value="3000" data-calc-input>
+            </div>
+            <div class="field">
+              <label for="calc-health">成长气血</label>
+              <input id="calc-health" type="number" min="0" value="6000" data-calc-input>
+            </div>
+            <div class="field">
+              <label for="calc-inner">原版内功</label>
+              <select id="calc-inner" data-calc-input></select>
+            </div>
+            <div class="field">
+              <label for="calc-martial">原版武学</label>
+              <select id="calc-martial" data-calc-input></select>
+            </div>
+            <div class="field">
+              <label for="calc-bonus">装备加成预览</label>
+              <select id="calc-bonus" data-calc-input>
+                <option value="0">无额外加成</option>
+                <option value="0.1">攻击 +10%</option>
+                <option value="0.2" selected>攻击 +20%</option>
+                <option value="0.35">攻击 +35%</option>
+              </select>
+            </div>
+          </div>
+          <div class="section-label"><span>战斗参数</span><span id="calc-mode-label">面板预览</span></div>
+          <div class="field">
+            <label for="calc-crit">暴击率</label>
+            <div class="range-line">
+              <input id="calc-crit" type="range" min="0" max="100" value="10" data-calc-input>
+              <output class="range-value" id="calc-crit-value">10%</output>
+            </div>
+          </div>
+          <div class="field" style="margin-top:12px">
+            <label for="calc-speed">速度</label>
+            <div class="range-line">
+              <input id="calc-speed" type="range" min="0" max="100" value="20" data-calc-input>
+              <output class="range-value" id="calc-speed-value">20</output>
+            </div>
+          </div>
+          <div class="result-band">
+            <div class="result-cell"><span>最终生命</span><strong id="calc-health-result">7,200</strong></div>
+            <div class="result-cell"><span>最终攻击</span><strong id="calc-attack-result">3,600</strong></div>
+            <div class="result-cell"><span>期望单次伤害</span><strong id="calc-damage-result">3,600</strong></div>
+            <div class="result-cell"><span>速度 / 闪避</span><strong id="calc-secondary-result">20 / 0%</strong></div>
+          </div>
+          <p class="helper-line" id="calc-helper">示例结果：基础攻击叠加装备加成，暴击与速度只在战斗模拟模式中参与期望估算。</p>
         </div>
+
+        <div class="section-label"><span>计算说明</span><span>可展开</span></div>
+        <details class="accordion" open>
+          <summary>面板计算范围</summary>
+          <div class="accordion-body">用于快速核对等级、装备和基础属性叠加结果。正式接入时沿用现有数据源，不把展示层逻辑塞进 APK。</div>
+        </details>
+        <details class="accordion">
+          <summary>战斗模拟口径</summary>
+          <div class="accordion-body">默认输出期望值，可在后续增加随机种子、单次战报和多轮统计。复杂 debuff、格挡和闪避建议作为可选参数逐步加入。</div>
+        </details>
       </main>
 
       <main id="team-page" class="page">
         <div class="top-row">
           <div>
             <h1 class="title">配队方案</h1>
-            <p class="subtitle">组合伙伴、武学与站位，快速查看队伍方向和面板结果</p>
+            <p class="subtitle">组合伙伴、武学与站位，快速查看队伍方向</p>
           </div>
-          <button class="pill-button" type="button">新建方案</button>
+          <button class="quiet-button" type="button" data-team-reset>清空</button>
+        </div>
+        <div class="preset-row" aria-label="推荐方案">
+          <button class="preset is-active" type="button" data-preset="balanced">均衡队</button>
+          <button class="preset" type="button" data-preset="burst">爆发队</button>
+          <button class="preset" type="button" data-preset="survive">续航队</button>
         </div>
         <div class="calculator-card">
-          <strong class="card-title">当前队伍</strong>
-          <span class="card-copy">主角 · 宗泽 · 穆云缨 · 3 个空位</span>
-          <div class="result-band">
-            <div class="result-cell"><span>队伍生命</span><strong>184,620</strong></div>
-            <div class="result-cell"><span>队伍攻击</span><strong>52,480</strong></div>
+          <div class="field">
+            <label for="team-name">方案名称</label>
+            <input id="team-name" value="未命名队伍" data-team-name>
           </div>
+          <div class="team-slots" id="team-slots" aria-label="队伍位置"></div>
+          <div class="result-band">
+            <div class="result-cell"><span>队伍生命</span><strong id="team-health-result">184,620</strong></div>
+            <div class="result-cell"><span>队伍攻击</span><strong id="team-attack-result">52,480</strong></div>
+          </div>
+          <p class="helper-line" id="team-summary">均衡队：主角、宗泽、穆云缨，适合先核对综合面板。</p>
         </div>
-        <div class="entry-stack" style="margin-top:14px">
-          <button class="module-card compact" type="button">
+
+        <div class="section-label"><span>队伍方向</span><span>示例模板</span></div>
+        <div class="entry-stack">
+          <button class="module-card compact" type="button" data-team-role="front">
             <span class="icon-box small">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="8" cy="8" r="3"></circle><circle cx="17" cy="9" r="2.5"></circle><path d="M3 20c.6-4 3-6 6-6s5.4 2 6 6"></path><path d="M14 14c2.8.2 4.8 2.1 5.4 5.3"></path></svg>
             </span>
             <span><strong class="card-title">前排承伤</strong><span class="card-copy">适合高生命、格挡和回复方向</span></span>
             <span class="chevron">›</span>
           </button>
-          <button class="module-card compact" type="button">
+          <button class="module-card compact" type="button" data-team-role="burst">
             <span class="icon-box small gold">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m5 19 5-5"></path><path d="m14 10 5-5"></path><path d="m8 6 10 10"></path><path d="M5 5h.01"></path><path d="M19 19h.01"></path></svg>
             </span>
             <span><strong class="card-title">爆发输出</strong><span class="card-copy">适合暴击、速度和多段武学方向</span></span>
+            <span class="chevron">›</span>
+          </button>
+          <button class="module-card compact" type="button" data-team-role="support">
+            <span class="icon-box small gray">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18"></path><path d="M3 12h18"></path><circle cx="12" cy="12" r="9"></circle></svg>
+            </span>
+            <span><strong class="card-title">辅助续航</strong><span class="card-copy">适合回复、减伤和控制覆盖</span></span>
             <span class="chevron">›</span>
           </button>
         </div>
@@ -815,8 +1281,15 @@
         </div>
         <label class="search">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"></circle><path d="m16.5 16.5 4 4"></path></svg>
-          <input type="search" placeholder="搜索图鉴条目...">
+          <input id="encyclopedia-search" type="search" placeholder="搜索图鉴条目...">
         </label>
+        <div class="filter-row" id="encyclopedia-filters" aria-label="图鉴分类">
+          <button class="filter-chip is-active" type="button" data-encyclopedia-filter="characters">角色</button>
+          <button class="filter-chip" type="button" data-encyclopedia-filter="inner_skills">内功</button>
+          <button class="filter-chip" type="button" data-encyclopedia-filter="martial_arts">武学</button>
+          <button class="filter-chip" type="button" data-encyclopedia-filter="equipment">装备</button>
+          <button class="filter-chip" type="button" data-encyclopedia-filter="dungeon_drops">副本掉落</button>
+        </div>
         <div class="entry-stack">
           <button class="module-card compact" type="button" data-open-page="companions-page">
             <span class="icon-box small">
@@ -838,50 +1311,58 @@
             <span class="chevron">›</span>
           </button>
         </div>
+        <div class="entry-stack" id="encyclopedia-list"></div>
+        <div class="empty-state" id="encyclopedia-empty">没有匹配的图鉴条目</div>
       </main>
 
       <main id="companions-page" class="page">
         <button class="back" type="button" data-open-page="home-page">‹ 返回首页</button>
         <h1 class="title">伙伴随从图鉴</h1>
-        <p class="subtitle" style="margin-bottom:18px">这里后续放角色成长、天赋、获取方式和推荐定位。</p>
-        <button class="module-card compact" type="button">
-          <span class="icon-box small"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"></circle><path d="M5 21c1-5 4-7 7-7s6 2 7 7"></path></svg></span>
-          <span><strong class="card-title">宗泽</strong><span class="card-copy">剑法随从 · 高攻击成长</span></span>
-          <span class="chevron">›</span>
-        </button>
+        <p class="subtitle" style="margin-bottom:18px">角色成长、天赋、获取方式和定位均来自原版角色数据。</p>
+        <label class="search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"></circle><path d="m16.5 16.5 4 4"></path></svg>
+          <input id="companions-search" type="search" placeholder="搜索角色、职业或天赋...">
+        </label>
+        <div class="entry-stack" id="companions-list"></div>
+        <div class="empty-state" id="companions-empty">没有匹配的角色</div>
       </main>
 
       <main id="martial-page" class="page">
         <button class="back" type="button" data-open-page="home-page">‹ 返回首页</button>
         <h1 class="title">武学秘籍资料库</h1>
-        <p class="subtitle" style="margin-bottom:18px">后续按拳、剑、刀、棍、内功筛选，展示威力、系数、获取路线。</p>
-        <button class="module-card compact" type="button">
-          <span class="icon-box small gold"><img src="assets/combat-swords-red.png" alt="" style="width:25px;height:25px;object-fit:contain;display:block"></span>
-          <span><strong class="card-title">独孤剑诀</strong><span class="card-copy">剑法 · 暴击与连击向</span></span>
-          <span class="chevron">›</span>
-        </button>
+        <p class="subtitle" style="margin-bottom:18px">按拳、剑、刀、棍筛选，展示威力、速度、暴击和获取路线。</p>
+        <label class="search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"></circle><path d="m16.5 16.5 4 4"></path></svg>
+          <input id="martial-search" type="search" placeholder="搜索武学、效果或获取方式...">
+        </label>
+        <div class="filter-row" id="martial-filters">
+          <button class="filter-chip is-active" type="button" data-martial-filter="">全部</button>
+          <button class="filter-chip" type="button" data-martial-filter="拳法">拳法</button>
+          <button class="filter-chip" type="button" data-martial-filter="剑法">剑法</button>
+          <button class="filter-chip" type="button" data-martial-filter="刀法">刀法</button>
+          <button class="filter-chip" type="button" data-martial-filter="棍法">棍法</button>
+        </div>
+        <div class="entry-stack" id="martial-list"></div>
+        <div class="empty-state" id="martial-empty">没有匹配的武学</div>
       </main>
 
       <main id="drops-page" class="page">
         <button class="back" type="button" data-open-page="home-page">‹ 返回首页</button>
         <h1 class="title">副本掉落查询</h1>
-        <p class="subtitle" style="margin-bottom:18px">副本页后续按副本、楼层、首领、掉落概率拆成表格卡片。</p>
-        <button class="module-card compact" type="button">
-          <span class="icon-box small"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16v12H4z"></path><path d="M8 10h8"></path><path d="M8 14h5"></path></svg></span>
-          <span><strong class="card-title">冥离地宫</strong><span class="card-copy">首领掉落 · 概率表</span></span>
-          <span class="chevron">›</span>
-        </button>
+        <p class="subtitle" style="margin-bottom:18px">按副本与首领展开，保持原版掉落记录的层级阅读方式。</p>
+        <label class="search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"></circle><path d="m16.5 16.5 4 4"></path></svg>
+          <input id="drops-search" type="search" placeholder="搜索副本、首领或掉落物...">
+        </label>
+        <div class="entry-stack" id="drops-list"></div>
+        <div class="empty-state" id="drops-empty">没有匹配的掉落记录</div>
       </main>
 
       <main id="guide-page" class="page">
         <button class="back" type="button" data-open-page="home-page">‹ 返回首页</button>
         <h1 class="title">避坑指南与菜谱</h1>
-        <p class="subtitle" style="margin-bottom:18px">适合放新手注意事项、人生目标、菜谱配方和任务分支提醒。</p>
-        <div class="notice-card">
-          <span style="color:var(--red)">!</span>
-          <span><strong>不要过早覆盖关键存档</strong><span>任务分支和关键道具建议先看路线说明。</span></span>
-          <span class="chevron">›</span>
-        </div>
+        <p class="subtitle" style="margin-bottom:18px">原版攻略按条目展开，后续可继续补充任务分支和菜谱。</p>
+        <div class="guide-list" id="guide-list"></div>
       </main>
 
       <nav class="bottom-nav" aria-label="一级导航">
@@ -930,61 +1411,572 @@
       </div>
     </div>
 
+    <script src="wiki-data.js"></script>
     <script>
       const pages = Array.from(document.querySelectorAll('.page'));
       const navButtons = Array.from(document.querySelectorAll('[data-nav]'));
       const openButtons = Array.from(document.querySelectorAll('[data-open-page]'));
       const detailMask = document.getElementById('detail-mask');
-      const details = {
-        '丹青': {
-          effect: '满级提供 10% 爆伤，学习后直接满级。',
-          get: '临安碧罗庄吸星大法支线任务途中，找画非画拼酒成功后打听丹青传授。',
-          route: '学习即满级，无需额外刷熟练度。'
-        },
-        '佛法禅理': {
-          effect: '满级提供 25% 基础气血，适合放在养成资料的核心推荐位。',
-          get: '少林寺 7.12 大雄宝殿参佛。',
-          route: '1-150级参佛；151-200级藏经阁读般若经；后续按资料路线继续补全。'
-        },
-        '浩然正气': {
-          effect: '满级提供 10% 攻击，是攻击向养成的重要技艺。',
-          get: '华山派 11.6 静室读正气诀。',
-          route: '1-200级读正气诀；201-300级与华山派梁海交谈并完成后续条件。'
-        }
+      const data = window.WIKI_REFERENCE_DATA || {};
+      const homeSearch = document.querySelector('#home-page input[type="search"]');
+      const teamState = ['主角', '宗泽', '穆云缨', null, null];
+      let activeEncyclopediaType = 'characters';
+      let activeMartialFilter = '';
+      let activeTechniqueFilter = '';
+      let calcMode = 'panel';
+
+      const number = (value, fallback = 0) => {
+        const result = Number(value);
+        return Number.isFinite(result) ? result : fallback;
       };
+
+      const formatNumber = (value) => number(value).toLocaleString('zh-CN');
+
+      const escapeHtml = (value) => String(value ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+
+      const searchable = (...values) => values.filter(Boolean).join(' ').toLocaleLowerCase();
+
+      function profileFor(name) {
+        return (data.characters || []).find((item) => item.name === name) || {
+          name,
+          hp_factor: 1,
+          power_factor: 1,
+          style: '自定义',
+          access: '原版主角基础模板',
+          talent: '基础角色模板，可继续叠加原版内功、武学和装备数据。',
+        };
+      }
+
+      function innerSummary(item) {
+        return [
+          item.rank,
+          item.hp_percent ? `${item.hp_percent}%气血` : '',
+          item.attack_percent ? `${item.attack_percent}%攻击` : '',
+          item.speed ? `速度 ${item.speed}` : '',
+          item.mitigation_percent ? `${item.mitigation_percent}%免伤` : '',
+          item.dodge_percent ? `${item.dodge_percent}%闪避` : '',
+        ].filter(Boolean).join(' · ') || '属性待补';
+      }
+
+      function martialSummary(item) {
+        return [
+          item.style,
+          item.rank,
+          `威力 ${number(item.power)}`,
+          `速度 ${number(item.speed)}`,
+          item.crit_percent ? `暴击 ${item.crit_percent}%` : '',
+          item.crit_damage ? `爆伤 ×${item.crit_damage}` : '',
+        ].filter(Boolean).join(' · ');
+      }
+
+      function recordCard({ name, meta, tags = [], summaryLabel, summary, access, note }) {
+        const tagMarkup = tags.filter(Boolean).map((tag) => `<span class="tag">${escapeHtml(tag)}</span>`).join('');
+        return `
+          <details class="wiki-card">
+            <summary class="wiki-head">
+              <div>
+                <h2 class="wiki-name">${escapeHtml(name || '未命名')}</h2>
+                <div class="tags">${tagMarkup}</div>
+              </div>
+              <span class="level">${escapeHtml(meta || '资料待补')}</span>
+            </summary>
+            <div class="wiki-body">
+              ${summary ? `<p><strong>${escapeHtml(summaryLabel || '说明')}：</strong>${escapeHtml(summary)}</p>` : ''}
+              ${access ? `<p><strong>获取方式：</strong>${escapeHtml(access)}</p>` : ''}
+              ${note ? `<p><strong>备注：</strong>${escapeHtml(note)}</p>` : ''}
+            </div>
+          </details>`;
+      }
+
+      function setCount(id, value) {
+        const element = document.getElementById(id);
+        if (element) element.textContent = String(value);
+      }
+
+      function renderCharacters(query = '') {
+        const list = document.getElementById('companions-list');
+        if (!list) return;
+        const normalized = query.trim().toLocaleLowerCase();
+        const records = (data.characters || []).filter((item) => !normalized
+          || searchable(item.name, item.style, item.access, item.talent).includes(normalized));
+        list.innerHTML = records.map((item) => recordCard({
+          name: item.name,
+          meta: item.style || '职业待补',
+          tags: [`生命 ×${number(item.hp_factor)}`, `攻击 ×${number(item.power_factor)}`],
+          summaryLabel: '天赋',
+          summary: item.talent,
+          access: item.access,
+        })).join('');
+        document.getElementById('companions-empty')?.classList.toggle('is-visible', !records.length);
+      }
+
+      function renderMartials(query = '') {
+        const list = document.getElementById('martial-list');
+        if (!list) return;
+        const normalized = query.trim().toLocaleLowerCase();
+        const records = (data.martial_arts || []).filter((item) => (
+          (!activeMartialFilter || String(item.style || '').includes(activeMartialFilter))
+          && (!normalized || searchable(item.name, item.style, item.access, item.buff, item.special).includes(normalized))
+        ));
+        list.innerHTML = records.map((item) => recordCard({
+          name: item.name,
+          meta: martialSummary(item),
+          tags: [item.double_break && `破 ${item.double_break}`, item.range],
+          summaryLabel: '武学效果',
+          summary: [item.buff, item.special].filter(Boolean).join(' · ') || '武学效果待补',
+          access: item.access,
+        })).join('');
+        document.getElementById('martial-empty')?.classList.toggle('is-visible', !records.length);
+      }
+
+      function renderTechniques(query = '') {
+        const list = document.getElementById('technique-list');
+        if (!list) return;
+        const normalized = query.trim().toLocaleLowerCase();
+        const records = (data.techniques || []).filter((item) => (
+          (!activeTechniqueFilter || String(item.scope || '').includes(activeTechniqueFilter))
+          && (!normalized || searchable(item.name, item.scope, item.effect, item.access, item.upgrade).includes(normalized))
+        ));
+        list.innerHTML = records.map((item) => recordCard({
+          name: item.name,
+          meta: item.max_level ? `上限 ${item.max_level} 级` : '效果资料',
+          tags: [item.scope || '通用', item.calculate === false ? '不计入面板' : '计入面板'],
+          summaryLabel: '技艺效果',
+          summary: item.effect,
+          access: item.access,
+          note: item.upgrade,
+        })).join('');
+        setCount('technique-count', `${records.length} 条`);
+        document.getElementById('technique-empty')?.classList.toggle('is-visible', !records.length);
+      }
+
+      function renderDrops(query = '') {
+        const list = document.getElementById('drops-list');
+        if (!list) return;
+        const normalized = query.trim().toLocaleLowerCase();
+        const groups = new Map();
+        (data.dungeon_drops || []).forEach((item) => {
+          if (normalized && !searchable(item.dungeon, item.boss, item.name, item.type, item.drop).includes(normalized)) return;
+          const dungeon = item.dungeon || '副本待补';
+          const boss = item.boss || '首领待补';
+          if (!groups.has(dungeon)) groups.set(dungeon, new Map());
+          const bossMap = groups.get(dungeon);
+          if (!bossMap.has(boss)) bossMap.set(boss, []);
+          bossMap.get(boss).push(item);
+        });
+        list.innerHTML = [...groups.entries()].map(([dungeon, bosses]) => `
+          <details class="accordion" open>
+            <summary>${escapeHtml(dungeon)}<span>${[...bosses.values()].flat().length} 项掉落</span></summary>
+            <div class="accordion-body">
+              ${[...bosses.entries()].map(([boss, drops]) => `
+                <details class="accordion">
+                  <summary>${escapeHtml(boss)}<span>${drops.length} 项</span></summary>
+                  <div class="accordion-body">
+                    ${drops.map((item) => `
+                      <div class="drop-row">
+                        <div><strong>${escapeHtml(item.name)}</strong><span>${escapeHtml(item.type || '掉落')} · 原版记录</span></div>
+                        <span class="drop-meta">${escapeHtml(item.drop || '概率待补')}</span>
+                      </div>`).join('')}
+                  </div>
+                </details>`).join('')}
+            </div>
+          </details>`).join('');
+        document.getElementById('drops-empty')?.classList.toggle('is-visible', !groups.size);
+      }
+
+      function renderGuides() {
+        const list = document.getElementById('guide-list');
+        if (!list) return;
+        list.innerHTML = (data.guide_notes || []).map((item) => `
+          <details class="accordion guide-item">
+            <summary>${escapeHtml(item.title)}<span>原版攻略 · P${escapeHtml(item.page || '-')}</span></summary>
+            <div class="accordion-body">${escapeHtml(item.text)}</div>
+          </details>`).join('');
+      }
+
+      function encyclopediaRecords(type) {
+        if (type === 'characters') return (data.characters || []).map((item) => ({
+          name: item.name,
+          meta: item.style || '职业待补',
+          tags: [`生命 ×${number(item.hp_factor)}`, `攻击 ×${number(item.power_factor)}`],
+          summaryLabel: '天赋',
+          summary: item.talent,
+          access: item.access,
+        }));
+        if (type === 'inner_skills') return (data.inner_skills || []).map((item) => ({
+          name: item.name,
+          meta: innerSummary(item),
+          tags: [item.scope || '修炼者'],
+          summaryLabel: '内功效果',
+          summary: [item.ren_du, item.special].filter(Boolean).join(' · ') || '内功效果待补',
+          access: item.access,
+        }));
+        if (type === 'martial_arts') return (data.martial_arts || []).map((item) => ({
+          name: item.name,
+          meta: martialSummary(item),
+          tags: [item.range, item.double_break],
+          summaryLabel: '武学效果',
+          summary: [item.buff, item.special].filter(Boolean).join(' · ') || '武学效果待补',
+          access: item.access,
+        }));
+        if (type === 'equipment') return (data.equipment || []).map((item) => ({
+          name: item.name,
+          meta: [item.rank, item.slot || '装备', item.hp_flat && `${item.hp_flat}血`, item.mitigation_percent && `${item.mitigation_percent}%免伤`].filter(Boolean).join(' · '),
+          tags: [item.unique && '唯一', item.scope || '佩戴者'],
+          summaryLabel: '装备效果',
+          summary: item.special || '装备属性以原版数据为准',
+          access: item.access,
+        }));
+        if (type === 'dungeon_drops') return (data.dungeon_drops || []).map((item) => ({
+          name: item.name,
+          meta: `${item.dungeon || '副本待补'} · ${item.boss || '首领待补'}`,
+          tags: [item.type],
+          summaryLabel: '掉落记录',
+          summary: item.drop,
+          access: item.boss,
+        }));
+        return (data.techniques || []).map((item) => ({
+          name: item.name,
+          meta: item.scope || '通用',
+          tags: [item.max_level ? `上限 ${item.max_level} 级` : '效果资料'],
+          summaryLabel: '技艺效果',
+          summary: item.effect,
+          access: item.access,
+          note: item.upgrade,
+        }));
+      }
+
+      function renderEncyclopedia() {
+        const list = document.getElementById('encyclopedia-list');
+        if (!list) return;
+        const query = document.getElementById('encyclopedia-search')?.value.trim().toLocaleLowerCase() || '';
+        const records = encyclopediaRecords(activeEncyclopediaType).filter((item) => (
+          !query || searchable(item.name, item.meta, item.summary, item.access, item.note).includes(query)
+        ));
+        list.innerHTML = records.map(recordCard).join('');
+        document.getElementById('encyclopedia-empty')?.classList.toggle('is-visible', !records.length);
+      }
+
+      function setActiveFilter(selector, value, attribute) {
+        document.querySelectorAll(selector).forEach((button) => {
+          button.classList.toggle('is-active', button.dataset[attribute] === value);
+        });
+      }
+
+      function setCalculatorOptions() {
+        const roleSelect = document.getElementById('calc-role');
+        const innerSelect = document.getElementById('calc-inner');
+        const martialSelect = document.getElementById('calc-martial');
+        if (!roleSelect || !innerSelect || !martialSelect) return;
+        roleSelect.innerHTML = ['主角', ...(data.characters || []).map((item) => item.name)]
+          .filter((name, index, list) => list.indexOf(name) === index)
+          .map((name) => `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`).join('');
+        innerSelect.innerHTML = `<option value="">无内功</option>${(data.inner_skills || []).map((item, index) => (
+          `<option value="${index}">${escapeHtml(item.name)} · ${escapeHtml(innerSummary(item))}</option>`
+        )).join('')}`;
+        martialSelect.innerHTML = `<option value="">无武学</option>${(data.martial_arts || []).map((item, index) => (
+          `<option value="${index}">${escapeHtml(item.name)} · ${escapeHtml(martialSummary(item))}</option>`
+        )).join('')}`;
+        roleSelect.value = '主角';
+        innerSelect.value = '';
+        martialSelect.value = '';
+      }
+
+      function selectedCalcRecords() {
+        const indexOf = (id) => {
+          const value = document.getElementById(id)?.value;
+          return value === '' ? -1 : number(value, -1);
+        };
+        return {
+          inner: (data.inner_skills || [])[indexOf('calc-inner')] || null,
+          martial: (data.martial_arts || [])[indexOf('calc-martial')] || null,
+        };
+      }
+
+      function syncCalculatorGrowth() {
+        const role = document.getElementById('calc-role')?.value || '主角';
+        const level = Math.max(1, Math.min(90, Math.round(number(document.getElementById('calc-level')?.value, 90))));
+        const profile = profileFor(role);
+        const baseHp = number(data.personHp?.[level]) * number(profile.hp_factor, 1);
+        const baseAttack = number(data.personPower?.[level]) * number(profile.power_factor, 1);
+        document.getElementById('calc-level').value = level;
+        document.getElementById('calc-health').value = Math.round(baseHp);
+        document.getElementById('calc-attack').value = Math.round(baseAttack);
+      }
+
+      function calculatePreview() {
+        const healthInput = document.getElementById('calc-health');
+        const attackInput = document.getElementById('calc-attack');
+        const role = document.getElementById('calc-role')?.value || '主角';
+        const profile = profileFor(role);
+        const bonus = number(document.getElementById('calc-bonus')?.value);
+        const crit = number(document.getElementById('calc-crit')?.value);
+        const speedBoost = number(document.getElementById('calc-speed')?.value);
+        const { inner, martial } = selectedCalcRecords();
+        const innerHp = number(inner?.hp_percent);
+        const innerAttack = number(inner?.attack_percent);
+        const innerSpeed = number(inner?.speed);
+        const innerCrit = number(inner?.crit_percent);
+        const innerDodge = number(inner?.dodge_percent);
+        const martialPower = number(martial?.power);
+        const martialSpeed = number(martial?.speed);
+        const martialCrit = number(martial?.crit_percent);
+        const martialCritDamage = number(String(martial?.crit_damage || '').split('/')[0], 1.5);
+        const baseStats = profile.base_stats || {};
+        const baseCrit = number(baseStats.crit);
+        const baseSpeed = number(baseStats.speed);
+        const baseDodge = number(baseStats.dodge);
+        const baseHealth = number(healthInput?.value);
+        const baseAttack = number(attackInput?.value);
+        const achievementHp = role === '主角' ? 292 : 177;
+        const attackMultiplier = 1 + bonus;
+        const finalHealth = Math.round(baseHealth * (1 + innerHp / 100) + achievementHp);
+        const finalAttack = Math.trunc(
+          (baseAttack * (1 + innerAttack / 100) + martialPower * (1 + innerAttack / 100))
+          * attackMultiplier
+          + achievementHp,
+        );
+        const finalCrit = Math.min(100, crit + baseCrit + innerCrit + martialCrit);
+        const finalSpeed = Math.trunc(baseSpeed + innerSpeed + martialSpeed + speedBoost);
+        const finalDodge = Math.min(100, baseDodge + innerDodge);
+        const damageFactor = Math.max(0, number(martial?.damage_factor, 1));
+        const hitSegments = Math.max(
+          1,
+          number(martial?.segments, 1),
+          ...Object.keys(martial?.multi_hit_probabilities || {}).map((key) => number(key)),
+        );
+        const segmentProbability = (segment) => {
+          if (segment <= 1) return 1;
+          return Math.max(0, Math.min(1, number(martial?.multi_hit_probabilities?.[segment], 0) / 100));
+        };
+        const expectedSegments = Array.from({ length: hitSegments }, (_, index) => segmentProbability(index + 1))
+          .reduce((sum, probability) => sum + probability, 0);
+        let expectedHitMultiplier = 1 + (finalCrit / 100) * (martialCritDamage - 1);
+        if (martial?.post_damage_trigger === 'crit') {
+          expectedHitMultiplier += (finalCrit / 100)
+            * (number(martial?.post_damage_chance_percent) / 100)
+            * (number(martial?.post_damage_multiplier, 1) - 1)
+            * martialCritDamage;
+        }
+        if (martial?.post_damage_trigger === 'always') {
+          expectedHitMultiplier *= number(martial?.post_damage_multiplier, 1);
+        }
+        const expectedHit = Math.round(finalAttack * damageFactor * expectedSegments * expectedHitMultiplier);
+        document.getElementById('calc-health-result').textContent = formatNumber(finalHealth);
+        document.getElementById('calc-attack-result').textContent = formatNumber(finalAttack);
+        document.getElementById('calc-crit-value').textContent = `${finalCrit.toFixed(finalCrit % 1 ? 1 : 0)}%`;
+        document.getElementById('calc-speed-value').textContent = `${finalSpeed}`;
+        document.getElementById('calc-damage-result').textContent = formatNumber(expectedHit);
+        document.getElementById('calc-secondary-result').textContent = `${finalSpeed} / ${finalDodge}%`;
+        document.getElementById('calc-mode-label').textContent = calcMode === 'battle' ? '期望伤害' : '面板预览';
+        document.getElementById('calc-helper').textContent = calcMode === 'battle'
+          ? `迁移预览：暴击 ${finalCrit.toFixed(1)}%，速度 ${finalSpeed}，${expectedSegments.toFixed(2)} 段期望约 ${formatNumber(expectedHit)}。此处不计 90%～110% 随机浮动，完整格挡、闪避和 debuff 仍由正式计算模块接管。`
+          : `迁移预览：等级成长、角色系数、内功和武学均读取原版数据；装备预览只叠加攻击，正式公式保持原版。`;
+      }
+
+      function resetCalculator() {
+        document.getElementById('calc-role').value = '主角';
+        document.getElementById('calc-level').value = 90;
+        document.getElementById('calc-inner').value = '';
+        document.getElementById('calc-martial').value = '';
+        document.getElementById('calc-bonus').value = '0.2';
+        document.getElementById('calc-crit').value = 10;
+        document.getElementById('calc-speed').value = 20;
+        calcMode = 'panel';
+        document.querySelectorAll('[data-calc-mode]').forEach((button) => {
+          const active = button.dataset.calcMode === calcMode;
+          button.classList.toggle('is-active', active);
+          button.setAttribute('aria-selected', String(active));
+        });
+        syncCalculatorGrowth();
+        calculatePreview();
+      }
+
+      function teamBaseStats(name) {
+        const profile = profileFor(name);
+        return {
+          hp: Math.round(number(data.personHp?.[90]) * number(profile.hp_factor, 1)),
+          attack: Math.round(number(data.personPower?.[90]) * number(profile.power_factor, 1)),
+        };
+      }
+
+      function renderTeam() {
+        const slots = document.getElementById('team-slots');
+        if (!slots) return;
+        slots.innerHTML = teamState.map((name, index) => {
+          const profile = name ? profileFor(name) : null;
+          return `<button class="team-slot${name ? ' is-filled' : ''}" type="button" data-team-slot="${index}">
+            <span class="slot-index">${index + 1}号位</span>
+            <span class="slot-name">${escapeHtml(name || '空位')}</span>
+            <span class="slot-role">${escapeHtml(profile?.style || '点击轮换')}</span>
+          </button>`;
+        }).join('');
+        const filled = teamState.filter(Boolean);
+        const totals = filled.reduce((sum, name) => {
+          const stats = teamBaseStats(name);
+          sum.hp += stats.hp;
+          sum.attack += stats.attack;
+          return sum;
+        }, { hp: 0, attack: 0 });
+        document.getElementById('team-health-result').textContent = formatNumber(totals.hp);
+        document.getElementById('team-attack-result').textContent = formatNumber(totals.attack);
+        document.getElementById('team-summary').textContent = filled.length
+          ? `当前队伍：${filled.join('、')}。点击位置可轮换原版角色，先用于确认配队信息架构。`
+          : '当前没有角色，选择上方模板或点击空位开始轮换。';
+      }
+
+      function applyTeamPreset(name) {
+        const presets = {
+          balanced: ['主角', '宗泽', '穆云缨', null, null],
+          burst: ['主角', '荆枫', '神秘女侠', '清月', null],
+          survive: ['主角', '顾言', '清月', '萧寒烟', null],
+        };
+        teamState.splice(0, teamState.length, ...(presets[name] || presets.balanced));
+        document.querySelectorAll('[data-preset]').forEach((button) => {
+          button.classList.toggle('is-active', button.dataset.preset === name);
+        });
+        renderTeam();
+      }
 
       function showPage(id) {
         pages.forEach((page) => page.classList.toggle('is-active', page.id === id));
-        navButtons.forEach((button) => button.classList.toggle('is-active', button.dataset.nav === id));
+        const parentId = {
+          'companions-page': 'encyclopedia-page',
+          'martial-page': 'encyclopedia-page',
+          'drops-page': 'encyclopedia-page',
+          'technique-page': 'guide-page',
+        }[id] || id;
+        navButtons.forEach((button) => button.classList.toggle('is-active', button.dataset.nav === parentId));
+        if (id === 'companions-page') renderCharacters(document.getElementById('companions-search')?.value || '');
+        if (id === 'martial-page') renderMartials(document.getElementById('martial-search')?.value || '');
+        if (id === 'drops-page') renderDrops(document.getElementById('drops-search')?.value || '');
+        if (id === 'technique-page') renderTechniques(document.getElementById('technique-search')?.value || '');
+        if (id === 'encyclopedia-page') renderEncyclopedia();
       }
 
-      openButtons.forEach((button) => {
-        button.addEventListener('click', () => showPage(button.dataset.openPage));
-      });
+      function openSearch(value) {
+        document.getElementById('encyclopedia-search').value = value;
+        showPage('encyclopedia-page');
+        renderEncyclopedia();
+      }
 
-      navButtons.forEach((button) => {
-        button.addEventListener('click', () => showPage(button.dataset.nav));
-      });
+      function bindEvents() {
+        openButtons.forEach((button) => button.addEventListener('click', () => showPage(button.dataset.openPage)));
+        navButtons.forEach((button) => button.addEventListener('click', () => showPage(button.dataset.nav)));
 
-      document.querySelectorAll('[data-detail]').forEach((button) => {
-        button.addEventListener('click', () => {
-          const name = button.dataset.detail;
-          const data = details[name] || details['丹青'];
-          document.getElementById('detail-title').textContent = name;
-          document.getElementById('detail-effect').textContent = data.effect;
-          document.getElementById('detail-get').textContent = data.get;
-          document.getElementById('detail-route').textContent = data.route;
-          detailMask.classList.add('is-open');
+        homeSearch?.addEventListener('keydown', (event) => {
+          if (event.key === 'Enter' && homeSearch.value.trim()) openSearch(homeSearch.value.trim());
         });
-      });
+        document.querySelectorAll('#home-page .chip').forEach((button) => {
+          button.addEventListener('click', () => {
+            homeSearch.value = button.textContent.trim();
+            openSearch(homeSearch.value);
+          });
+        });
 
-      document.getElementById('detail-close').addEventListener('click', () => {
-        detailMask.classList.remove('is-open');
-      });
+        document.getElementById('encyclopedia-search')?.addEventListener('input', renderEncyclopedia);
+        document.querySelectorAll('[data-encyclopedia-filter]').forEach((button) => {
+          button.addEventListener('click', () => {
+            activeEncyclopediaType = button.dataset.encyclopediaFilter;
+            setActiveFilter('[data-encyclopedia-filter]', activeEncyclopediaType, 'encyclopediaFilter');
+            renderEncyclopedia();
+          });
+        });
+        document.getElementById('companions-search')?.addEventListener('input', (event) => renderCharacters(event.target.value));
+        document.getElementById('martial-search')?.addEventListener('input', (event) => renderMartials(event.target.value));
+        document.querySelectorAll('[data-martial-filter]').forEach((button) => {
+          button.addEventListener('click', () => {
+            activeMartialFilter = button.dataset.martialFilter;
+            setActiveFilter('[data-martial-filter]', activeMartialFilter, 'martialFilter');
+            renderMartials(document.getElementById('martial-search').value);
+          });
+        });
+        document.getElementById('drops-search')?.addEventListener('input', (event) => renderDrops(event.target.value));
+        document.getElementById('technique-search')?.addEventListener('input', (event) => renderTechniques(event.target.value));
+        document.querySelectorAll('[data-technique-filter]').forEach((button) => {
+          button.addEventListener('click', () => {
+            activeTechniqueFilter = button.dataset.techniqueFilter;
+            setActiveFilter('[data-technique-filter]', activeTechniqueFilter, 'techniqueFilter');
+            renderTechniques(document.getElementById('technique-search').value);
+          });
+        });
 
-      detailMask.addEventListener('click', (event) => {
-        if (event.target === detailMask) detailMask.classList.remove('is-open');
-      });
+        document.querySelectorAll('[data-calc-mode]').forEach((button) => {
+          button.addEventListener('click', () => {
+            calcMode = button.dataset.calcMode;
+            document.querySelectorAll('[data-calc-mode]').forEach((item) => {
+              const active = item === button;
+              item.classList.toggle('is-active', active);
+              item.setAttribute('aria-selected', String(active));
+            });
+            calculatePreview();
+          });
+        });
+        document.querySelectorAll('[data-calc-input]').forEach((input) => input.addEventListener('input', () => {
+          if (input.id === 'calc-role' || input.id === 'calc-level') syncCalculatorGrowth();
+          calculatePreview();
+        }));
+        document.querySelectorAll('[data-calc-input]').forEach((input) => input.addEventListener('change', () => {
+          if (input.id === 'calc-role' || input.id === 'calc-level') syncCalculatorGrowth();
+          calculatePreview();
+        }));
+        document.querySelector('[data-reset-calc]')?.addEventListener('click', resetCalculator);
+
+        document.querySelectorAll('[data-preset]').forEach((button) => {
+          button.addEventListener('click', () => applyTeamPreset(button.dataset.preset));
+        });
+        document.querySelector('[data-team-reset]')?.addEventListener('click', () => {
+          teamState.fill(null);
+          renderTeam();
+        });
+        document.querySelectorAll('[data-team-role]').forEach((button) => {
+          button.addEventListener('click', () => {
+            const preset = button.dataset.teamRole === 'burst' ? 'burst' : button.dataset.teamRole === 'front' ? 'survive' : 'balanced';
+            applyTeamPreset(preset);
+          });
+        });
+        document.getElementById('team-slots')?.addEventListener('click', (event) => {
+          const slot = event.target.closest('[data-team-slot]');
+          if (!slot) return;
+          const index = number(slot.dataset.teamSlot);
+          const names = ['主角', ...(data.characters || []).map((item) => item.name)];
+          const currentIndex = names.indexOf(teamState[index]);
+          teamState[index] = names[(currentIndex + 1) % names.length];
+          renderTeam();
+        });
+
+        document.getElementById('detail-close').addEventListener('click', () => detailMask.classList.remove('is-open'));
+        detailMask.addEventListener('click', (event) => {
+          if (event.target === detailMask) detailMask.classList.remove('is-open');
+        });
+      }
+
+      function init() {
+        setCount('character-count', data.characters?.length || 0);
+        setCount('martial-count', data.martial_arts?.length || 0);
+        setCount('inner-count', data.inner_skills?.length || 0);
+        setCount('drop-count', data.dungeon_drops?.length || 0);
+        setCount('technique-count-home', data.techniques?.length || 0);
+        setCount('guide-count-home', data.guide_notes?.length || 0);
+        setCalculatorOptions();
+        syncCalculatorGrowth();
+        renderCharacters();
+        renderMartials();
+        renderDrops();
+        renderTechniques();
+        renderGuides();
+        renderEncyclopedia();
+        renderTeam();
+        bindEvents();
+        calculatePreview();
+      }
+
+      init();
     </script>
   </body>
 </html>
