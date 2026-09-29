@@ -675,9 +675,14 @@ function renderDamagePreview(damage) {
   $('damage-crit-range').textContent = `${formatNumber(damage.critical.min)}～${formatNumber(damage.critical.max)}`;
   $('damage-max-value').textContent = formatNumber(damage.max);
   $('damage-max-probability').textContent = `上限概率 ${formatPercent(damage.upperLimitProbability)}`;
-  $('damage-target-mitigation').value = damage.targetMitigation;
-  $('damage-factor').value = damage.damageFactor;
-  $('damage-crit-adjustment').value = damage.critDamageValue;
+  [
+    ['damage-target-mitigation', damage.targetMitigation],
+    ['damage-factor', damage.damageFactor],
+    ['damage-crit-adjustment', damage.critDamageValue],
+  ].forEach(([id, value]) => {
+    const input = $(id);
+    if (document.activeElement !== input) input.value = value;
+  });
 }
 function martialSpeed(selection = getSelectedMartial()) {
   return Number(selection?.item?.speed) || 0;
@@ -3252,9 +3257,9 @@ function bindEvents() {
     damageCritCustomized = false;
     calculate();
   });
-  $('damage-target-mitigation').addEventListener('input', calculate);
-  $('damage-factor').addEventListener('input', () => { damageFactorCustomized = true; calculate(); });
-  $('damage-crit-adjustment').addEventListener('input', () => { damageCritCustomized = true; calculate(); });
+  $('damage-target-mitigation').addEventListener('input', () => calculate({ commit: true }));
+  $('damage-factor').addEventListener('input', () => { damageFactorCustomized = true; calculate({ commit: true }); });
+  $('damage-crit-adjustment').addEventListener('input', () => { damageCritCustomized = true; calculate({ commit: true }); });
   $('technique-options').addEventListener('change', (event) => {
     const input = event.target.closest('.technique-option');
     if (!input) return;
