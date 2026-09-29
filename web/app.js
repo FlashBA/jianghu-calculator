@@ -131,6 +131,7 @@ const CALCULATION_DOCUMENT = [
       '默认理论爆伤% = 武学爆伤倍率 × 100 + 面板爆伤%；可在理论伤害中手动覆盖',
       '最终暴击倍率 = 理论伤害爆伤值 ÷ 100',
       '暴击伤害浮动 = trunc(本次伤害基数 × 伤害系数 × 90%～110% × 最终暴击倍率 × (1 - min(对方免伤, 50%)))',
+      '多段武学伤害 = 各段分别按对应爆伤倍率计算后求和；多段概率按已知的二连/三连触发概率展示',
       '结算后附伤 = 已完成免伤计算的伤害 × 武学附伤倍率（例如天狼破穹枪 × 1.5）',
       '阵法独立伤害乘区 = 1 + 阵法独立伤害%',
       '最终伤害 = 结算后附伤 × 阵法独立伤害乘区',
@@ -151,6 +152,7 @@ const state = {
   data: null,
   whiteRabbit: null,
   equipmentSlots: [EMPTY_EQUIPMENT(), EMPTY_EQUIPMENT(), EMPTY_EQUIPMENT(), EMPTY_EQUIPMENT()],
+  weaponId: '',
   weaponName: '',
   weaponAffixes: [EMPTY_WEAPON_AFFIX(), EMPTY_WEAPON_AFFIX(), EMPTY_WEAPON_AFFIX()],
 };
@@ -467,7 +469,11 @@ function formationStats() {
   return result;
 }
 const WEAPON_TYPES = new Set([1, 2, 3, 4]);
-function isWeapon(item) { return WEAPON_TYPES.has(Number(item?.type)); }
+function isWeapon(item) {
+  return item?.weapon === true
+    || String(item?.slot || '').startsWith('weapon-')
+    || WEAPON_TYPES.has(Number(item?.type));
+}
 function isSEquipment(item) {
   return item?.source === 'white'
     ? isSOrUnknownRank(item.rank)
@@ -550,6 +556,31 @@ function martialPostDamageMultiplier(item) {
   const value = Number(item?.post_damage_multiplier);
   return Number.isFinite(value) && value >= 0 ? value : 1;
 }
+function martialHitProfiles(item) {
+  const probabilityMap = Object.fromEntries(Object.entries(item?.multi_hit_probabilities || {})
+    .map(([segments, probability]) => [Number(segments), Math.max(0, Math.min(100, Number(probability) || 0))])
+    .filter(([segments, probability]) => Number.isFinite(segments) && segments > 1 && Number.isFinite(probability)));
+  const probabilitySegments = Object.keys(probabilityMap).map(Number);
+  if (!probabilitySegments.length) return [{ segments: 1, probability: 100, reachProbability: 100 }];
+  const maxSegments = Math.max(1, Number(item?.segments) || 0, ...probabilitySegments);
+  return Array.from({ length: maxSegments }, (_, index) => {
+    const segments = index + 1;
+    const reachProbability = segments === 1 ? 100 : probabilityMap[segments] || 0;
+    const nextReachProbability = segments < maxSegments ? (probabilityMap[segments + 1] || 0) : 0;
+    return {
+      segments,
+      reachProbability,
+      probability: Number((Math.max(0, reachProbability - nextReachProbability)).toFixed(2)),
+    };
+  });
+}
+function martialHitProbabilityLabel(item) {
+  const profiles = martialHitProfiles(item);
+  if (profiles.length <= 1) return '';
+  return profiles.map((profile) => profile.segments === 1
+    ? '1段'
+    : `${profile.segments}段${formatPercent(profile.reachProbability)}`).join(' / ');
+}
 function damageUpperLimitProbability(item, totalCritPercent = Number(item?.crit_percent) || 0) {
   const critPercent = Math.max(0, Math.min(100, Number(totalCritPercent) || 0));
   const probabilities = Object.entries(item?.multi_hit_probabilities || {})
@@ -587,13 +618,10 @@ function calculateDamagePreview({ attack, baseAttackRaw, weaponWhiteAttack, maxH
   const postDamageMultiplier = martialPostDamageMultiplier(martial);
   const formationDamageMultiplier = 1 + Math.max(0, Number(formationDamagePercent) || 0) / 100;
   const finalDamageMultiplier = postDamageMultiplier * formationDamageMultiplier;
-  const normalBeforePostMultiplier = {
-    min: trunc(effectiveAttack * 0.9),
-    max: trunc(effectiveAttack * 1.1),
-  };
   const criticalMultipliers = martialCriticalMultipliers(martial);
   const baseCritMultiplier = Math.max(...criticalMultipliers);
   const baseCritMultiplierMin = Math.min(...criticalMultipliers);
+  const hitProfiles = martialHitProfiles(martial);
   const panelCritDamage = Number(stats?.critDamage) || 0;
   const defaultCritDamageValue = baseCritMultiplier * 100 + panelCritDamage;
   const customCritDamageValue = critDamageValue === null || critDamageValue === undefined
@@ -603,28 +631,48 @@ function calculateDamagePreview({ attack, baseAttackRaw, weaponWhiteAttack, maxH
     ? Math.max(0, customCritDamageValue)
     : defaultCritDamageValue;
   const critMultiplier = resolvedCritDamageValue / 100;
-  const critMultiplierMin = Math.max(
-    0,
-    (resolvedCritDamageValue - (baseCritMultiplier - baseCritMultiplierMin) * 100) / 100,
-  );
-  const criticalBeforePostMultiplier = {
-    min: trunc(effectiveAttack * 0.9 * critMultiplierMin),
-    max: trunc(effectiveAttack * 1.1 * critMultiplier),
-  };
-  const theoreticalMax = Math.max(
-    trunc(maxEffectiveAttack * 1.1 * finalDamageMultiplier),
-    trunc(maxEffectiveAttack * 1.1 * critMultiplier * finalDamageMultiplier),
-  );
-  const normal = {
-    min: trunc(normalBeforePostMultiplier.min * finalDamageMultiplier),
-    max: trunc(normalBeforePostMultiplier.max * finalDamageMultiplier),
-  };
-  const critical = {
-    min: trunc(criticalBeforePostMultiplier.min * finalDamageMultiplier),
-    max: trunc(criticalBeforePostMultiplier.max * finalDamageMultiplier),
-  };
+  const segmentCritMultipliers = hitProfiles.map((profile, index) => {
+    const baseMultiplier = criticalMultipliers[Math.min(index, criticalMultipliers.length - 1)] || baseCritMultiplier;
+    return Math.max(0, critMultiplier - (baseCritMultiplier - baseMultiplier));
+  });
+  const normalSegments = hitProfiles.map((profile) => ({
+    ...profile,
+    min: trunc(effectiveAttack * 0.9 * profile.segments * finalDamageMultiplier),
+    max: trunc(effectiveAttack * 1.1 * profile.segments * finalDamageMultiplier),
+  }));
+  const criticalSegments = hitProfiles.map((profile, index) => {
+    const multiplierTotal = segmentCritMultipliers.slice(0, profile.segments)
+      .reduce((sum, multiplier) => sum + multiplier, 0);
+    return {
+      ...profile,
+      min: trunc(effectiveAttack * 0.9 * multiplierTotal * finalDamageMultiplier),
+      max: trunc(effectiveAttack * 1.1 * multiplierTotal * finalDamageMultiplier),
+    };
+  });
+  const maxNormal = normalSegments.map((profile) => ({
+    ...profile,
+    min: trunc(maxEffectiveAttack * 0.9 * profile.segments * finalDamageMultiplier),
+    max: trunc(maxEffectiveAttack * 1.1 * profile.segments * finalDamageMultiplier),
+  }));
+  const maxCritical = criticalSegments.map((profile) => {
+    const multiplierTotal = segmentCritMultipliers.slice(0, profile.segments)
+      .reduce((sum, multiplier) => sum + multiplier, 0);
+    return {
+      ...profile,
+      min: trunc(maxEffectiveAttack * 0.9 * multiplierTotal * finalDamageMultiplier),
+      max: trunc(maxEffectiveAttack * 1.1 * multiplierTotal * finalDamageMultiplier),
+    };
+  });
+  const normal = normalSegments[0];
+  const critical = criticalSegments[0];
+  const theoreticalMax = Math.max(maxNormal[maxNormal.length - 1].max, maxCritical[maxCritical.length - 1].max);
   return {
     range: martialRange(martial),
+    segmentCount: hitProfiles.length,
+    hitProfiles,
+    hitProbabilityLabel: martialHitProbabilityLabel(martial),
+    normalSegments,
+    criticalSegments,
     normal,
     critical,
     baseCritMultiplier,
@@ -641,6 +689,8 @@ function calculateDamagePreview({ attack, baseAttackRaw, weaponWhiteAttack, maxH
     maxAttachmentDamage,
     attachmentTotals,
     maxAttachmentTotals,
+    maxNormal,
+    maxCritical,
     damageEffects,
     guaranteedDamageEffects: guaranteedEffects,
     postDamageMultiplier,
@@ -667,12 +717,15 @@ function renderDamagePreview(damage) {
   section.hidden = false;
   const selection = getSelectedMartial();
   const item = selection?.item || {};
-  $('damage-preview-context').textContent = `${item.name || item.nick || '当前武学'} · ${damage.range}`;
-  $('damage-normal-range').title = '本次出手必定附伤下的普通伤害范围';
-  $('damage-crit-range').title = '本次出手必定附伤下的暴击伤害范围';
-  $('damage-max-value').title = '包含已知概率/周期附伤都触发时的理论上限';
-  $('damage-normal-range').textContent = `${formatNumber(damage.normal.min)}～${formatNumber(damage.normal.max)}`;
-  $('damage-crit-range').textContent = `${formatNumber(damage.critical.min)}～${formatNumber(damage.critical.max)}`;
+  const formatSegmentRanges = (ranges) => ranges.length > 1
+    ? ranges.map((range) => `${range.segments}段 ${formatNumber(range.min)}～${formatNumber(range.max)}`).join(' · ')
+    : `${formatNumber(ranges[0].min)}～${formatNumber(ranges[0].max)}`;
+  $('damage-preview-context').textContent = `${item.name || item.nick || '当前武学'} · ${damage.range}${damage.hitProbabilityLabel ? ` · ${damage.hitProbabilityLabel}` : ''}`;
+  $('damage-normal-range').title = damage.segmentCount > 1 ? '按不同段数分别显示普通伤害范围' : '本次出手必定附伤下的普通伤害范围';
+  $('damage-crit-range').title = damage.segmentCount > 1 ? '按不同段数分别显示暴击伤害范围' : '本次出手必定附伤下的暴击伤害范围';
+  $('damage-max-value').title = '包含最高段数和已知概率/周期附伤都触发时的理论上限';
+  $('damage-normal-range').textContent = formatSegmentRanges(damage.normalSegments);
+  $('damage-crit-range').textContent = formatSegmentRanges(damage.criticalSegments);
   $('damage-max-value').textContent = formatNumber(damage.max);
   $('damage-max-probability').textContent = `上限概率 ${formatPercent(damage.upperLimitProbability)}`;
   [
@@ -887,7 +940,7 @@ function equipmentSummary(item) {
   const parts = [];
   if (stats.hpFlat) parts.push(`${formatNumber(stats.hpFlat)}血`);
   if (stats.hp) parts.push(`${formatPercent(stats.hp)}血`);
-  if (stats.attackFlat) parts.push(`${formatNumber(stats.attackFlat)}攻`);
+  if (stats.attackFlat) parts.push(`${isWeapon(item) ? '+9 ' : ''}${formatNumber(stats.attackFlat)}攻`);
   if (stats.attack) parts.push(`${formatPercent(stats.attack)}攻`);
   SECONDARY_STAT_DEFS.forEach((definition) => {
     const value = stats.secondary[definition.key];
@@ -1319,9 +1372,20 @@ function normalizeCustomEquipment(value, id) {
   };
 }
 function weaponActive() {
-  return Boolean(String(state.weaponName || '').trim() || state.weaponAffixes.some((affix) => Number(affix.value)));
+  return Boolean(state.weaponId || String(state.weaponName || '').trim() || state.weaponAffixes.some((affix) => Number(affix.value)));
 }
 function populateWeaponAffixes() {
+  const weaponSelect = $('weapon-select');
+  if (weaponSelect) {
+    weaponSelect.innerHTML = '<option value="">手动填写</option>';
+    (state.whiteRabbit?.equipment || []).filter((item) => isWeapon(item) && isSEquipment(item)).forEach((item) => {
+      const option = document.createElement('option');
+      option.value = String(item.id);
+      option.textContent = `${equipmentName(item)} · ${equipmentSummary(item)}`;
+      option.title = item.access ? `获取：${item.access}` : '';
+      weaponSelect.appendChild(option);
+    });
+  }
   document.querySelectorAll('.weapon-affix-key').forEach((select) => {
     select.innerHTML = '<option value="">选择属性</option>';
     WEAPON_ATTRIBUTE_OPTIONS.forEach((item) => {
@@ -1334,6 +1398,7 @@ function populateWeaponAffixes() {
   renderWeaponAffixes();
 }
 function renderWeaponAffixes() {
+  if ($('weapon-select')) $('weapon-select').value = state.weaponId || '';
   $('weapon-name').value = state.weaponName || '';
   state.weaponAffixes.forEach((affix, index) => {
     $(`weapon-affix-key-${index}`).value = affix.key || '';
@@ -1346,9 +1411,10 @@ function updateWeaponSummary() {
   const summary = $('weapon-summary');
   if (!summary) return;
   const affixCount = state.weaponAffixes.filter((affix) => affix.key && Number(affix.value)).length;
-  const weaponName = String(state.weaponName || '').trim();
+  const selectedWeapon = getWhiteEquipment(state.weaponId);
+  const weaponName = String(state.weaponName || '').trim() || equipmentName(selectedWeapon);
   summary.textContent = weaponActive()
-    ? `${weaponName || '已配置'}${affixCount ? ` · ${affixCount} 个词条` : ''}`
+    ? `${weaponName || '已配置'}${selectedWeapon ? ` · +9白值${formatNumber(equipmentStats(selectedWeapon).attackFlat)}攻` : ''}${affixCount ? ` · ${affixCount} 个词条` : ''}`
     : '未设置';
 }
 function setError(message) {
@@ -1513,6 +1579,7 @@ function currentConfig() {
       ...slot,
       secondary: { ...slot.secondary },
     })),
+    weaponId: state.weaponId,
     weaponName: $('weapon-name').value,
     weaponAffixes: state.weaponAffixes.map((affix) => ({ ...affix })),
     martialId: $('martial-select').value,
@@ -1861,6 +1928,10 @@ function restoreConfig(sourceConfig = null) {
       state.equipmentSlots = [EMPTY_EQUIPMENT(), EMPTY_EQUIPMENT(), EMPTY_EQUIPMENT(), EMPTY_EQUIPMENT()];
     }
   }
+  if (config.weaponId !== undefined) {
+    const item = getWhiteEquipment(config.weaponId);
+    state.weaponId = item && isWeapon(item) ? String(config.weaponId) : '';
+  }
   if (config.weaponName !== undefined) $('weapon-name').value = String(config.weaponName);
   if (Array.isArray(config.weaponAffixes)) {
     state.weaponAffixes = config.weaponAffixes.slice(0, 3).map((affix) => ({
@@ -2154,6 +2225,15 @@ function weaponAffixTotals() {
     attackPercent: 0,
     secondary: emptySecondaryStats(),
   };
+  const selectedWeapon = getWhiteEquipment(state.weaponId);
+  if (selectedWeapon && isWeapon(selectedWeapon)) {
+    const builtIn = equipmentStats(selectedWeapon);
+    totals.hpFlat += builtIn.hpFlat;
+    totals.hpPercent += builtIn.hp;
+    totals.attackFlat += builtIn.attackFlat;
+    totals.attackPercent += builtIn.attack;
+    addSecondaryStats(totals.secondary, builtIn.secondary);
+  }
   state.weaponAffixes.forEach((affix) => {
     const value = Number(affix.value) || 0;
     if (!affix.key || !value) return;
@@ -2898,9 +2978,6 @@ function dungeonBossFromSegment(segment, dungeon, alias) {
   return remainder || 'Boss 信息待补';
 }
 function encyclopediaDungeonGroups() {
-  const sourceRecords = Object.entries(ENCYCLOPEDIA_TYPE_LABELS).flatMap(([sourceType, typeLabel]) => (
-    encyclopediaRecords(sourceType).map((record) => ({ ...record, sourceType, typeLabel }))
-  ));
   const groups = ENCYCLOPEDIA_DUNGEONS.map((dungeon) => ({
     ...dungeon,
     bosses: [],
@@ -2908,6 +2985,37 @@ function encyclopediaDungeonGroups() {
   }));
   const groupMap = new Map(groups.map((group) => [group.id, group]));
   const seen = new Set();
+  const addDrop = (group, bossName, drop) => {
+    if (!group) return;
+    const normalizedBoss = String(bossName || '副本掉落').trim() || '副本掉落';
+    const seenKey = `${group.id}|${drop.name}`;
+    if (seen.has(seenKey)) return;
+    seen.add(seenKey);
+    if (!group.bossMap.has(normalizedBoss)) {
+      const boss = { name: normalizedBoss, drops: [] };
+      group.bossMap.set(normalizedBoss, boss);
+      group.bosses.push(boss);
+    }
+    group.bossMap.get(normalizedBoss).drops.push(drop);
+  };
+  (state.whiteRabbit?.dungeon_drops || []).forEach((record, index) => {
+    const dungeon = ENCYCLOPEDIA_DUNGEONS.find((candidate) => (
+      candidate.aliases.some((alias) => String(record.dungeon || '').includes(alias))
+    ));
+    if (!dungeon || !record.name) return;
+    addDrop(groupMap.get(dungeon.id), record.boss || '副本掉落', {
+      id: record.id || `explicit-dungeon-drop-${index}`,
+      name: record.name,
+      typeLabel: record.type || '掉落',
+      meta: record.drop || '',
+      summary: record.drop || '',
+      detail: record.note || '',
+      source: record.drop || '攻略记录',
+    });
+  });
+  const sourceRecords = Object.entries(ENCYCLOPEDIA_TYPE_LABELS).flatMap(([sourceType, typeLabel]) => (
+    encyclopediaRecords(sourceType).map((record) => ({ ...record, sourceType, typeLabel }))
+  ));
   sourceRecords.forEach((record) => {
     const sourceText = record.sourceText || encyclopediaText(record.access, record.detail);
     const sourceHasDropAction = ENCYCLOPEDIA_DROP_ACTION_PATTERN.test(sourceText);
@@ -2921,15 +3029,7 @@ function encyclopediaDungeonGroups() {
         const bossName = dungeonBossFromSegment(segment, dungeon, alias);
         const group = groupMap.get(dungeon.id);
         if (!group) return;
-        const seenKey = `${dungeon.id}|${record.id}|${bossName}|${segment}`;
-        if (seen.has(seenKey)) return;
-        seen.add(seenKey);
-        if (!group.bossMap.has(bossName)) {
-          const boss = { name: bossName, drops: [] };
-          group.bossMap.set(bossName, boss);
-          group.bosses.push(boss);
-        }
-        group.bossMap.get(bossName).drops.push({
+        addDrop(group, bossName, {
           id: `${record.id}-${dungeon.id}-${group.bosses.length}`,
           name: record.name,
           typeLabel: record.typeLabel,
@@ -3017,7 +3117,12 @@ function encyclopediaRecords(type) {
         summaryLabel: '装备效果',
         summary: item.special || '特殊效果待补',
         access: item.access || '获取方式待补',
-        detail: item.unique && '唯一装备',
+        detail: encyclopediaText(
+          item.unique && '唯一装备',
+          Array.isArray(item.aliases) && item.aliases.length && `别名：${item.aliases.join('、')}`,
+          Array.isArray(item.forge_options) && item.forge_options.length && `可铸造：${item.forge_options.join('、')}`,
+          item.designer && `设计：${item.designer}`,
+        ),
         sourceText: item.access || '',
       };
     });
@@ -3052,27 +3157,17 @@ function renderEncyclopedia() {
   const toolbar = $('encyclopedia-toolbar');
   const martialFilterField = $('encyclopedia-martial-filter-field');
   const equipmentFilterField = $('encyclopedia-equipment-filter-field');
-  const dungeonFilterField = $('encyclopedia-dungeon-filter-field');
   const martialFilter = $('encyclopedia-martial-filter')?.value || '';
   const equipmentFilter = $('encyclopedia-equipment-filter')?.value || '';
   const dungeonGroups = type === 'dungeon_drops' ? encyclopediaDungeonGroups() : [];
-  const dungeonSelect = $('encyclopedia-dungeon-filter');
-  if (dungeonSelect && type === 'dungeon_drops') {
-    const selected = dungeonSelect.value;
-    dungeonSelect.innerHTML = `<option value="">全部副本</option>${dungeonGroups.filter((group) => group.bosses.length).map((group) => `<option value="${escapeHtml(group.id)}">${escapeHtml(group.name)}</option>`).join('')}`;
-    dungeonSelect.value = dungeonGroups.some((group) => group.id === selected && group.bosses.length) ? selected : '';
-  }
-  const dungeonFilter = dungeonSelect?.value || '';
-  const hasSecondaryFilter = type === 'martial_arts' || type === 'equipment' || type === 'dungeon_drops';
+  const hasSecondaryFilter = type === 'martial_arts' || type === 'equipment';
   toolbar?.classList.toggle('has-secondary-filter', hasSecondaryFilter);
   if (martialFilterField) martialFilterField.hidden = type !== 'martial_arts';
   if (equipmentFilterField) equipmentFilterField.hidden = type !== 'equipment';
-  if (dungeonFilterField) dungeonFilterField.hidden = type !== 'dungeon_drops';
   const records = encyclopediaRecords(type);
   const filteredRecords = records.filter((record) => {
     if (type === 'martial_arts' && martialFilter && !String(record.style || '').includes(martialFilter)) return false;
     if (type === 'equipment' && equipmentFilter && record.equipmentSlot !== equipmentFilter) return false;
-    if (type === 'dungeon_drops' && dungeonFilter && record.dungeonId !== dungeonFilter) return false;
     return true;
   });
   const visible = filteredRecords.filter((record) => !query
@@ -3094,8 +3189,8 @@ function renderEncyclopedia() {
       })).filter((boss) => boss.drops.length),
     })).filter((group) => group.bosses.length);
     content.innerHTML = visibleGroups.map((group) => `
-      <section class="dungeon-drop-section">
-        <div class="dungeon-drop-heading"><div><span class="dungeon-drop-kicker">副本掉落</span><strong>${escapeHtml(group.name)}</strong></div><span>${group.bosses.length} 个 Boss · ${group.bosses.reduce((sum, boss) => sum + boss.drops.length, 0)} 项掉落</span></div>
+      <details class="dungeon-drop-section">
+        <summary class="dungeon-drop-heading"><span><span class="dungeon-drop-kicker">副本掉落</span><strong>${escapeHtml(group.name)}</strong></span><span>${group.bosses.length} 个 Boss · ${group.bosses.reduce((sum, boss) => sum + boss.drops.length, 0)} 项掉落</span></summary>
         <div class="dungeon-boss-list">
           ${group.bosses.map((boss) => `
             <section class="dungeon-boss-group">
@@ -3105,7 +3200,7 @@ function renderEncyclopedia() {
               </div>
             </section>`).join('')}
         </div>
-      </section>`).join('');
+      </details>`).join('');
     return;
   }
   content.innerHTML = visible.map((record) => `
@@ -3429,6 +3524,16 @@ function bindEvents() {
     updateWeaponSummary();
     calculate();
   });
+  $('weapon-select').addEventListener('change', (event) => {
+    const previousWeapon = getWhiteEquipment(state.weaponId);
+    const usedBuiltInName = !String(state.weaponName || '').trim()
+      || String(state.weaponName).trim() === equipmentName(previousWeapon);
+    state.weaponId = event.target.value;
+    const item = getWhiteEquipment(state.weaponId);
+    if (usedBuiltInName) state.weaponName = item ? equipmentName(item) : '';
+    renderWeaponAffixes();
+    calculate();
+  });
   state.weaponAffixes.forEach((affix, index) => {
     $(`weapon-affix-key-${index}`).addEventListener('change', (event) => { state.weaponAffixes[index].key = event.target.value; updateWeaponSummary(); calculate(); });
     $(`weapon-affix-mode-${index}`).addEventListener('change', (event) => { state.weaponAffixes[index].mode = event.target.value; updateWeaponSummary(); calculate(); });
@@ -3451,6 +3556,7 @@ function bindEvents() {
   });
   $('reset-button').addEventListener('click', () => {
     state.equipmentSlots = [EMPTY_EQUIPMENT(), EMPTY_EQUIPMENT(), EMPTY_EQUIPMENT(), EMPTY_EQUIPMENT()];
+    state.weaponId = '';
     state.weaponName = '';
     state.weaponAffixes = [EMPTY_WEAPON_AFFIX(), EMPTY_WEAPON_AFFIX(), EMPTY_WEAPON_AFFIX()];
     $('person-name').value = '主角'; $('hp-factor').value = 1; $('power-factor').value = 1;
@@ -3507,7 +3613,6 @@ function bindEvents() {
   $('encyclopedia-type').addEventListener('change', renderEncyclopedia);
   $('encyclopedia-martial-filter').addEventListener('change', renderEncyclopedia);
   $('encyclopedia-equipment-filter').addEventListener('change', renderEncyclopedia);
-  $('encyclopedia-dungeon-filter').addEventListener('change', renderEncyclopedia);
   $('encyclopedia-search').addEventListener('input', renderEncyclopedia);
 
   $('name-modal-confirm').addEventListener('click', () => {

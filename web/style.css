@@ -1785,17 +1785,22 @@ h2 {
   border-bottom: 0;
 }
 
+.weapon-row > .slot-picker {
+  grid-column: 1;
+  grid-row: 1;
+}
+
 .weapon-row .slot-name,
 .weapon-row .weapon-affix-grid {
   grid-column: 1;
 }
 
 .weapon-row .slot-name {
-  grid-row: 1;
+  grid-row: 2;
 }
 
 .weapon-row .weapon-affix-grid {
-  grid-row: 2;
+  grid-row: 3;
   margin-top: 8px;
 }
 
@@ -3010,12 +3015,13 @@ h2 {
 }
 
 .damage-preview-card strong {
-  overflow: hidden;
+  max-width: 78%;
   color: var(--teal-dark);
   font-size: 1.1rem;
   font-variant-numeric: tabular-nums;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.35;
+  text-align: right;
+  overflow-wrap: anywhere;
 }
 
 .damage-preview-crit strong {
@@ -3208,6 +3214,15 @@ h2 {
   box-shadow: inset 0 0 0 1px #c9b9a6;
 }
 
+.dungeon-drop-section > summary {
+  list-style: none;
+  cursor: pointer;
+}
+
+.dungeon-drop-section > summary::-webkit-details-marker {
+  display: none;
+}
+
 .dungeon-drop-heading {
   display: flex;
   align-items: end;
@@ -3221,7 +3236,7 @@ h2 {
   font-weight: 700;
 }
 
-.dungeon-drop-heading > div {
+.dungeon-drop-heading > span:first-child {
   display: grid;
   gap: 2px;
 }

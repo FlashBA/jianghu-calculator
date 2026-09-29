@@ -236,6 +236,7 @@
                 <summary><strong>武器设置</strong><span id="weapon-summary">未设置</span></summary>
                 <div class="weapon-editor-content">
                   <div class="equipment-slot-row weapon-row" data-slot="0">
+                    <label class="field slot-picker"><span>内置武器</span><select id="weapon-select" class="compact-picker" aria-label="选择内置武器"></select></label>
                     <label class="field slot-name"><span>名称</span><input id="weapon-name" type="text" placeholder="自定义武器" autocomplete="off"></label>
                     <div class="weapon-affix-grid">
                       <div class="weapon-affix-row">
@@ -468,12 +469,6 @@
               <option value="armor">衣甲</option>
               <option value="ring">戒指</option>
               <option value="wrist">护腕</option>
-            </select>
-          </label>
-          <label class="field encyclopedia-filter-field" id="encyclopedia-dungeon-filter-field" hidden>
-            <span>选择副本</span>
-            <select id="encyclopedia-dungeon-filter">
-              <option value="">全部副本</option>
             </select>
           </label>
           <label class="field">

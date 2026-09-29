@@ -9,7 +9,7 @@
 构建新版本时递增版本号，例如：
 
 ```sh
-VERSION_CODE=109 VERSION_NAME=0.1.9 \
+VERSION_CODE=200 VERSION_NAME=0.2.0 \
 APK_KEYSTORE=/path/to/jianghu-debug.keystore \
 APK_STORE_PASSWORD=android \
 APK_KEY_ALIAS=androiddebugkey \
@@ -29,11 +29,11 @@ JAVA_HOME=/path/to/jdk-17 ./build-apk.sh
 # 在 analysis/ 目录执行
 git status
 git log -1 --oneline
-git tag v0.1.10 HEAD
-git push origin v0.1.10
+git tag v0.2.0 HEAD
+git push origin v0.2.0
 ```
 
-版本号必须递增，并且每个版本使用未占用的新标签，例如 `v0.1.10`。推送成功后，在 GitHub Actions 中等待构建完成，再到对应 Release 检查 APK 资产。
+版本号必须递增，并且每个版本使用未占用的新标签，例如 `v0.2.0`。推送成功后，在 GitHub Actions 中等待构建完成，再到对应 Release 检查 APK 资产。
 
 不要只点击 `Run workflow` 来做正式发布：手动运行没有 tag 上下文，当前 Release action 会报 `GitHub Releases requires a tag`。如果只是重试已有标签的构建，应从该标签重新运行对应的 workflow；正式发布仍使用“创建并推送新标签”的流程。
 
