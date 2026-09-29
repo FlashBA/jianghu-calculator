@@ -2816,6 +2816,14 @@ const ENCYCLOPEDIA_WEAPON_SLOTS = {
   3: 'weapon-blade',
   4: 'weapon-staff',
 };
+const ENCYCLOPEDIA_DUNGEON_PATTERN = /副本|虎啸林|八阵图|囚龙谷|无间地狱|冥离地宫|凤鸣山|五龙塔|玄武岛/;
+const ENCYCLOPEDIA_DROP_ACTION_PATTERN = /掉落|宝箱|击杀|概率|残页|获得/;
+const ENCYCLOPEDIA_TYPE_LABELS = {
+  techniques: '技艺',
+  inner_skills: '内功',
+  martial_arts: '武学',
+  equipment: '装备',
+};
 function encyclopediaText(...values) {
   return values.flatMap((value) => Array.isArray(value) ? value : [value])
     .map((value) => String(value || '').replace(/\s+/g, ' ').trim())
@@ -2859,6 +2867,30 @@ function martialRuleSummary(item) {
 }
 function encyclopediaRecords(type) {
   const white = state.whiteRabbit || {};
+  if (type === 'dungeon_drops') {
+    const sourceRecords = Object.entries(ENCYCLOPEDIA_TYPE_LABELS).flatMap(([sourceType, typeLabel]) => (
+      encyclopediaRecords(sourceType).map((record) => ({ ...record, sourceType, typeLabel }))
+    ));
+    const markedRecords = sourceRecords.filter((record) => record.encyclopediaCategory === 'dungeon_drops');
+    const records = markedRecords.length ? markedRecords : sourceRecords.filter((record) => {
+      const sourceText = record.sourceText || encyclopediaText(record.access, record.detail);
+      return ENCYCLOPEDIA_DUNGEON_PATTERN.test(sourceText)
+        && ENCYCLOPEDIA_DROP_ACTION_PATTERN.test(sourceText);
+    });
+    return records.map((record) => {
+      const sourceText = record.sourceText || encyclopediaText(record.access, record.detail);
+      const dropSources = sourceText
+        .split(' · ')
+        .filter((part) => ENCYCLOPEDIA_DUNGEON_PATTERN.test(part)
+          && ENCYCLOPEDIA_DROP_ACTION_PATTERN.test(part));
+      return {
+        ...record,
+        id: `dungeon-${record.sourceType}-${record.id}`,
+        meta: encyclopediaText(record.typeLabel, record.meta),
+        access: dropSources.join('；') || record.access,
+      };
+    });
+  }
   if (type === 'characters') {
     return (white.characters || []).map((item, index) => ({
       id: item.id || `character-${index}`,
@@ -2879,6 +2911,8 @@ function encyclopediaRecords(type) {
       summary: item.effect || '效果待补',
       access: item.access || '获取方式待补',
       detail: item.group === 'wolong' ? '' : item.upgrade && `升级：${item.upgrade}`,
+      sourceText: encyclopediaText(item.access, item.upgrade),
+      encyclopediaCategory: item.encyclopedia_category || '',
     }));
   }
   if (type === 'inner_skills') {
@@ -2890,6 +2924,7 @@ function encyclopediaRecords(type) {
       summary: innerEncyclopediaEffect(item),
       access: item.access || '获取方式待补',
       detail: item.designer ? `设计：${item.designer}` : '',
+      sourceText: item.access || '',
     }));
   }
   if (type === 'martial_arts') {
@@ -2902,6 +2937,7 @@ function encyclopediaRecords(type) {
       summary: encyclopediaText(item.double_break, item.crit_percent != null && `暴击 ${formatPercent(item.crit_percent)}`, martialCritDamageLabel(item.crit_damage), item.buff, item.special, martialRuleSummary(item)) || '武学效果待补',
       access: item.access || '获取方式待补',
       detail: '',
+      sourceText: item.access || '',
     }));
   }
   if (type === 'equipment') {
@@ -2916,6 +2952,7 @@ function encyclopediaRecords(type) {
         summary: item.special || '特殊效果待补',
         access: item.access || '获取方式待补',
         detail: item.unique && '唯一装备',
+        sourceText: item.access || '',
       };
     });
     const seen = new Set();
@@ -2935,6 +2972,7 @@ function encyclopediaRecords(type) {
         summaryLabel: '武器说明',
         summary: '白值、强化档与铸造属性以当前武器数据为准',
         detail: String(item.desp || '').replace(/【\|[^|]+\|/g, '').replace(/\|】/g, ''),
+        sourceText: '',
       }));
     return [...whiteRecords, ...weaponRecords];
   }

@@ -703,6 +703,7 @@
     },
     {
       "name": "朱雀之力",
+      "encyclopedia_category": "dungeon_drops",
       "max_level": 300,
       "scope": "全队",
       "effect": "10%攻击，10%闪避，10%爆伤",
@@ -714,6 +715,7 @@
     },
     {
       "name": "玄武之力",
+      "encyclopedia_category": "dungeon_drops",
       "max_level": 300,
       "scope": "全队",
       "effect": "10%恢复，10%格挡，10%基础气血",
@@ -726,6 +728,7 @@
     },
     {
       "name": "白虎之力",
+      "encyclopedia_category": "dungeon_drops",
       "max_level": 300,
       "scope": "全队",
       "effect": "10速度，5%暴击率，5%吸血",
@@ -737,6 +740,7 @@
     },
     {
       "name": "染羽",
+      "encyclopedia_category": "dungeon_drops",
       "max_level": 300,
       "scope": "全队",
       "effect": "3%免伤，3速度，3%格挡，3%闪避",
@@ -748,6 +752,7 @@
     },
     {
       "name": "垂钓之技",
+      "encyclopedia_category": "dungeon_drops",
       "max_level": 300,
       "scope": "主角",
       "effect": "15%气血",
@@ -759,6 +764,7 @@
     },
     {
       "name": "伐木之技",
+      "encyclopedia_category": "dungeon_drops",
       "max_level": 300,
       "scope": "主角",
       "effect": "15%攻击",
@@ -770,6 +776,7 @@
     },
     {
       "name": "种植之技",
+      "encyclopedia_category": "dungeon_drops",
       "max_level": 300,
       "scope": "主角",
       "effect": "6%暴击率",
@@ -781,6 +788,7 @@
     },
     {
       "name": "研读之技",
+      "encyclopedia_category": "dungeon_drops",
       "max_level": 300,
       "scope": "主角",
       "effect": "10%恢复",
