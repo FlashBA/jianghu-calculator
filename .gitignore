@@ -18,6 +18,7 @@ FORMULAS*.md
 !/android-app/src/main/java/com/flashba/
 !/android-app/src/main/java/com/flashba/jianghucalculator/
 !/android-app/src/main/java/com/flashba/jianghucalculator/MainActivity.java
+!/android-app/src/main/java/com/flashba/jianghucalculator/UpdateApkProvider.java
 !/android-app/tools/
 !/android-app/tools/AssetVaultBuilder.java
 !/android-app/src/main/res/

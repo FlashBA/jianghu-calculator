@@ -1,4 +1,5 @@
 const STORAGE_KEY = 'jianghu-stat-simulator:character:v6';
+const REMOTE_WHITE_RABBIT_URL = 'https://raw.githubusercontent.com/FlashBA/jianghu-calculator/main/web/whiterabbit_data.json';
 const BASE_SPEED_DEFAULTS_VERSION = 2;
 const BASE_CRIT_DEFAULTS_VERSION = 1;
 const CHARACTER_BASE_DEFAULTS_VERSION = 1;
@@ -52,7 +53,7 @@ const INNER_MANUAL_FIELD_IDS = ['neigong-hp', 'neigong-attack', ...SECONDARY_KEY
 ))];
 const WEAPON_ATTRIBUTE_OPTIONS = [
   { key: 'hp', label: '生命' },
-  { key: 'attack', label: '攻击' },
+  { key: 'attack', label: '武器白值攻击' },
   ...SECONDARY_STAT_DEFS.map((stat) => ({ key: stat.key, label: stat.label })),
 ];
 const FORMATION_OPTIONS = [
@@ -78,9 +79,10 @@ const CALCULATION_DOCUMENT = [
     title: '生命',
     formulas: [
       '血丹乘区 = 1 + 血丹数量 × 2%',
-      '血丹后生命 = 血丹后基础生命 × (1 + 内功生命% + 技艺生命% + 装备生命% + 武器/阵法生命% + 小任督生命%)',
+      '血丹后生命 = 血丹后基础生命 × (1 + 内功生命% + 技艺生命% + 装备生命% + 武器生命% + 小任督生命%)',
+      '阵法生命乘区 = 1 + 阵法生命加成%（八枢 1 号位为 ×1.24，其他位置为 ×0.93）',
       '内功大任督生命 = 基础生命 × (110% + 补充生命%)',
-      '最终生命 = round(血丹后生命 + 内功大任督生命) + 成就固定生命 + 装备/武器白值生命',
+      '最终生命 = round((血丹后生命 + 内功大任督生命) × 阵法生命乘区) + 成就固定生命 + 装备/武器白值生命',
     ],
     notes: ['血丹最多按 30 颗计算。内功大任督按血丹前基础生命计算，不吃装备白值和成就固定值。'],
   },
@@ -99,9 +101,11 @@ const CALCULATION_DOCUMENT = [
     formulas: [
       '基础攻击项 = B × 攻击丹乘区 × (1 + 内功攻击% + 技艺攻击% + 武学威力加成%)',
       '武学项 = P × (1 + 内功攻击% + 小任督攻击% + 技艺攻击% + 武学威力加成%)',
+      '武学威力加成 = 普通威力加成 + 当前武学对应的满级佛法/道学加成',
+      '阵法攻击乘区 = 1 + 阵法攻击加成%（八枢 1 号位为 ×1.24，其他位置为 ×0.93）',
       '内功大任督攻击项 = B × (10% × 大任督数量 + 补充攻击%)',
       '装备百分比项 = (B × 攻击丹乘区 + P) × (装备攻击% + 武器铸造攻击%)',
-      '最终攻击 = trunc((基础攻击项 + 武学项 + 大任督攻击项 + 装备百分比项 + 固定攻击) × 武学大任督乘区) + 成就固定攻击',
+      '最终攻击 = trunc((基础攻击项 + 武学项 + 大任督攻击项 + 装备百分比项 + 固定攻击) × 阵法攻击乘区 × 武学大任督乘区) + 成就固定攻击',
     ],
     notes: ['B 为基础攻击原值，P 为当前武学原始威力。朱雀之力等生效技艺攻击%同时进入基础攻击项和武学项；小任督攻击%只进入武学项。'],
   },
@@ -118,12 +122,23 @@ const CALCULATION_DOCUMENT = [
   {
     title: '伤害结算',
     formulas: [
-      '攻击方战斗值 = trunc(攻击基础值 × 武功倍率 × 战斗模式倍率 ÷ 100)',
-      '有效免伤 = min(目标免伤, 50%)',
-      '实际伤害 = trunc(攻击方战斗值 × (1 - 有效免伤))',
-      '当前生命 = clamp(当前生命 + 生命变化, 0, 最大生命)',
+      '原版浮动倍率 = (随机整数 90～110) ÷ 100',
+      '本次伤害基数 = 最终攻击 + 本次必定触发的人物基础附伤 + 武器白值附伤',
+      '理论上限伤害基数 = 最终攻击 + 已知附伤全部触发时的人物基础附伤 + 武器白值附伤',
+      '人物基础附伤 = 基础攻击原值 B × 人物基础攻击附伤%；武器白值附伤 = 当前强化武器白值攻击 × 武器攻击附伤%；其他附伤按明确标注的最终攻击/最终生命取值',
+      '概率附伤按触发时加入，周期附伤只在对应回合加入',
+      '普通伤害浮动 = trunc(本次伤害基数 × 伤害系数 × 90%～110% × (1 - min(对方免伤, 50%)))',
+      '默认理论爆伤% = 武学爆伤倍率 × 100 + 面板爆伤%；可在理论伤害中手动覆盖',
+      '最终暴击倍率 = 理论伤害爆伤值 ÷ 100',
+      '暴击伤害浮动 = trunc(本次伤害基数 × 伤害系数 × 90%～110% × 最终暴击倍率 × (1 - min(对方免伤, 50%)))',
+      '结算后附伤 = 已完成免伤计算的伤害 × 武学附伤倍率（例如天狼破穹枪 × 1.5）',
+      '阵法独立伤害乘区 = 1 + 阵法独立伤害%',
+      '最终伤害 = 结算后附伤 × 阵法独立伤害乘区',
+      '理论伤害上限 = max(普通伤害上限, 暴击伤害上限)',
+      '理论上限概率 = 暴击率 × 多段上限概率 × 概率附伤触发率（无多段数据时取 1；周期附伤按对应回合判断）',
+      '实际伤害 = trunc(浮动伤害 × (1 - min(目标免伤, 50%)))',
     ],
-    notes: ['暴击率、等级差、武功和装备的特殊效果在战斗判定阶段生效，不改变面板攻击力公式。'],
+    notes: ['人物基础附伤只取基础攻击原值 B；武器白值附伤只取武器编辑器中的当前强化最终白值，百分比攻击词条不作为白值。理论上限概率使用最终面板暴击率，并把已知概率/周期附伤视为触发态，但不会把它们当作每次出手必定生效。随1/随2/随3/邻2/邻3是目标范围，不自动套用统一分摊系数。'],
   },
 ];
 
@@ -152,6 +167,8 @@ let pendingNameDialog = null;
 let pendingTeamPicker = null;
 let pendingConfirmation = null;
 let expandedTeamId = null;
+let damageFactorCustomized = false;
+let damageCritCustomized = false;
 
 const $ = (id) => document.getElementById(id);
 
@@ -223,6 +240,95 @@ function stylePowerFromEffect(effect) {
     : text;
   return stylePowerFromText(rendered);
 }
+function martialRuleName(item) {
+  return String(item?.name || item?.nick || '').trim();
+}
+function nativeMartialItem(item) {
+  if (item?.levelEffect) return item;
+  const target = normalizedDataName(martialRuleName(item));
+  if (!target) return null;
+  return Object.values(state.data?.skill || {}).find((candidate) => (
+    normalizedDataName(candidate?.nick || candidate?.name) === target
+  )) || null;
+}
+function nativeMartialRule(item) {
+  const levelEffect = nativeMartialItem(item)?.levelEffect;
+  const parameter = Number(levelEffect?.param);
+  const value = Number(levelEffect?.v);
+  if (![7018, 7207].includes(parameter) || !Number.isFinite(value) || value <= 0) return null;
+  return {
+    technique: parameter === 7018 ? '佛法' : '道学',
+    maxPercent: value / 100,
+    source: '原版 5.40 levelEffect',
+  };
+}
+function nativeMartialDamageEffects(item) {
+  const levelEffect = nativeMartialItem(item)?.levelEffect;
+  const type = Number(levelEffect?.t);
+  const value = Number(levelEffect?.v);
+  if (![134217734, 134217735].includes(type) || !Number.isFinite(value) || value <= 0) return [];
+  return [{
+    source: type === 134217734 ? 'weapon_attack' : 'base_attack',
+    percent: value / 100,
+    chance_percent: Number(levelEffect?.rate) || 100,
+    period_rounds: Number(levelEffect?.r) > 0 ? Number(levelEffect.r) + 1 : 0,
+  }];
+}
+function martialRule(item) {
+  const name = martialRuleName(item);
+  const stored = state.whiteRabbit?.martial_rules?.[name] || {};
+  const native = nativeMartialRule(item) || {};
+  return {
+    ...native,
+    ...stored,
+    damageEffects: stored.damage_effects || stored.damageEffects || nativeMartialDamageEffects(item),
+  };
+}
+function selectedTechniqueMaxLevel(name) {
+  const normalized = String(name || '').replace(/禅理$/, '');
+  const technique = selectedTechniques().find((item) => {
+    const candidate = String(item?.name || '');
+    return techniqueScopeStatus(item) && (candidate === name || candidate.startsWith(normalized));
+  });
+  return Number(technique?.max_level) || 0;
+}
+function martialTechniqueBonusPercent(item) {
+  const rule = martialRule(item);
+  const maxPercent = Number(rule.max_percent ?? rule.maxPercent);
+  if (!rule.technique || !Number.isFinite(maxPercent) || maxPercent <= 0) return 0;
+  const level = selectedTechniqueMaxLevel(rule.technique);
+  const maxLevel = Math.max(1, selectedTechniqueMaxLevel(rule.technique) || 300);
+  return Number((maxPercent * Math.min(1, level / maxLevel)).toFixed(2));
+}
+function martialDamageEffects(item) {
+  return martialRule(item).damageEffects
+    .map((effect) => ({
+      source: effect.source,
+      percent: Number(effect.percent) || 0,
+      chancePercent: Number(effect.chance_percent ?? effect.chancePercent) || 100,
+      periodRounds: Number(effect.period_rounds ?? effect.periodRounds) || 0,
+    }))
+    .filter((effect) => ['base_attack', 'weapon_attack', 'final_attack', 'max_hp'].includes(effect.source)
+      && effect.percent > 0);
+}
+function damageAttachmentTotals(effects, { baseAttackRaw, weaponWhiteAttack, finalAttack, maxHp }) {
+  return effects.reduce((totals, effect) => {
+    const sourceValue = {
+      base_attack: baseAttackRaw,
+      weapon_attack: weaponWhiteAttack,
+      final_attack: finalAttack,
+      max_hp: maxHp,
+    }[effect.source];
+    const amount = sourceValue * effect.percent / 100;
+    if (Object.prototype.hasOwnProperty.call(totals, effect.source)) {
+      totals[effect.source] += Number.isFinite(amount) ? amount : 0;
+    }
+    return totals;
+  }, { base_attack: 0, weapon_attack: 0, final_attack: 0, max_hp: 0 });
+}
+function guaranteedDamageEffects(effects) {
+  return effects.filter((effect) => effect.chancePercent >= 100 && effect.periodRounds <= 0);
+}
 function addSecondaryStats(target, source) {
   SECONDARY_KEYS.forEach((key) => { target[key] += numberValueFrom(source?.[key]); });
   return target;
@@ -253,11 +359,21 @@ function secondaryStatsFromText(text) {
     格挡: 'block', 招架: 'block', 反伤: 'reflect', 回复: 'recovery',
     恢复: 'recovery', 疗伤: 'recovery',
   };
+  const normalized = String(text || '');
   const pattern = /(降低|减少)?\s*(\d+(?:\.\d+)?)\s*%?\s*(暴击伤害|暴击率|暴击|免伤|闪避|吸血|反伤|格挡|招架|回复|恢复|疗伤|速度)/g;
   let match;
-  while ((match = pattern.exec(String(text || '').replaceAll('\n', '，')))) {
+  while ((match = pattern.exec(normalized))) {
     const key = statMap[match[3]];
-    if (key) stats[key] += (match[1] ? -1 : 1) * Number(match[2]);
+    if (!key) continue;
+    const clauseStart = Math.max(
+      normalized.lastIndexOf('。', match.index),
+      normalized.lastIndexOf('；', match.index),
+      normalized.lastIndexOf(';', match.index),
+      normalized.lastIndexOf('\n', match.index),
+    ) + 1;
+    const operator = normalized.slice(clauseStart, match.index).match(/降低|减少|增加|提高|提升/g)?.at(-1);
+    const sign = operator === '降低' || operator === '减少' || match[1] ? -1 : 1;
+    stats[key] += sign * Number(match[2]);
   }
   return stats;
 }
@@ -265,7 +381,10 @@ function secondaryStatsSummary(stats) {
   return SECONDARY_STAT_DEFS
     .map((definition) => {
       const value = Number(stats?.[definition.key]) || 0;
-      return value ? formatSecondaryValue(definition.key, value) + definition.label : '';
+      const formatted = definition.key === 'recovery'
+        ? formatPercent(value)
+        : formatSecondaryValue(definition.key, value);
+      return value ? formatted + definition.label : '';
     })
     .filter(Boolean)
     .join(' · ');
@@ -282,15 +401,18 @@ function innerStatsSummary(stats) {
 }
 function formationStats() {
   const formation = $('formation-select')?.value || '';
-  if (!formation) return { name: '不布阵', position: 0, hp: 0, attack: 0, secondary: emptySecondaryStats(), note: '' };
+  if (!formation) return { name: '不布阵', position: 0, hp: 0, attack: 0, damage: 0, secondary: emptySecondaryStats(), note: '' };
   const roleName = $('person-name').value.trim() || '自定义角色';
-  const position = roleName === '主角' ? 1 : Math.max(1, Math.min(9, Math.round(numberValue('formation-position', 1))));
+  const position = roleName === '主角'
+    ? 1
+    : Math.max(2, Math.min(9, Math.round(numberValue('formation-position', 2))));
   const secondary = emptySecondaryStats();
   const result = {
     name: formation === 'jiugong' ? '九宫八卦阵' : '八枢汇极阵',
     position,
     hp: 0,
     attack: 0,
+    damage: 0,
     secondary,
     note: '',
   };
@@ -301,7 +423,7 @@ function formationStats() {
       3: { hp: 10, mitigation: 5, note: '坤位' },
       4: { speed: 15, crit: 8, note: '震位' },
       5: { speed: 12, dodge: 12, note: '巽位' },
-      6: { note: '乾位' },
+      6: { damage: 20, note: '乾位，独立伤害乘区' },
       7: { crit: 10, lifesteal: 10, note: '兑位' },
       8: { block: 15, reflect: 50, note: '艮位' },
       9: { crit: 10, critDamage: 50, note: '离位' },
@@ -309,6 +431,7 @@ function formationStats() {
     const slot = slots[position];
     result.hp = slot.hp || 0;
     result.attack = slot.attack || 0;
+    result.damage = slot.damage || 0;
     addSecondaryStats(secondary, slot);
     result.note = slot.note;
     return result;
@@ -343,7 +466,7 @@ function formationStats() {
   }
   return result;
 }
-const WEAPON_TYPES = new Set([1, 2, 3]);
+const WEAPON_TYPES = new Set([1, 2, 3, 4]);
 function isWeapon(item) { return WEAPON_TYPES.has(Number(item?.type)); }
 function isSEquipment(item) {
   return item?.source === 'white'
@@ -353,6 +476,17 @@ function isSEquipment(item) {
 function isSOrUnknownRank(value) {
   const rank = String(value || '').trim().toUpperCase();
   return rank.endsWith('S') || rank === '?' || rank === '？';
+}
+function displayMartialRank(value) {
+  const rank = String(value || '').trim().toUpperCase();
+  return /^\d+S$/.test(rank) ? 'S' : rank || '品级待补';
+}
+function martialCritDamageLabel(value) {
+  const raw = String(value ?? '').trim();
+  if (!raw || raw === '/') return '';
+  if (raw.includes('/')) return `爆伤 ×${raw}`;
+  const number = Number(raw);
+  return Number.isFinite(number) ? `爆伤 ×${number.toFixed(2)}` : `爆伤 ×${raw}`;
 }
 function getWhiteEquipment(id) {
   return state.whiteRabbit?.equipment?.find((item) => String(item.id) === String(id));
@@ -398,6 +532,153 @@ function getSelectedMartial() {
   }
   return null;
 }
+function martialCriticalMultiplier(item) {
+  return Math.max(...martialCriticalMultipliers(item));
+}
+function martialCriticalMultipliers(item) {
+  const values = String(item?.crit_damage ?? item?.baojiEffect ?? '')
+    .split('/')
+    .map((value) => Number(value.trim()))
+    .filter((value) => Number.isFinite(value) && value > 0);
+  return values.length ? values : [1.25];
+}
+function martialDamageFactor(item) {
+  const value = Number(item?.damage_factor);
+  return Number.isFinite(value) && value >= 0 ? value : 1;
+}
+function martialPostDamageMultiplier(item) {
+  const value = Number(item?.post_damage_multiplier);
+  return Number.isFinite(value) && value >= 0 ? value : 1;
+}
+function damageUpperLimitProbability(item, totalCritPercent = Number(item?.crit_percent) || 0) {
+  const critPercent = Math.max(0, Math.min(100, Number(totalCritPercent) || 0));
+  const probabilities = Object.entries(item?.multi_hit_probabilities || {})
+    .map(([segments, probability]) => ({ segments: Number(segments), probability: Number(probability) }))
+    .filter((entry) => Number.isFinite(entry.segments) && entry.segments > 1
+      && Number.isFinite(entry.probability) && entry.probability >= 0)
+    .sort((left, right) => right.segments - left.segments);
+  const maxSegments = probabilities[0];
+  let probability = maxSegments ? maxSegments.probability / 100 : 1;
+  martialDamageEffects(item).forEach((effect) => {
+    if (effect.periodRounds <= 0 && effect.chancePercent < 100) {
+      probability *= effect.chancePercent / 100;
+    }
+  });
+  return Number((critPercent * probability).toFixed(2));
+}
+function martialRange(item) {
+  if (item?.range) return String(item.range);
+  return ({ 21: '随1', 22: '随2', 23: '随3', 24: '邻2', 25: '邻3' })[Number(item?.mode)] || '单体范围待补';
+}
+function calculateDamagePreview({ attack, baseAttackRaw, weaponWhiteAttack, maxHp, martial, stats, damageFactor, targetMitigation, critDamageValue = null, formationDamagePercent = 0 }) {
+  if (!martial) return null;
+  const attackValue = Math.max(0, Number(attack) || 0);
+  const factor = Math.max(0, Number(damageFactor) || 0);
+  const mitigation = Math.max(0, Math.min(50, Number(targetMitigation) || 0));
+  const damageEffects = martialDamageEffects(martial);
+  const guaranteedEffects = guaranteedDamageEffects(damageEffects);
+  const attachmentInputs = { baseAttackRaw, weaponWhiteAttack, finalAttack: attackValue, maxHp };
+  const attachmentTotals = damageAttachmentTotals(guaranteedEffects, attachmentInputs);
+  const maxAttachmentTotals = damageAttachmentTotals(damageEffects, attachmentInputs);
+  const attachmentDamage = Object.values(attachmentTotals).reduce((sum, value) => sum + value, 0);
+  const maxAttachmentDamage = Object.values(maxAttachmentTotals).reduce((sum, value) => sum + value, 0);
+  const effectiveAttack = (attackValue + attachmentDamage) * factor * (1 - mitigation / 100);
+  const maxEffectiveAttack = (attackValue + maxAttachmentDamage) * factor * (1 - mitigation / 100);
+  const postDamageMultiplier = martialPostDamageMultiplier(martial);
+  const formationDamageMultiplier = 1 + Math.max(0, Number(formationDamagePercent) || 0) / 100;
+  const finalDamageMultiplier = postDamageMultiplier * formationDamageMultiplier;
+  const normalBeforePostMultiplier = {
+    min: trunc(effectiveAttack * 0.9),
+    max: trunc(effectiveAttack * 1.1),
+  };
+  const criticalMultipliers = martialCriticalMultipliers(martial);
+  const baseCritMultiplier = Math.max(...criticalMultipliers);
+  const baseCritMultiplierMin = Math.min(...criticalMultipliers);
+  const panelCritDamage = Number(stats?.critDamage) || 0;
+  const defaultCritDamageValue = baseCritMultiplier * 100 + panelCritDamage;
+  const customCritDamageValue = critDamageValue === null || critDamageValue === undefined
+    ? NaN
+    : Number(critDamageValue);
+  const resolvedCritDamageValue = Number.isFinite(customCritDamageValue)
+    ? Math.max(0, customCritDamageValue)
+    : defaultCritDamageValue;
+  const critMultiplier = resolvedCritDamageValue / 100;
+  const critMultiplierMin = Math.max(
+    0,
+    (resolvedCritDamageValue - (baseCritMultiplier - baseCritMultiplierMin) * 100) / 100,
+  );
+  const criticalBeforePostMultiplier = {
+    min: trunc(effectiveAttack * 0.9 * critMultiplierMin),
+    max: trunc(effectiveAttack * 1.1 * critMultiplier),
+  };
+  const theoreticalMax = Math.max(
+    trunc(maxEffectiveAttack * 1.1 * finalDamageMultiplier),
+    trunc(maxEffectiveAttack * 1.1 * critMultiplier * finalDamageMultiplier),
+  );
+  const normal = {
+    min: trunc(normalBeforePostMultiplier.min * finalDamageMultiplier),
+    max: trunc(normalBeforePostMultiplier.max * finalDamageMultiplier),
+  };
+  const critical = {
+    min: trunc(criticalBeforePostMultiplier.min * finalDamageMultiplier),
+    max: trunc(criticalBeforePostMultiplier.max * finalDamageMultiplier),
+  };
+  return {
+    range: martialRange(martial),
+    normal,
+    critical,
+    baseCritMultiplier,
+    baseCritMultiplierMin,
+    panelCritDamage,
+    critMultiplier,
+    critDamagePercent: Number((critMultiplier * 100).toFixed(2)),
+    generatedCritDamagePercent: Number(defaultCritDamageValue.toFixed(2)),
+    damageFactor: factor,
+    critDamageValue: Number(resolvedCritDamageValue.toFixed(2)),
+    baseAttackRaw: Number(baseAttackRaw) || 0,
+    weaponWhiteAttack: Number(weaponWhiteAttack) || 0,
+    attachmentDamage,
+    maxAttachmentDamage,
+    attachmentTotals,
+    maxAttachmentTotals,
+    damageEffects,
+    guaranteedDamageEffects: guaranteedEffects,
+    postDamageMultiplier,
+    formationDamagePercent: Math.max(0, Number(formationDamagePercent) || 0),
+    formationDamageMultiplier,
+    finalDamageMultiplier,
+    targetMitigation: mitigation,
+    upperLimitProbability: damageUpperLimitProbability(martial, stats?.crit),
+    max: theoreticalMax,
+  };
+}
+function renderDamagePreview(damage) {
+  const section = $('damage-preview-section');
+  if (!section) return;
+  if (!damage) {
+    section.hidden = true;
+    $('damage-preview-context').textContent = '未选择武学';
+    $('damage-normal-range').textContent = '--';
+    $('damage-crit-range').textContent = '--';
+    $('damage-max-value').textContent = '--';
+    $('damage-max-probability').textContent = '上限概率 --';
+    return;
+  }
+  section.hidden = false;
+  const selection = getSelectedMartial();
+  const item = selection?.item || {};
+  $('damage-preview-context').textContent = `${item.name || item.nick || '当前武学'} · ${damage.range}`;
+  $('damage-normal-range').title = '本次出手必定附伤下的普通伤害范围';
+  $('damage-crit-range').title = '本次出手必定附伤下的暴击伤害范围';
+  $('damage-max-value').title = '包含已知概率/周期附伤都触发时的理论上限';
+  $('damage-normal-range').textContent = `${formatNumber(damage.normal.min)}～${formatNumber(damage.normal.max)}`;
+  $('damage-crit-range').textContent = `${formatNumber(damage.critical.min)}～${formatNumber(damage.critical.max)}`;
+  $('damage-max-value').textContent = formatNumber(damage.max);
+  $('damage-max-probability').textContent = `上限概率 ${formatPercent(damage.upperLimitProbability)}`;
+  $('damage-target-mitigation').value = damage.targetMitigation;
+  $('damage-factor').value = damage.damageFactor;
+  $('damage-crit-adjustment').value = damage.critDamageValue;
+}
 function martialSpeed(selection = getSelectedMartial()) {
   return Number(selection?.item?.speed) || 0;
 }
@@ -421,6 +702,10 @@ function currentMartialStyle() {
   return ({ 拳主: '拳法', 剑主: '剑法', 刀主: '刀法', 棍主: '棍法' })[selectedStyle] || selectedStyle;
 }
 function martialStyleEligible(item) {
+  const scope = String(item?.scope || '');
+  const personName = $('person-name')?.value.trim() || '自定义角色';
+  if (scope.includes('陆仁甲') && personName !== '陆仁甲') return false;
+  if (scope.includes('剑主') && currentMartialStyle() !== '剑法') return false;
   const style = currentMartialStyle();
   return !style || style === '全能' || style === '拳剑刀棍' || martialStyle(item) === style;
 }
@@ -503,7 +788,7 @@ function techniqueOptionEntries() {
           name: choice.name,
           parentName: technique.name,
           group: 'wolong',
-          group_label: technique.group_label || '卧龙心决（三选一）',
+          group_label: technique.group_label || '卧龙心诀（三选一）',
         });
       });
       return;
@@ -514,6 +799,13 @@ function techniqueOptionEntries() {
     entries.push({ id: String(index), ...technique, group: technique.group || inferredGroup });
   });
   return entries;
+}
+
+function techniqueDisplayName(technique) {
+  const name = technique?.name || '未命名技艺';
+  if (technique?.group === 'wolong') return `卧龙心诀·${name}（三选一）`;
+  if (technique?.group === 'jiuyin') return `九阴奇功·${name}（七选一）`;
+  return name;
 }
 
 function getWhiteTechnique(id) {
@@ -613,6 +905,61 @@ function innerEffectTotals(record, level) {
     return totals;
   }, { hp: 0, attack: 0, stylePower: emptyStylePower(), secondary: emptySecondaryStats() });
 }
+function martialIsSGrade(martial) {
+  return /S$/i.test(String(martial?.rank || '').trim());
+}
+function innerSpecialStats(item, martial) {
+  const secondary = emptySecondaryStats();
+  const stylePower = emptyStylePower();
+  const martialName = String(martial?.name || martial?.nick || '').trim();
+  const martialStyleName = martialStyle(martial);
+  const special = String(item?.special || '');
+  const numberBefore = (pattern) => Number(special.match(pattern)?.[1]) || 0;
+
+  // These descriptions contain values for a named martial art, not global
+  // panel stats. Keep the plain text for the encyclopedia, but only apply the
+  // numeric effect after the current martial art satisfies its condition.
+  if (item?.name === '白兔心决') {
+    addSecondaryStats(secondary, secondaryStatsFromText(special));
+  }
+  if (item?.name === '葵花宝典' && ['辟魔剑法', '辟邪剑法'].includes(martialName)) {
+    secondary.crit += numberBefore(/(\d+(?:\.\d+)?)%暴击率/);
+  }
+  if (item?.name === '紫霞真气'
+    && martialStyleName === '剑法'
+    && /气宗/.test(martialName)) {
+    secondary.crit += numberBefore(/(\d+(?:\.\d+)?)%暴击/);
+  }
+  if (item?.name === '金顶莲华经' && ['曜日破云掌', '倚天剑诀'].includes(martialName)) {
+    secondary.crit += numberBefore(/(\d+(?:\.\d+)?)%暴击/);
+  }
+  if (item?.name === '纯阳无极功'
+    && martialIsSGrade(martial)
+    && ['拳法', '剑法'].includes(martialStyleName)) {
+    secondary.crit += numberBefore(/(\d+(?:\.\d+)?)%暴击率/);
+  }
+
+  if (item?.name === '易筋经'
+    && ['光明拳', '一指禅', '般若禅掌', '十二擒拿手', '定珠降魔神功'].includes(martialName)) {
+    return {
+      secondary,
+      stylePower,
+      martialAttackPercent: numberBefore(/(\d+(?:\.\d+)?)%攻击/),
+    };
+  }
+  if (item?.name === '离合神功' && martialIsSGrade(martial) && martialStyleName === '剑法') {
+    stylePower.剑法 += numberBefore(/(\d+(?:\.\d+)?)%威力/);
+  }
+  if (item?.name === '两仪玄元功'
+    && martialStyleName === '刀法'
+    && (martialName === '太虚神悟刀' || /太乙/.test(String(martial?.access || '')))) {
+    stylePower.刀法 += numberBefore(/威力(\d+(?:\.\d+)?)%/);
+  }
+  if (item?.name === '玄同归藏诀' && martialName === '大同天演剑') {
+    stylePower.剑法 += numberBefore(/(\d+(?:\.\d+)?)%大同天演剑威力/);
+  }
+  return { secondary, stylePower, martialAttackPercent: 0 };
+}
 function setInnerStatsMode(mode) {
   $('neigong-hp').dataset.mode = mode;
   $('neigong-attack').dataset.mode = mode;
@@ -641,12 +988,13 @@ function autoInnerStats(selection = getSelectedInner()) {
   if (selection.source === 'white') {
     const item = selection.item || {};
     const secondary = secondaryStatsFromRecord(item);
-    addSecondaryStats(secondary, secondaryStatsFromText(item.special));
-    const stylePower = stylePowerFromText(item.special);
+    const specialStats = innerSpecialStats(item, getSelectedMartial()?.item);
+    addSecondaryStats(secondary, specialStats.secondary);
     return {
       hp: Number(item.hp_percent) || 0,
       attack: Number(item.attack_percent) || 0,
-      stylePower,
+      stylePower: specialStats.stylePower,
+      martialAttackPercent: specialStats.martialAttackPercent,
       directHp: Number(item.hp_percent) || 0,
       directAttack: Number(item.attack_percent) || 0,
       secondary,
@@ -661,6 +1009,7 @@ function autoInnerStats(selection = getSelectedInner()) {
     hp: direct.hp,
     attack: direct.attack,
     stylePower: direct.stylePower,
+    martialAttackPercent: 0,
     directHp: direct.hp,
     directAttack: direct.attack,
     secondary: direct.secondary,
@@ -690,6 +1039,14 @@ function getSelectedInner() {
     return item ? { source: 'game', item } : null;
   }
   return null;
+}
+function innerScopeEligible(item) {
+  const scope = String(item?.scope || '').replace(/\s/g, '');
+  const personName = $('person-name')?.value.trim() || '自定义角色';
+  if (!scope || scope.includes('修炼者') || scope.includes('全队')) return true;
+  if (scope.includes('剑主')) return personName === '主角' && currentMartialStyle() === '剑法';
+  if (scope.includes('主角')) return personName === '主角';
+  return scope.split(/[，,、]/).includes(personName);
 }
 function techniqueScopeStatus(technique) {
   const scope = String(technique?.scope || '');
@@ -740,6 +1097,9 @@ function techniqueAccountEligible(technique) {
   return scope.split(/[，,、]/).map((item) => item.trim()).includes(personName);
 }
 function techniqueStats(technique) {
+  const structuredSecondary = technique?.secondary && typeof technique.secondary === 'object'
+    ? technique.secondary
+    : {};
   const totals = {
     hp: Number(technique?.hp_percent) || 0,
     attack: Number(technique?.attack_percent) || 0,
@@ -747,8 +1107,13 @@ function techniqueStats(technique) {
     stylePower: stylePowerFromText(technique?.effect),
     secondary: emptySecondaryStats(),
   };
-  addSecondaryStats(totals.secondary, technique?.secondary);
+  addSecondaryStats(totals.secondary, structuredSecondary);
   const parsedSecondary = secondaryStatsFromText(technique?.effect);
+  // Structured values are canonical. Text parsing only fills fields that do
+  // not already exist in the record, preventing choice effects from doubling.
+  SECONDARY_KEYS.forEach((key) => {
+    if (Object.prototype.hasOwnProperty.call(structuredSecondary, key)) parsedSecondary[key] = 0;
+  });
   // 玄武的“10%恢复”是基础生命转化出的回复量，不是回复百分比。
   parsedSecondary.recovery -= totals.recoveryBasePercent;
   addSecondaryStats(totals.secondary, parsedSecondary);
@@ -760,9 +1125,24 @@ function techniqueStatsLabel(technique) {
   if (stats.hp) parts.push(`${formatPercent(stats.hp)}血`);
   if (stats.attack) parts.push(`${formatPercent(stats.attack)}攻`);
   if (stats.recoveryBasePercent) parts.push(`${formatPercent(stats.recoveryBasePercent)}回复量`);
+  const styleLabels = {
+    拳法: '拳脚威力',
+    剑法: '剑法威力',
+    刀法: '刀法威力',
+    棍法: '棍法威力',
+  };
+  MARTIAL_STYLE_KEYS.forEach((style) => {
+    const value = stats.stylePower[style];
+    if (value) parts.push(`${formatPercent(value)}${styleLabels[style]}`);
+  });
   SECONDARY_STAT_DEFS.forEach((definition) => {
     const value = stats.secondary[definition.key];
-    if (value) parts.push(`${formatSecondaryValue(definition.key, value)}${definition.label}`);
+    if (value) {
+      const formatted = definition.key === 'recovery'
+        ? formatPercent(value)
+        : formatSecondaryValue(definition.key, value);
+      parts.push(`${formatted}${definition.label}`);
+    }
   });
   return parts.join(' · ') || '属性待补';
 }
@@ -877,7 +1257,7 @@ function populateTechniques() {
     normal: '普通技艺（可多选）',
     profession: '职业技艺（四选一）',
     jiuyin: '九阴奇功（七选一）',
-    wolong: '卧龙心决（三选一）',
+    wolong: '卧龙心诀（三选一）',
   };
   ['normal', 'profession', 'jiuyin', 'wolong'].forEach((group) => {
     const items = groups.get(group) || [];
@@ -899,7 +1279,7 @@ function populateTechniques() {
       input.dataset.exclusiveGroup = group === 'normal' ? '' : group;
       const title = document.createElement('span');
       title.className = 'technique-choice-name';
-      title.textContent = technique.name;
+      title.textContent = techniqueDisplayName(technique);
       const stats = document.createElement('small');
       stats.textContent = `${techniqueStatsLabel(technique)} · ${technique.scope || '全队'}`;
       label.append(input, title, stats);
@@ -1162,6 +1542,11 @@ function currentConfig() {
     pillsRange: 30,
     smallRenEnabled: $('small-ren-enabled').checked,
     largeRenEnabled: $('large-ren-enabled').checked,
+    damageTargetMitigation: $('damage-target-mitigation').value,
+    damageFactor: $('damage-factor').value,
+    damageCritAdjustment: $('damage-crit-adjustment').value,
+    damageCritCustomized,
+    damageFactorCustomized,
   };
 }
 
@@ -1442,11 +1827,17 @@ function restoreConfig(sourceConfig = null) {
     largeRenAttackCount: 'large-ren-attack-count',
     learnedSMartialCount: 'learned-s-martial-count',
     martialBonusPercent: 'martial-bonus-percent',
+    damageTargetMitigation: 'damage-target-mitigation',
+    damageFactor: 'damage-factor',
+    damageCritAdjustment: 'damage-crit-adjustment',
     formationPosition: 'formation-position',
   };
   Object.entries(fieldMap).forEach(([key, id]) => { if (config[key] !== undefined) $(id).value = config[key]; });
+  damageCritCustomized = config.damageCritCustomized === true;
+  damageFactorCustomized = config.damageFactorCustomized === true;
   applyCharacterDefaults({ resetBaseStats: false });
   populateMartialArts();
+  populateNeigong();
   if (typeof config.pillsEnabled === 'boolean') $('pills-enabled').checked = config.pillsEnabled;
   if (typeof config.attackPillsEnabled === 'boolean') $('attack-pills-enabled').checked = config.attackPillsEnabled;
   if (typeof config.speedPillsEnabled === 'boolean') $('speed-pills-enabled').checked = config.speedPillsEnabled;
@@ -1531,12 +1922,13 @@ function restoreConfig(sourceConfig = null) {
 
 function populateNeigong() {
   const select = $('neigong-select');
+  const previousValue = select.value;
   select.innerHTML = '<option value="">无内功（0%）</option><option value="custom">自定义内功</option>';
   if (state.whiteRabbit?.inner_skills?.length) {
     const whiteGroup = document.createElement('optgroup');
     whiteGroup.label = '白兔内功';
     state.whiteRabbit.inner_skills.forEach((skill, index) => {
-      if (!String(skill.rank || '').trim()) return;
+      if (!String(skill.rank || '').trim() || !innerScopeEligible(skill)) return;
       const option = document.createElement('option');
       option.value = `wr:${index}`;
       const stats = autoInnerStats({ source: 'white', item: skill });
@@ -1546,7 +1938,9 @@ function populateNeigong() {
     });
     select.appendChild(whiteGroup);
   }
-  select.value = '';
+  select.value = [...select.options].some((option) => option.value === previousValue)
+    ? previousValue
+    : '';
   select.disabled = false;
 }
 
@@ -1572,7 +1966,7 @@ function populateMartialArts() {
       items.forEach(({ skill, index }) => {
         const option = document.createElement('option');
         option.value = `wr-skill:${index}`;
-        option.textContent = `${skill.name || '未命名武学'} · ${skill.rank} · 威力 ${Number(skill.power) || 0} · 速度 ${Number(skill.speed)}`;
+        option.textContent = `${skill.name || '未命名武学'} · ${displayMartialRank(skill.rank)} · 威力 ${Number(skill.power) || 0} · 速度 ${Number(skill.speed)} · ${martialRange(skill)}`;
         group.appendChild(option);
       });
       select.appendChild(group);
@@ -1589,10 +1983,11 @@ function filteredEquipment() {
 }
 function equipmentCategory(item) {
   if (item?.source === 'white') {
+    if (item?.slot) return item.slot;
     const match = /^wr-eq-(\d+)$/.exec(String(item.id));
     if (!match) return '';
     const index = Number(match[1]);
-    if (index < 10) return 'armor';
+    if (index < 8) return 'armor';
     if (index < 20) return 'ring';
     return 'wrist';
   }
@@ -1719,7 +2114,15 @@ function renderFormationControls() {
   const formation = $('formation-select').value;
   const isMain = ($('person-name').value.trim() || '自定义角色') === '主角';
   const positionSelect = $('formation-position');
-  positionSelect.value = isMain ? '1' : (positionSelect.value || '1');
+  if (isMain) {
+    positionSelect.value = '1';
+  } else {
+    const position = Math.max(2, Math.min(9, Math.round(Number(positionSelect.value) || 2)));
+    positionSelect.value = String(position);
+  }
+  [...positionSelect.options].forEach((option) => {
+    option.disabled = !isMain && option.value === '1';
+  });
   positionSelect.disabled = !formation || isMain;
   $('formation-position-field').classList.toggle('is-muted', !formation || isMain);
   $('formation-hint').textContent = !formation
@@ -1761,6 +2164,7 @@ function clearGeneratedResult() {
   resultGenerated = false;
   currentResult = null;
   activeComparisonIndex = null;
+  renderDamagePreview(null);
   $('final-hp').textContent = '--';
   $('final-attack').textContent = '--';
   $('hp-detail').textContent = '等待确认生成';
@@ -1828,6 +2232,9 @@ function calculate({ commit = false } = {}) {
     reflect: numberValue('base-reflect'),
     recovery: numberValue('base-recovery'),
   };
+  if (selectedMartial?.item) {
+    secondaryStats.crit += Number(selectedMartial.item.crit_percent) || 0;
+  }
   if ($('speed-pills-enabled').checked) secondaryStats.speed += 30;
   const innerSecondary = innerDetails?.secondary;
   if (innerSecondary) addSecondaryStats(secondaryStats, innerSecondary);
@@ -1854,15 +2261,17 @@ function calculate({ commit = false } = {}) {
   const largeRenAttackCount = largeRenEnabled ? Math.max(0, numberValue('large-ren-attack-count', 10)) : 0;
   const largeRenSpeed = largeRenEnabled ? 8 : 0;
   secondaryStats.speed += largeRenSpeed;
-  // Blood pills form their own base-life multiplier. Other life percentages
-  // share that post-pill base, while large Ren Du uses the pre-pill base.
+  // Blood pills and ordinary life percentages are calculated first. Formation
+  // life is a separate multiplier on the resulting life value.
   const bloodPillBaseHp = baseHpRaw * (100 + pillHp) / 100;
   const postPillHpPercent = equipmentHp + techniqueHp + neigongHp + smallRenHp
-    + weaponTotals.hpPercent + activeFormation.hp;
+    + weaponTotals.hpPercent;
   const largeRenHpBonus = largeRenEnabled
     ? baseHpRaw * (largeRenHp + largeRenHpSupplement) / 100
     : 0;
-  const finalHpRaw = bloodPillBaseHp * (100 + postPillHpPercent) / 100 + largeRenHpBonus;
+  const hpBeforeFormation = bloodPillBaseHp * (100 + postPillHpPercent) / 100 + largeRenHpBonus;
+  const formationHpMultiplier = 1 + activeFormation.hp / 100;
+  const finalHpRaw = hpBeforeFormation * formationHpMultiplier;
   const hpPercent = baseHpRaw ? (finalHpRaw / baseHpRaw - 1) * 100 : 0;
   const finalHp = Math.round(finalHpRaw) + trunc(achievementHp) + trunc(weaponTotals.hpFlat) + trunc(equipmentHpFlat);
   const attackPillsEnabled = $('attack-pills-enabled').checked;
@@ -1870,18 +2279,20 @@ function calculate({ commit = false } = {}) {
   const attackPillMultiplier = 1 + attackPillCount / 100;
   const selectedMartialStyle = martialStyle(selectedMartial?.item);
   const martialPower = Number(selectedMartial?.item?.power) || 0;
+  const martialTechniqueBonus = martialTechniqueBonusPercent(selectedMartial?.item);
   const selectedStylePower = selectedMartialStyle
-    ? (innerDetails?.stylePower?.[selectedMartialStyle] || 0) + (selectedTechniqueStats.stylePower?.[selectedMartialStyle] || 0)
+    ? (innerDetails?.stylePower?.[selectedMartialStyle] || 0) + (selectedTechniqueStats.stylePower?.[selectedMartialStyle] || 0) + martialTechniqueBonus
     : 0;
+  const martialAttackBonus = Number(innerDetails?.martialAttackPercent) || 0;
   const martialBonusPercent = numberValue('martial-bonus-percent');
   // 技艺攻击百分比（包括朱雀之力）同时作用于基础攻击项和武学项。
   const baseAttackPercentMultiplier = 1 + (
-    neigongAttack + techniqueAttack + activeFormation.attack + selectedStylePower
+    neigongAttack + techniqueAttack + selectedStylePower
   ) / 100;
   const baseAttackDetailTerm = baseAttackRaw * baseAttackPercentMultiplier;
   const baseAttackTerm = baseAttackDetailTerm * attackPillMultiplier;
   const martialPowerTerm = martialPower * (
-    1 + (neigongAttack + smallRenAttack + techniqueAttack + selectedStylePower + martialBonusPercent) / 100
+    1 + (neigongAttack + smallRenAttack + techniqueAttack + selectedStylePower + martialBonusPercent + martialAttackBonus) / 100
   );
   const largeRenAttackTerm = largeRenEnabled
     ? baseAttackRaw * (0.1 * largeRenAttackCount + largeRenAttackSupplement / 100)
@@ -1892,7 +2303,22 @@ function calculate({ commit = false } = {}) {
     + equipmentAttackFlat + weaponTotals.attackFlat + equipmentPercentTerm;
   const learnedSMartialCount = Math.max(0, numberValue('learned-s-martial-count', 5));
   const sMartialMultiplier = 1 + learnedSMartialCount * 0.05;
-  const finalAttack = trunc(attackBeforeSMultiplier * sMartialMultiplier) + trunc(achievementAttack);
+  const formationAttackMultiplier = 1 + activeFormation.attack / 100;
+  const finalAttack = trunc(attackBeforeSMultiplier * formationAttackMultiplier * sMartialMultiplier) + trunc(achievementAttack);
+  if (!damageFactorCustomized) $('damage-factor').value = martialDamageFactor(selectedMartial?.item);
+  const weaponWhiteAttack = weaponTotals.attackFlat;
+  const damagePreview = calculateDamagePreview({
+    attack: finalAttack,
+    baseAttackRaw,
+    weaponWhiteAttack,
+    maxHp: finalHp,
+    martial: selectedMartial?.item,
+    stats: secondaryStats,
+    damageFactor: numberValue('damage-factor', 1),
+    targetMitigation: numberValue('damage-target-mitigation', 0),
+    critDamageValue: damageCritCustomized ? numberValue('damage-crit-adjustment', 0) : null,
+    formationDamagePercent: activeFormation.damage,
+  });
   // 回复按 APK 面板口径：玄武的基础回复量也要乘内功生命加成。
   const recoveryBase = baseHpRaw * (100 + neigongHp) / 100;
   const recoveryValue = trunc(
@@ -1901,13 +2327,17 @@ function calculate({ commit = false } = {}) {
   );
   $('final-hp').textContent = formatNumber(finalHp);
   $('final-attack').textContent = formatNumber(finalAttack);
+  renderDamagePreview(damagePreview);
   $('hp-detail').textContent = `基础 ${formatNumber(baseHp)} · 百分比 ${formatPercent(hpPercent)} · 成就 +${formatNumber(achievementHp)}`;
   $('attack-detail').textContent = `基础项 ${formatNumber(trunc(baseAttackDetailTerm))} · 武学项 ${formatNumber(martialPower)} · S武学 ${formatPercent(learnedSMartialCount * 5)} · 成就 +${formatNumber(achievementAttack)}`;
   SECONDARY_KEYS.forEach((key) => {
     const domKey = key.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
-    $(`final-${domKey}`).textContent = key === 'recovery'
-      ? formatNumber(recoveryValue)
-      : formatSecondaryValue(key, secondaryStats[key]);
+    const value = key === 'critDamage' && damagePreview
+      ? formatPercent(damagePreview.generatedCritDamagePercent)
+      : key === 'recovery'
+        ? formatNumber(recoveryValue)
+        : formatSecondaryValue(key, secondaryStats[key]);
+    $(`final-${domKey}`).textContent = value;
   });
   $('result-person').textContent = roleName;
   $('result-level').textContent = `等级 ${level}`;
@@ -1918,7 +2348,15 @@ function calculate({ commit = false } = {}) {
     attack: finalAttack,
     roleName,
     level,
-    stats: Object.fromEntries(SECONDARY_KEYS.map((key) => [key, key === 'recovery' ? recoveryValue : secondaryStats[key]])),
+    stats: Object.fromEntries(SECONDARY_KEYS.map((key) => [
+      key,
+      key === 'recovery'
+        ? recoveryValue
+        : key === 'critDamage' && damagePreview
+          ? damagePreview.generatedCritDamagePercent
+          : secondaryStats[key],
+    ])),
+    damage: damagePreview,
   };
   resultGenerated = true;
   saveConfig();
@@ -2363,9 +2801,191 @@ function renderTeams() {
   content.querySelectorAll('[data-team-rename]').forEach((button) => button.addEventListener('click', () => renameTeam(button.dataset.teamRename)));
 }
 
+const ENCYCLOPEDIA_EQUIPMENT_SLOT_LABELS = {
+  'weapon-staff': '棍武器',
+  'weapon-blade': '刀武器',
+  'weapon-fist': '拳武器',
+  'weapon-sword': '剑武器',
+  armor: '衣甲',
+  ring: '戒指',
+  wrist: '护腕',
+};
+const ENCYCLOPEDIA_WEAPON_SLOTS = {
+  1: 'weapon-fist',
+  2: 'weapon-sword',
+  3: 'weapon-blade',
+  4: 'weapon-staff',
+};
+function encyclopediaText(...values) {
+  return values.flatMap((value) => Array.isArray(value) ? value : [value])
+    .map((value) => String(value || '').replace(/\s+/g, ' ').trim())
+    .filter(Boolean)
+    .join(' · ');
+}
+function innerEncyclopediaEffect(item) {
+  const stats = innerStatsSummary({
+    hp: Number(item?.hp_percent) || 0,
+    attack: Number(item?.attack_percent) || 0,
+    secondary: secondaryStatsFromRecord(item),
+  });
+  return [
+    stats !== '无属性' ? stats : '',
+    item?.ren_du ? `大任督：${item.ren_du}` : '',
+    item?.special || '',
+    item?.conditional_mitigation_percent
+      ? `${item.conditional_mitigation_condition || '满足条件时'}增加${formatPercent(item.conditional_mitigation_percent)}免伤`
+      : '',
+  ].filter(Boolean).join('；') || '特殊效果待补';
+}
+function martialRuleSummary(item) {
+  const rule = martialRule(item);
+  const parts = [];
+  const maxPercent = Number(rule.max_percent ?? rule.maxPercent);
+  if (rule.technique && Number.isFinite(maxPercent) && maxPercent > 0) {
+    parts.push(`${rule.technique}满级 +${formatPercent(maxPercent)}武学威力`);
+  }
+  rule.damageEffects.forEach((effect) => {
+    const source = ({
+      base_attack: '人物基础攻击',
+      weapon_attack: '武器白值攻击',
+      final_attack: '最终攻击',
+      max_hp: '最终生命',
+    })[effect.source] || effect.source;
+    const chance = effect.chance_percent ?? effect.chancePercent;
+    const period = effect.period_rounds ?? effect.periodRounds;
+    parts.push(`${period > 0 ? `每${period}回合` : ''}${chance < 100 ? `${formatPercent(chance)}概率` : ''}附加${formatPercent(effect.percent)}${source}伤害`);
+  });
+  return parts.join('；');
+}
+function encyclopediaRecords(type) {
+  const white = state.whiteRabbit || {};
+  if (type === 'characters') {
+    return (white.characters || []).map((item, index) => ({
+      id: item.id || `character-${index}`,
+      name: item.name,
+      meta: encyclopediaText(item.style || '职业待补', `生命系数 ${item.hp_factor}`, `攻击系数 ${item.power_factor}`),
+      summaryLabel: '特性',
+      summary: item.talent || '特性待补',
+      access: item.access || '获取方式待补',
+      detail: '',
+    }));
+  }
+  if (type === 'techniques') {
+    return techniqueOptionEntries().map((item) => ({
+      id: `technique-${item.id}`,
+      name: techniqueDisplayName(item),
+      meta: encyclopediaText(item.group === 'wolong' ? '' : item.parentName && item.parentName !== item.name ? item.parentName : '', item.scope || '通用', item.max_level ? `上限 ${item.max_level} 级` : ''),
+      summaryLabel: '技艺效果',
+      summary: item.effect || '效果待补',
+      access: item.access || '获取方式待补',
+      detail: item.group === 'wolong' ? '' : item.upgrade && `升级：${item.upgrade}`,
+    }));
+  }
+  if (type === 'inner_skills') {
+    return (white.inner_skills || []).filter((item) => String(item.rank || '').trim()).map((item, index) => ({
+      id: item.id || `inner-${index}`,
+      name: item.name,
+      meta: item.rank,
+      summaryLabel: '内功效果',
+      summary: innerEncyclopediaEffect(item),
+      access: item.access || '获取方式待补',
+      detail: item.designer ? `设计：${item.designer}` : '',
+    }));
+  }
+  if (type === 'martial_arts') {
+    return (white.martial_arts || []).filter((item) => String(item.rank || '').trim()).map((item, index) => ({
+      id: item.id || `martial-${index}`,
+      name: item.name,
+      style: item.style || '',
+      meta: encyclopediaText(item.style || '流派待补', displayMartialRank(item.rank), `威力 ${Number(item.power) || 0}`, `速度 ${Number(item.speed) || 0}`, martialRange(item)),
+      summaryLabel: '武学效果',
+      summary: encyclopediaText(item.double_break, item.crit_percent != null && `暴击 ${formatPercent(item.crit_percent)}`, martialCritDamageLabel(item.crit_damage), item.buff, item.special, martialRuleSummary(item)) || '武学效果待补',
+      access: item.access || '获取方式待补',
+      detail: '',
+    }));
+  }
+  if (type === 'equipment') {
+    const whiteRecords = (white.equipment || []).map((item, index) => {
+      const equipmentSlot = equipmentCategory(item);
+      return {
+        id: item.id || `equipment-${index}`,
+        name: item.name || item.nick,
+        equipmentSlot,
+        meta: encyclopediaText(ENCYCLOPEDIA_EQUIPMENT_SLOT_LABELS[equipmentSlot] || '装备部位待补', item.rank, equipmentSummary(item), item.scope || '佩戴者'),
+        summaryLabel: '装备效果',
+        summary: item.special || '特殊效果待补',
+        access: item.access || '获取方式待补',
+        detail: item.unique && '唯一装备',
+      };
+    });
+    const seen = new Set();
+    const weaponRecords = Object.values(state.data?.equip || {})
+      .filter((item) => isWeapon(item) && isSEquipment(item) && (item.nick || item.name))
+      .filter((item) => {
+        const key = `${item.id}:${item.nick || item.name}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      })
+      .map((item) => ({
+        id: `weapon-${item.id}`,
+        name: item.nick || item.name,
+        equipmentSlot: ENCYCLOPEDIA_WEAPON_SLOTS[Number(item.type)] || '',
+        meta: encyclopediaText(ENCYCLOPEDIA_EQUIPMENT_SLOT_LABELS[ENCYCLOPEDIA_WEAPON_SLOTS[Number(item.type)]] || '武器', `品阶 ${item.star || '待补'}`),
+        summaryLabel: '武器说明',
+        summary: '白值、强化档与铸造属性以当前武器数据为准',
+        detail: String(item.desp || '').replace(/【\|[^|]+\|/g, '').replace(/\|】/g, ''),
+      }));
+    return [...whiteRecords, ...weaponRecords];
+  }
+  return [];
+}
+function renderEncyclopedia() {
+  const content = $('encyclopedia-list');
+  if (!content) return;
+  const type = $('encyclopedia-type')?.value || 'characters';
+  const query = ($('encyclopedia-search')?.value || '').trim().toLocaleLowerCase();
+  const toolbar = $('encyclopedia-toolbar');
+  const martialFilterField = $('encyclopedia-martial-filter-field');
+  const equipmentFilterField = $('encyclopedia-equipment-filter-field');
+  const martialFilter = $('encyclopedia-martial-filter')?.value || '';
+  const equipmentFilter = $('encyclopedia-equipment-filter')?.value || '';
+  const hasSecondaryFilter = type === 'martial_arts' || type === 'equipment';
+  toolbar?.classList.toggle('has-secondary-filter', hasSecondaryFilter);
+  if (martialFilterField) martialFilterField.hidden = type !== 'martial_arts';
+  if (equipmentFilterField) equipmentFilterField.hidden = type !== 'equipment';
+  const records = encyclopediaRecords(type);
+  const filteredRecords = records.filter((record) => {
+    if (type === 'martial_arts' && martialFilter && !String(record.style || '').includes(martialFilter)) return false;
+    if (type === 'equipment' && equipmentFilter && record.equipmentSlot !== equipmentFilter) return false;
+    return true;
+  });
+  const visible = filteredRecords.filter((record) => !query
+    || [record.name, record.meta, record.summary, record.detail, record.access, record.style].filter(Boolean).join(' ').toLocaleLowerCase().includes(query));
+  $('encyclopedia-count').textContent = `${visible.length} / ${filteredRecords.length} 条`;
+  if (!visible.length) {
+    content.innerHTML = `<div class="empty-collection"><strong>没有匹配的图鉴条目</strong><span>更换分类或搜索内容试试</span></div>`;
+    return;
+  }
+  content.innerHTML = visible.map((record) => `
+    <details class="encyclopedia-card">
+      <summary class="encyclopedia-card-summary">
+        <span class="encyclopedia-card-heading">
+          <strong>${escapeHtml(record.name || '未命名')}</strong>
+        </span>
+        <span class="encyclopedia-card-meta">${escapeHtml(record.meta || '数据待补')}</span>
+      </summary>
+      <div class="encyclopedia-card-detail${record.summary ? '' : ' is-detail-only'}">
+        ${record.summary ? `<p><strong class="encyclopedia-detail-label">${escapeHtml(record.summaryLabel || '说明')}</strong>${escapeHtml(record.summary)}</p>` : ''}
+        ${record.access ? `<p class="encyclopedia-card-access"><strong class="encyclopedia-detail-label">获取</strong>${escapeHtml(record.access)}</p>` : ''}
+        ${record.detail ? `<p class="encyclopedia-card-note"><strong class="encyclopedia-detail-label">备注</strong>${escapeHtml(record.detail)}</p>` : ''}
+      </div>
+    </details>`).join('');
+}
+
 function switchView(view, { persist = true } = {}) {
-  activeView = ['calculator', 'teams', 'cards'].includes(view) ? view : 'calculator';
-  ['calculator', 'teams', 'cards'].forEach((name) => {
+  activeView = ['calculator', 'teams', 'cards', 'encyclopedia'].includes(view) ? view : 'calculator';
+  ['calculator', 'teams', 'cards', 'encyclopedia'].forEach((name) => {
     const element = $(`${name}-view`);
     if (element) element.hidden = name !== activeView;
     const button = document.querySelector(`[data-view="${name}"]`);
@@ -2373,6 +2993,7 @@ function switchView(view, { persist = true } = {}) {
   });
   if (activeView === 'teams') renderTeams();
   if (activeView === 'cards') renderSavedCards();
+  if (activeView === 'encyclopedia') renderEncyclopedia();
   if (persist) saveConfig();
 }
 
@@ -2397,13 +3018,18 @@ function closeCalculationDocument() {
 }
 
 function hydrateLegacySnapshot(snapshot) {
-  if (snapshot.statsAvailable !== false) return false;
+  const needsStats = snapshot.statsAvailable === false;
+  const needsDamage = !snapshot.damage && currentResult?.damage;
+  if (!needsStats && !needsDamage) return false;
   if (!currentResult || currentResult.hp !== snapshot.hp || currentResult.attack !== snapshot.attack) {
     calculate({ commit: true });
   }
   if (currentResult?.hp !== snapshot.hp || currentResult?.attack !== snapshot.attack) return false;
-  snapshot.stats = { ...currentResult.stats };
-  snapshot.statsAvailable = true;
+  if (needsStats) {
+    snapshot.stats = { ...currentResult.stats };
+    snapshot.statsAvailable = true;
+  }
+  if (needsDamage) snapshot.damage = currentResult.damage;
   saveConfig();
   return true;
 }
@@ -2422,6 +3048,7 @@ function showComparisonSnapshot(index) {
   }
   $('final-hp').textContent = formatNumber(snapshot.hp);
   $('final-attack').textContent = formatNumber(snapshot.attack);
+  renderDamagePreview(snapshot.damage || currentResult?.damage || null);
   $('hp-detail').textContent = `方案 ${comparisonCode(index)} · 已保存快照`;
   $('attack-detail').textContent = `方案 ${comparisonCode(index)} · 已保存快照`;
   SECONDARY_KEYS.forEach((key) => {
@@ -2554,8 +3181,10 @@ function bindEvents() {
     'learned-s-martial-count', 'martial-bonus-percent']
     .forEach((id) => $(id).addEventListener('input', calculate));
   const handleCharacterSelection = () => {
+    damageCritCustomized = false;
     applyCharacterDefaults();
     populateMartialArts();
+    populateNeigong();
     applyDefaultTechniqueSelections();
     refreshTechniqueAvailability();
     renderFormationControls();
@@ -2568,6 +3197,7 @@ function bindEvents() {
   $('person-name').addEventListener('change', handleCharacterSelection);
   ['person-style', 'person-gender'].forEach((id) => $(id).addEventListener('change', () => {
     if (id === 'person-style') populateMartialArts();
+    populateNeigong();
     applyDefaultTechniqueSelections();
     refreshTechniqueAvailability();
     renderTechniqueScope();
@@ -2579,7 +3209,14 @@ function bindEvents() {
     calculate();
   });
   $('neigong-select').addEventListener('change', applyInnerSelection);
-  $('martial-select').addEventListener('change', calculate);
+  $('martial-select').addEventListener('change', () => {
+    damageFactorCustomized = false;
+    damageCritCustomized = false;
+    calculate();
+  });
+  $('damage-target-mitigation').addEventListener('input', calculate);
+  $('damage-factor').addEventListener('input', () => { damageFactorCustomized = true; calculate(); });
+  $('damage-crit-adjustment').addEventListener('input', () => { damageCritCustomized = true; calculate(); });
   $('technique-options').addEventListener('change', (event) => {
     const input = event.target.closest('.technique-option');
     if (!input) return;
@@ -2686,6 +3323,8 @@ function bindEvents() {
     $('attack-pill-count').value = 30; $('small-ren-attack-percent').value = 10;
     $('large-ren-attack-count').value = 10; $('learned-s-martial-count').value = 5;
     $('martial-bonus-percent').value = 0;
+    $('damage-target-mitigation').value = 0; $('damage-factor').value = 1; $('damage-crit-adjustment').value = 0;
+    damageFactorCustomized = false; damageCritCustomized = false;
     $('level-input').value = 90; $('martial-select').value = ''; $('neigong-select').value = '';
     $('neigong-level').value = 9;
     INNER_MANUAL_FIELD_IDS.forEach((id) => { $(id).value = 0; });
@@ -2724,6 +3363,10 @@ function bindEvents() {
   $('team-search').addEventListener('input', renderTeams);
   $('card-search').addEventListener('input', renderSavedCards);
   $('card-role-filter').addEventListener('change', renderSavedCards);
+  $('encyclopedia-type').addEventListener('change', renderEncyclopedia);
+  $('encyclopedia-martial-filter').addEventListener('change', renderEncyclopedia);
+  $('encyclopedia-equipment-filter').addEventListener('change', renderEncyclopedia);
+  $('encyclopedia-search').addEventListener('input', renderEncyclopedia);
 
   $('name-modal-confirm').addEventListener('click', () => {
     const value = validateNameDialog();
@@ -2775,12 +3418,43 @@ function bindEvents() {
   });
 }
 
+function fetchJsonWithTimeout(url, timeoutMs = 3500) {
+  const request = fetch(url, { cache: 'no-store' })
+    .then((response) => {
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      return response.json();
+    });
+  const timeout = new Promise((_, reject) => {
+    setTimeout(() => reject(new Error('request timeout')), timeoutMs);
+  });
+  return Promise.race([request, timeout]);
+}
+
+async function loadWhiteRabbitData() {
+  const localUrl = `./whiterabbit_data.json?updated=${Date.now()}`;
+  const remoteUrl = `${REMOTE_WHITE_RABBIT_URL}?updated=${Date.now()}`;
+  const embeddedApp = window.location.hostname === 'appassets.androidplatform.net';
+  const sources = embeddedApp ? [remoteUrl, localUrl] : [localUrl, remoteUrl];
+  for (const url of sources) {
+    try {
+      const data = await fetchJsonWithTimeout(url);
+      if (Array.isArray(data?.techniques) && Array.isArray(data?.martial_arts)) return data;
+    } catch (error) {
+      // Offline APKs fall back to the encrypted copy bundled at build time.
+    }
+  }
+  return null;
+}
+
 async function init() {
   try {
-    const [baseResponse, whiteResponse] = await Promise.all([fetch('./uc540_doc.json'), fetch('./whiterabbit_data.json?v=20260927-64')]);
+    const [baseResponse, whiteData] = await Promise.all([
+      fetch('./uc540_doc.json', { cache: 'no-store' }),
+      loadWhiteRabbitData(),
+    ]);
     if (!baseResponse.ok) throw new Error(`数据读取失败（HTTP ${baseResponse.status}）`);
     state.data = await baseResponse.json();
-    if (whiteResponse.ok) state.whiteRabbit = await whiteResponse.json();
+    if (whiteData) state.whiteRabbit = whiteData;
     populate(); bindEvents(); restoreConfig();
     if (innerStatsMode() === 'auto') syncAutoInnerStats();
     if (techniqueStatsMode() === 'auto') syncTechniqueStats();

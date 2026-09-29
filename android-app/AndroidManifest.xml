@@ -1,5 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.flashba.jianghucalculator">
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <application
         android:allowBackup="false"
         android:hardwareAccelerated="true"
@@ -18,5 +20,10 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <provider
+            android:name=".UpdateApkProvider"
+            android:authorities="com.flashba.jianghucalculator.update"
+            android:exported="false"
+            android:grantUriPermissions="true" />
     </application>
 </manifest>

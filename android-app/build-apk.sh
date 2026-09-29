@@ -6,8 +6,8 @@ APP_DIR="$ROOT_DIR/android-app"
 BUILD_DIR="$APP_DIR/build"
 ASSET_DIR="$APP_DIR/src/main/assets"
 SDK_ROOT=${ANDROID_SDK_ROOT:-/opt/homebrew/share/android-commandlinetools}
-VERSION_CODE=${VERSION_CODE:-2}
-VERSION_NAME=${VERSION_NAME:-0.1.1}
+VERSION_CODE=${VERSION_CODE:-109}
+VERSION_NAME=${VERSION_NAME:-0.1.9}
 KEYSTORE=${APK_KEYSTORE:-$BUILD_DIR/jianghu-debug.keystore}
 STORE_PASSWORD=${APK_STORE_PASSWORD:-android}
 KEY_ALIAS=${APK_KEY_ALIAS:-androiddebugkey}
@@ -55,6 +55,7 @@ rm -f "$ASSET_DIR/index.html" "$ASSET_DIR/app.js" "$ASSET_DIR/style.css" \
 
 "$JAVAC" --release 8 -classpath "$PLATFORM" -d "$BUILD_DIR/classes" \
   "$APP_DIR/src/main/java/com/flashba/jianghucalculator/MainActivity.java" \
+  "$APP_DIR/src/main/java/com/flashba/jianghucalculator/UpdateApkProvider.java" \
   "$BUILD_DIR/generated/com/flashba/jianghucalculator/AssetVaultKey.java"
 "$BUILD_TOOLS/d8" --lib "$PLATFORM" --min-api 23 --output "$BUILD_DIR/dex" \
   "$BUILD_DIR/classes/com/flashba/jianghucalculator/"*.class

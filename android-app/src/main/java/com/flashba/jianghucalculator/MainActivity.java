@@ -1,9 +1,16 @@
 package com.flashba.jianghucalculator;
 
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.Intent;
 import android.net.Uri;
+import android.os.Build;
+import android.os.Environment;
 import android.os.Bundle;
+import android.provider.Settings;
+import android.content.pm.PackageInfo;
 import android.view.Window;
+import android.widget.ProgressBar;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -12,10 +19,15 @@ import android.webkit.WebResourceResponse;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.security.GeneralSecurityException;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -24,13 +36,22 @@ import javax.crypto.Cipher;
 import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 public final class MainActivity extends Activity {
     private static final String ASSET_HOST = "appassets.androidplatform.net";
+    private static final String RELEASES_API_URL =
+        "https://api.github.com/repos/FlashBA/jianghu-calculator/releases/latest";
     private static final byte[] VAULT_MAGIC = new byte[]{
         'J', 'H', 'C', 'V', 'A', 'U', 'L', 'T'
     };
     private WebView webView;
     private Map<String, byte[]> assets;
+    private AlertDialog downloadDialog;
+    private ProgressBar downloadProgress;
+    private volatile boolean cancelDownload;
+    private File pendingInstallFile;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -70,6 +91,257 @@ public final class MainActivity extends Activity {
         webView.setOverScrollMode(WebView.OVER_SCROLL_NEVER);
         webView.loadUrl("https://" + ASSET_HOST + "/assets/index.html");
         setContentView(webView);
+        checkForUpdate();
+    }
+
+    private void checkForUpdate() {
+        new Thread(() -> {
+            try {
+                JSONObject release = fetchLatestRelease();
+                if (release == null) return;
+                String latestVersion = normalizeVersion(release.optString("tag_name"));
+                String apkUrl = findApkUrl(release.optJSONArray("assets"));
+                if (latestVersion.isEmpty() || apkUrl.isEmpty()) return;
+                String releaseNotes = release.optString("body", "").trim();
+                PackageInfo current = getPackageManager().getPackageInfo(getPackageName(), 0);
+                String currentVersion = normalizeVersion(current.versionName);
+                if (compareVersions(latestVersion, currentVersion) <= 0) return;
+                runOnUiThread(() -> showUpdateDialog(latestVersion, apkUrl, releaseNotes));
+            } catch (Exception ignored) {
+                // Update checks are optional; the offline calculator must still open.
+            }
+        }, "jianghu-update-check").start();
+    }
+
+    private static JSONObject fetchLatestRelease() throws IOException {
+        HttpURLConnection connection = (HttpURLConnection) new URL(RELEASES_API_URL).openConnection();
+        connection.setConnectTimeout(4500);
+        connection.setReadTimeout(4500);
+        connection.setRequestProperty("Accept", "application/vnd.github+json");
+        connection.setRequestProperty("User-Agent", "jianghu-calculator");
+        try {
+            if (connection.getResponseCode() != HttpURLConnection.HTTP_OK) return null;
+            return new JSONObject(new String(readAll(connection.getInputStream()), "UTF-8"));
+        } finally {
+            connection.disconnect();
+        }
+    }
+
+    private static String findApkUrl(JSONArray assets) {
+        if (assets == null) return "";
+        for (int i = 0; i < assets.length(); i++) {
+            JSONObject asset = assets.optJSONObject(i);
+            if (asset == null) continue;
+            String name = asset.optString("name", "").toLowerCase(Locale.ROOT);
+            String url = asset.optString("browser_download_url", "");
+            if (name.endsWith(".apk") && !url.isEmpty()) return url;
+        }
+        return "";
+    }
+
+    private void showUpdateDialog(String version, String apkUrl, String releaseNotes) {
+        if (isFinishing() || (Build.VERSION.SDK_INT >= 17 && isDestroyed())) return;
+        String message = "GitHub 已发布新的 APK。\n\n"
+            + (releaseNotes.isEmpty() ? "建议更新后继续使用。" : limitReleaseNotes(releaseNotes));
+        new AlertDialog.Builder(this)
+            .setTitle("发现新版本 " + version)
+            .setMessage(message)
+            .setNegativeButton("稍后", null)
+            .setPositiveButton("立即更新", (dialog, which) -> {
+                downloadAndInstall(version, apkUrl);
+            })
+            .show();
+    }
+
+    private static String limitReleaseNotes(String notes) {
+        if (notes.length() <= 1800) return notes;
+        return notes.substring(0, 1800).trim() + "\n\n（更新说明过长，已截断）";
+    }
+
+    private void downloadAndInstall(String version, String apkUrl) {
+        if (downloadDialog != null && downloadDialog.isShowing()) return;
+        cancelDownload = false;
+        downloadProgress = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
+        downloadProgress.setIndeterminate(true);
+        downloadProgress.setPadding(0, 0, 0, 0);
+        downloadDialog = new AlertDialog.Builder(this)
+            .setTitle("正在下载 " + version)
+            .setView(downloadProgress, 24, 0, 24, 0)
+            .setNegativeButton("取消", (dialog, which) -> cancelDownload = true)
+            .create();
+        downloadDialog.setOnCancelListener(dialog -> cancelDownload = true);
+        downloadDialog.show();
+
+        new Thread(() -> {
+            File temporaryFile = null;
+            try {
+                File apkFile = updateApkFile();
+                temporaryFile = new File(apkFile.getParentFile(), apkFile.getName() + ".part");
+                File parent = temporaryFile.getParentFile();
+                if (parent != null && !parent.exists() && !parent.mkdirs()) {
+                    throw new IOException("无法创建更新目录");
+                }
+                if (temporaryFile.exists() && !temporaryFile.delete()) {
+                    throw new IOException("无法清理旧更新文件");
+                }
+
+                HttpURLConnection connection = (HttpURLConnection) new URL(apkUrl).openConnection();
+                connection.setConnectTimeout(8000);
+                connection.setReadTimeout(15000);
+                connection.setRequestProperty("User-Agent", "jianghu-calculator");
+                try {
+                    if (connection.getResponseCode() != HttpURLConnection.HTTP_OK) {
+                        throw new IOException("下载失败（HTTP " + connection.getResponseCode() + "）");
+                    }
+                    long total = connection.getContentLengthLong();
+                    long downloaded = 0;
+                    byte[] buffer = new byte[8192];
+                    try (InputStream input = connection.getInputStream();
+                         FileOutputStream output = new FileOutputStream(temporaryFile)) {
+                        int count;
+                        while ((count = input.read(buffer)) != -1) {
+                            if (cancelDownload) throw new IOException("下载已取消");
+                            output.write(buffer, 0, count);
+                            downloaded += count;
+                            updateDownloadProgress(downloaded, total);
+                        }
+                    }
+                } finally {
+                    connection.disconnect();
+                }
+
+                if (cancelDownload) throw new IOException("下载已取消");
+                if (apkFile.exists() && !apkFile.delete()) {
+                    throw new IOException("无法替换旧更新文件");
+                }
+                if (!temporaryFile.renameTo(apkFile)) {
+                    throw new IOException("无法保存更新文件");
+                }
+                File completedFile = apkFile;
+                runOnUiThread(() -> {
+                    closeDownloadDialog();
+                    installDownloadedApk(completedFile);
+                });
+            } catch (Exception error) {
+                if (temporaryFile != null) temporaryFile.delete();
+                runOnUiThread(() -> {
+                    closeDownloadDialog();
+                    if (!cancelDownload && !isFinishing()) {
+                        new AlertDialog.Builder(this)
+                            .setTitle("更新失败")
+                            .setMessage(error.getMessage() == null ? "无法下载更新，请稍后重试。" : error.getMessage())
+                            .setPositiveButton("知道了", null)
+                            .show();
+                    }
+                });
+            }
+        }, "jianghu-apk-download").start();
+    }
+
+    private void updateDownloadProgress(long downloaded, long total) {
+        runOnUiThread(() -> {
+            if (downloadProgress == null) return;
+            if (total > 0 && total <= Integer.MAX_VALUE) {
+                downloadProgress.setIndeterminate(false);
+                downloadProgress.setProgress((int) Math.min(100, downloaded * 100 / total));
+            }
+        });
+    }
+
+    private void closeDownloadDialog() {
+        if (downloadDialog != null && downloadDialog.isShowing()) downloadDialog.dismiss();
+        downloadDialog = null;
+        downloadProgress = null;
+    }
+
+    private File updateApkFile() {
+        File directory = getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS);
+        if (directory == null) directory = getFilesDir();
+        return new File(directory, "jianghu-calculator-update.apk");
+    }
+
+    private void installDownloadedApk(File apkFile) {
+        if (!apkFile.isFile()) {
+            showInstallError("更新文件不存在，请重新下载。" );
+            return;
+        }
+        if (Build.VERSION.SDK_INT >= 26 && !getPackageManager().canRequestPackageInstalls()) {
+            pendingInstallFile = apkFile;
+            new AlertDialog.Builder(this)
+                .setTitle("需要允许安装更新")
+                .setMessage("请在系统设置中允许本应用安装未知来源应用，返回后会继续安装。")
+                .setNegativeButton("稍后", null)
+                .setPositiveButton("去设置", (dialog, which) -> {
+                    Intent intent = new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
+                        Uri.parse("package:" + getPackageName()));
+                    startActivity(intent);
+                })
+                .show();
+            return;
+        }
+        pendingInstallFile = null;
+        Uri apkUri = Uri.parse("content://" + UpdateApkProvider.AUTHORITY + "/apk");
+        Intent intent = new Intent(Intent.ACTION_VIEW)
+            .setDataAndType(apkUri, "application/vnd.android.package-archive")
+            .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_ACTIVITY_NEW_TASK);
+        try {
+            startActivity(intent);
+        } catch (Exception error) {
+            showInstallError("系统安装器无法打开更新文件，请重试。" );
+        }
+    }
+
+    private void showInstallError(String message) {
+        if (isFinishing()) return;
+        new AlertDialog.Builder(this)
+            .setTitle("无法安装更新")
+            .setMessage(message)
+            .setPositiveButton("知道了", null)
+            .show();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (pendingInstallFile != null
+            && pendingInstallFile.isFile()
+            && (Build.VERSION.SDK_INT < 26 || getPackageManager().canRequestPackageInstalls())) {
+            File apkFile = pendingInstallFile;
+            pendingInstallFile = null;
+            installDownloadedApk(apkFile);
+        }
+    }
+
+    private static String normalizeVersion(String value) {
+        String version = value == null ? "" : value.trim();
+        while (version.startsWith("v") || version.startsWith("V")) {
+            version = version.substring(1);
+        }
+        int suffix = version.indexOf('-');
+        if (suffix >= 0) version = version.substring(0, suffix);
+        return version;
+    }
+
+    private static int compareVersions(String left, String right) {
+        String[] leftParts = left.split("\\.");
+        String[] rightParts = right.split("\\.");
+        int length = Math.max(leftParts.length, rightParts.length);
+        for (int i = 0; i < length; i++) {
+            int leftValue = i < leftParts.length ? parseVersionPart(leftParts[i]) : 0;
+            int rightValue = i < rightParts.length ? parseVersionPart(rightParts[i]) : 0;
+            if (leftValue != rightValue) return Integer.compare(leftValue, rightValue);
+        }
+        return 0;
+    }
+
+    private static int parseVersionPart(String value) {
+        String digits = value.replaceAll("[^0-9].*", "");
+        if (digits.isEmpty()) return 0;
+        try {
+            return Integer.parseInt(digits);
+        } catch (NumberFormatException ignored) {
+            return 0;
+        }
     }
 
     private Map<String, byte[]> loadAssets() {

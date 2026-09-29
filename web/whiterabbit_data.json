@@ -5,6 +5,111 @@
     "characters_and_techniques": "equipment_282.xlsx",
     "martial_arts": "martial_arts_282.xlsx"
   },
+  "martial_rules": {
+    "无极玄功拳": {
+      "technique": "道学",
+      "max_percent": 60,
+      "source": "原版 5.40 levelEffect v=6000"
+    },
+    "定珠降魔神功": {
+      "technique": "佛法",
+      "max_percent": 60,
+      "source": "原版 5.40 levelEffect v=6000"
+    },
+    "混元掌": {
+      "technique": "道学",
+      "max_percent": 30,
+      "source": "原版 5.40 levelEffect v=3000"
+    },
+    "燃木刀法": {
+      "technique": "佛法",
+      "max_percent": 50,
+      "source": "原版 5.40 levelEffect v=5000"
+    },
+    "太虚神悟刀": {
+      "technique": "道学",
+      "max_percent": 50,
+      "source": "原版 5.40 levelEffect v=5000"
+    },
+    "真武七截剑": {
+      "technique": "道学",
+      "max_percent": 60,
+      "source": "原版 5.40 levelEffect v=6000"
+    },
+    "独孤剑诀": {
+      "damage_effects": [
+        { "source": "weapon_attack", "percent": 150, "chance_percent": 100 }
+      ],
+      "source": "白兔版武学表"
+    },
+    "六脉剑指": {
+      "damage_effects": [
+        { "source": "base_attack", "percent": 100, "chance_percent": 80 }
+      ],
+      "source": "原版 5.40 levelEffect rate=80 v=10000"
+    },
+    "曜日破云掌": {
+      "damage_effects": [
+        { "source": "weapon_attack", "percent": 120, "chance_percent": 100 }
+      ],
+      "source": "白兔版武学表"
+    },
+    "破浪刀诀": {
+      "damage_effects": [
+        { "source": "weapon_attack", "percent": 100, "chance_percent": 100 }
+      ],
+      "source": "白兔版武学表"
+    },
+    "白兔斩天刀": {
+      "damage_effects": [
+        { "source": "weapon_attack", "percent": 180, "chance_percent": 100 }
+      ],
+      "source": "白兔版武学表"
+    },
+    "少林六合棍": {
+      "damage_effects": [
+        { "source": "weapon_attack", "percent": 50, "chance_percent": 100, "period_rounds": 2 }
+      ],
+      "source": "白兔版武学表"
+    },
+    "万躯撼岳拳": {
+      "damage_effects": [
+        { "source": "final_attack", "percent": 20, "chance_percent": 100 },
+        { "source": "max_hp", "percent": 80, "chance_percent": 100 }
+      ],
+      "source": "白兔版武学表"
+    },
+    "降龙十八掌": {
+      "damage_effects": [
+        { "source": "final_attack", "percent": 200, "chance_percent": 100 }
+      ],
+      "source": "白兔版武学表"
+    },
+    "破锋八斩": {
+      "damage_effects": [
+        { "source": "final_attack", "percent": 200, "chance_percent": 100, "period_rounds": 3 }
+      ],
+      "source": "白兔版武学表"
+    },
+    "獬豸呑邪斩": {
+      "damage_effects": [
+        { "source": "final_attack", "percent": 100, "chance_percent": 12 }
+      ],
+      "source": "白兔版武学表"
+    },
+    "关山月破阵": {
+      "damage_effects": [
+        { "source": "base_attack", "percent": 100, "chance_percent": 100 }
+      ],
+      "source": "白兔版武学表"
+    },
+    "九霄惊雷刀法": {
+      "damage_effects": [
+        { "source": "base_attack", "percent": 200, "chance_percent": 100, "period_rounds": 3 }
+      ],
+      "source": "白兔版武学表"
+    }
+  },
   "characters": [
     {
       "name": "宗泽",
@@ -19,7 +124,7 @@
       "hp_factor": 1.35,
       "power_factor": 1.35,
       "style": "棍法",
-      "access": "白兔版特色角色，襄阳茶摊接取任务",
+      "access": "襄阳茶摊 → 吕文德旁 → 回答问题 → 青龙门上面 → 回去找她",
       "talent": "每次出手给受击目标叠加一层破绽标记，每层标记使穆红缨对该目标的伤害提高12%，无上限，1-3层显示破1,4-6层显示破2,7以上显示破3"
     },
     {
@@ -27,7 +132,7 @@
       "hp_factor": 1.3,
       "power_factor": 1.38,
       "style": "剑法",
-      "access": "白兔版特色角色，华山风青云处接取任务",
+      "access": "华山风青云处打听悟剑往事 → 临安书院 → 沧州老家 → 60级找风青云（专属武学） → 70级找书院夫子（专属武器：15%免伤） → 75级找张真人（专属内功） → 80级找玄慈方丈（专属天性：5%免伤、10%回复、10%生命）",
       "talent": "攻击带有负面状态的敌人时伤害提高20%，专属技艺提高5%免伤，10%恢复，10%基础气血\n(有S专属武器S专属武学S专属内功)"
     },
     {
@@ -74,7 +179,7 @@
       "base_stats": {
         "crit": 10
       },
-      "access": "初始三选一",
+      "access": "初始四选一",
       "talent": "天赋+专属技艺总计速度增加10，暴击率增加30%，暴击伤害增加20%"
     },
     {
@@ -101,7 +206,7 @@
       "hp_factor": 1.28,
       "power_factor": 1.36,
       "style": "剑法",
-      "access": "初始三选一",
+      "access": "初始四选一",
       "talent": "10%概率出手两次，自带S剑法云崖千堆雪"
     },
     {
@@ -125,7 +230,7 @@
       "hp_factor": 1.3,
       "power_factor": 1.32,
       "style": "拳法",
-      "access": "初始三选一",
+      "access": "初始四选一",
       "talent": "进入战斗后，每损失50%气血+10%暴击率，暴击率100%后溢出部分转化为18%暴击伤害，持续到本场战斗结束，自带？内功嗜心炼体决"
     },
     {
@@ -246,7 +351,7 @@
       "hp_factor": 0.7,
       "power_factor": 0.5,
       "style": "棍法",
-      "access": "白兔版本新增角色",
+      "access": "初始四选一",
       "talent": "可生效全部技艺"
     }
   ],
@@ -344,7 +449,7 @@
       "max_level": 300,
       "scope": "主角",
       "effect": "降低6%暴击率，6%暴击伤害，6%气血",
-      "hp_percent": 6,
+      "hp_percent": -6,
       "attack_percent": null,
       "calculate": true,
       "access": "金陵8.17千金赌坊赌局胜利",
@@ -373,7 +478,7 @@
       "upgrade": "副本八阵图击败八卦守护概率掉落八卦之力，集齐八卦之力在姜少卿处提升等级，每次20级"
     },
     {
-      "name": "卧龙心决",
+      "name": "卧龙心诀",
       "max_level": 1,
       "scope": "主角",
       "effect": "写不下，效果看右侧获取栏",
@@ -383,10 +488,11 @@
       "access": "奇门遁甲300级后找姜少卿获得秘籍，拿到即满级，三种形态可切换",
       "upgrade": "阴阳流转：增加15%恢复，10速度，20%暴击伤害\n坤元厚磐：增加15%免伤，50%气血，60%反伤，同时降低20%暴击率，50%攻击\n乾元罡气：增加20%暴击率，50%攻击，18%吸血，同时降低15%免伤，50%生命值",
       "group": "wolong",
-      "group_label": "卧龙心决（三选一）",
+      "group_label": "卧龙心诀（三选一）",
       "choices": [
         {
           "name": "阴阳流转",
+          "effect": "增加15%恢复、10速度、20%暴击伤害",
           "hp_percent": 0,
           "attack_percent": 0,
           "secondary": {
@@ -397,6 +503,7 @@
         },
         {
           "name": "坤元厚磐",
+          "effect": "增加15%免伤、50%气血、60%反伤；降低20%暴击率、50%攻击",
           "hp_percent": 50,
           "attack_percent": -50,
           "secondary": {
@@ -407,6 +514,7 @@
         },
         {
           "name": "乾元罡气",
+          "effect": "增加20%暴击率、50%攻击、18%吸血；降低15%免伤、50%生命值",
           "hp_percent": -50,
           "attack_percent": 50,
           "secondary": {
@@ -590,14 +698,14 @@
       "hp_percent": 5,
       "attack_percent": null,
       "calculate": true,
-      "access": "写不下，原版任务流程自行百度",
+      "access": "原版任务流程自行百度；白兔版本可以和摘音剑双拿",
       "upgrade": "…"
     },
     {
       "name": "朱雀之力",
       "max_level": 300,
       "scope": "全队",
-      "effect": "10%基础攻击，10%闪避",
+      "effect": "10%攻击，10%闪避，10%爆伤",
       "hp_percent": null,
       "attack_percent": 10,
       "calculate": true,
@@ -1079,7 +1187,7 @@
       "speed": null,
       "dodge_percent": null,
       "special": "受击36%概率复制敌方武学反击",
-      "access": "无门派找燕子坞慕容复多次打听开启任务，限1"
+      "access": "主角无门派，向慕容复多次打听并拜入燕子坞接任务；三次任务都找苏州古董商，仁政印找虎啸林入口陶惜阴；结束后找王妙铃领取"
     },
     {
       "name": "达摩武经",
@@ -1138,7 +1246,7 @@
     {
       "name": "葵花宝典",
       "rank": "S",
-      "scope": "修炼者",
+      "scope": "剑主",
       "ren_du": "",
       "hp_percent": 36,
       "attack_percent": 54,
@@ -1151,7 +1259,7 @@
       "speed": 28,
       "dodge_percent": null,
       "special": "增加辟魔剑法，辟邪剑法15%暴击率",
-      "access": "幽州老太监处割弟弟学习，限1"
+      "access": "仅剑主可学习；幽州老太监处割弟弟学习，限1"
     },
     {
       "name": "寂影玄幽诀",
@@ -1176,17 +1284,17 @@
       "rank": "S",
       "scope": "修炼者",
       "ren_du": "",
-      "hp_percent": 48,
-      "attack_percent": 48,
+      "hp_percent": 45,
+      "attack_percent": 42,
       "heal_percent": null,
-      "mitigation_percent": null,
+      "mitigation_percent": 24,
       "lifesteal_percent": null,
       "crit_percent": null,
       "crit_damage_percent": null,
       "reflect_percent": null,
-      "speed": 32,
-      "dodge_percent": 28.000000000000004,
-      "special": "20%免伤，免疫减速，增加曜日吞云掌和倚天剑诀15%暴击",
+      "speed": 28,
+      "dodge_percent": 28,
+      "special": "免疫减速，增加曜日破云掌和倚天剑诀10%暴击",
       "access": "带清月去金陵茕茕处领取，限1，武道感悟"
     },
     {
@@ -1404,6 +1512,28 @@
       "dodge_percent": null,
       "special": "",
       "access": "丐帮苏州净衣派长老吕文舟处花费贡献学习"
+    },
+    {
+      "name": "喵王护御决",
+      "rank": "?",
+      "scope": "修炼者",
+      "ren_du": "",
+      "hp_percent": 40,
+      "attack_percent": 27,
+      "heal_percent": 40,
+      "mitigation_percent": 21,
+      "lifesteal_percent": null,
+      "crit_percent": null,
+      "crit_damage_percent": null,
+      "reflect_percent": null,
+      "speed": null,
+      "dodge_percent": null,
+      "damage_transfer_percent": 20,
+      "conditional_mitigation_percent": 5,
+      "conditional_mitigation_condition": "自己血量最低",
+      "special": "转移队友20%伤害到自己身上",
+      "access": "原版航海图：灵石岛任务奖励",
+      "designer": "@喵喵大王"
     }
   ],
   "equipment": [
@@ -1670,6 +1800,28 @@
       "reflect_percent": 15,
       "scope": "佩戴者",
       "access": "豹牌"
+    },
+    {
+      "id": "wr-eq-26",
+      "source": "white",
+      "slot": "ring",
+      "name": "染羽",
+      "rank": "S",
+      "crit_damage_percent": 30,
+      "lifesteal_percent": 12,
+      "scope": "佩戴者",
+      "access": "烟波楼杀人事件任务结束后找勾夫人获取"
+    },
+    {
+      "id": "wr-eq-27",
+      "source": "white",
+      "slot": "ring",
+      "name": "逍遥",
+      "rank": "S",
+      "crit_percent": 10,
+      "lifesteal_percent": 15,
+      "scope": "佩戴者",
+      "access": "原版逍遥散人任务单挑胜利后获取"
     }
   ],
   "martial_arts": [
@@ -1838,7 +1990,7 @@
       "crit_percent": 5,
       "crit_damage": 1.5,
       "buff": "20%概率降低15%攻击三回合",
-      "special": "随2",
+      "special": "20%攻击+80%血量附伤",
       "access": "原版吸星大法支线任务奖励修改，线1"
     },
     {
@@ -1870,9 +2022,23 @@
       "access": "峨眉派卧云庵学习，限1"
     },
     {
-      "name": "定珠降魔神功",
+      "name": "大日如来掌",
       "style": "拳法",
       "rank": "15S",
+      "power": 1224,
+      "speed": 115,
+      "range": "随1",
+      "double_break": "破招",
+      "crit_percent": 12,
+      "crit_damage": 2.5,
+      "buff": "20%概率5%流血，降低15%攻击两回合",
+      "special": "随2，击杀目标全队获得10%最大生命值护盾",
+      "access": "原版苏州游方和尚支线任务奖励修改，限1"
+    },
+    {
+      "name": "定珠降魔神功",
+      "style": "拳法",
+      "rank": "16S",
       "power": 1337,
       "speed": 102,
       "range": "邻2",
@@ -1928,6 +2094,7 @@
     {
       "name": "辟邪剑法",
       "style": "剑法",
+      "scope": "剑主",
       "rank": "2S",
       "power": 1479,
       "speed": 148,
@@ -1937,7 +2104,7 @@
       "crit_damage": 2.4,
       "buff": "30%概率5%流血",
       "special": "50%概率打五",
-      "access": "学习辟魔剑法后找幽州老太监学习，限1"
+      "access": "仅剑主可学习；学习辟魔剑法后找幽州老太监学习，限1"
     },
     {
       "name": "达摩剑法",
@@ -2156,11 +2323,16 @@
       "power": 1836,
       "speed": 148,
       "range": "邻2",
+      "segments": 3,
+      "multi_hit_probabilities": {
+        "2": 65,
+        "3": 50
+      },
       "double_break": "双破",
       "crit_percent": 5,
-      "crit_damage": "2.5/2.8/3",
+      "crit_damage": "2.4/2.5/2.6",
       "buff": "15%概率一段7%流血\n二段降低速度15%，攻击15%\n三段降低速度15%，攻击15%，8%流血两回合",
-      "special": "出手后75%概率二连，50%概率三连",
+      "special": "出手后65%概率二连，50%概率三连",
       "access": "人生目标盖世武功选择绝世剑法，限1"
     },
     {
@@ -2231,7 +2403,7 @@
       "crit_damage": 2.5,
       "buff": "15%概率7%流血两回合",
       "special": "寂雪斩技艺层数每层固定1000增伤",
-      "access": "沧州老奶支线完成后在潭州酒楼小二处开启任务获取，限1"
+      "access": "前置任务沧州老奶，后续潭州32.25醉仙楼小二处打听接取任务，然后去8.20岳麓书院张南轩处打听，再前往0.26的山洞，阅读密信"
     },
     {
       "name": "破浪刀诀",
@@ -2408,6 +2580,7 @@
       "power": 1428,
       "speed": 130,
       "range": "邻3",
+      "damage_factor": 0.7,
       "double_break": "破闪",
       "crit_percent": 20,
       "crit_damage": 2.5,
@@ -2482,7 +2655,8 @@
       "crit_percent": 10,
       "crit_damage": 2.8,
       "buff": "20%概率降低25%攻击两回合",
-      "special": "攻击30%概率额外造成30%伤害",
+      "special": "50%附伤（结算后伤害×1.5）",
+      "post_damage_multiplier": 1.5,
       "access": "囚龙谷外围怯薛都统 慕容飞概率掉落整本，限1"
     },
     {
@@ -2820,6 +2994,24 @@
       "buff": "10%概率降低10%速度两回合",
       "special": "随2",
       "access": "金陵26.26训练官处花费银两或者元宝学习"
+    },
+    {
+      "name": "如意随心",
+      "style": "棍法",
+      "scope": "陆仁甲",
+      "rank": "S",
+      "power": 1305,
+      "speed": 100,
+      "range": "随1",
+      "double_break": "破闪",
+      "crit_percent": 10,
+      "crit_damage": 2,
+      "target_count": 3,
+      "ally_mimic_chance_percent": 25,
+      "ally_mimic_damage_percent": 50,
+      "buff": "/",
+      "special": "随机攻击3名敌人；队友出手时25%概率用50%伤害模仿队友武功",
+      "access": "陆仁甲专属；正气300后，沧州找老奶奶打听陆仁甲，再去扫地僧处获取"
     }
   ],
   "guide_notes": [

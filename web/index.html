@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#172027">
     <title>江湖风云录 · 角色数值模拟</title>
-    <link rel="stylesheet" href="style.css?v=20260927-64">
+    <link rel="stylesheet" href="style.css?v=20260929-93">
   </head>
   <body>
     <main class="app-shell">
@@ -22,6 +22,7 @@
         <button class="app-nav-button is-active" type="button" data-view="calculator">计算器</button>
         <button class="app-nav-button" type="button" data-view="teams">配队</button>
         <button class="app-nav-button" type="button" data-view="cards">数据卡片</button>
+        <button class="app-nav-button" type="button" data-view="encyclopedia">图鉴</button>
         <button class="app-nav-button" id="doc-button" type="button" data-open-doc>数值文档</button>
       </nav>
 
@@ -53,6 +54,32 @@
           <div class="result-stat"><span>反伤</span><strong id="final-reflect">--</strong></div>
             <div class="result-stat"><span>回复</span><strong id="final-recovery">--</strong></div>
         </div>
+      </section>
+
+      <section class="damage-preview-section" id="damage-preview-section" aria-label="伤害预览" hidden>
+        <div class="damage-preview-heading">
+          <div>
+            <p class="section-kicker">DAMAGE PREVIEW</p>
+            <h2>理论伤害</h2>
+          </div>
+          <span class="damage-preview-context" id="damage-preview-context">未选择武学</span>
+        </div>
+        <div class="damage-preview-controls">
+          <label><span>对方免伤 %</span><input id="damage-target-mitigation" type="number" min="0" max="50" step="0.1" value="0" inputmode="decimal"></label>
+          <label><span>伤害系数</span><input id="damage-factor" type="number" min="0" step="0.01" value="1" inputmode="decimal"></label>
+          <label><span>爆伤调整 %</span><input id="damage-crit-adjustment" type="number" min="0" step="0.1" value="0" inputmode="decimal"></label>
+        </div>
+        <div class="damage-preview-grid">
+          <div class="damage-preview-card">
+            <span>普通伤害</span>
+            <strong id="damage-normal-range">--</strong>
+          </div>
+          <div class="damage-preview-card damage-preview-crit">
+            <span>暴击伤害</span>
+            <strong id="damage-crit-range">--</strong>
+          </div>
+        </div>
+        <div class="damage-preview-limit"><span>理论上限</span><strong id="damage-max-value">--</strong><em id="damage-max-probability">上限概率 --</em></div>
       </section>
 
       <div id="error-message" class="error-message" role="alert" hidden></div>
@@ -283,7 +310,7 @@
                 <label class="field"><span>爆伤 %</span><input id="neigong-crit-damage" type="number" min="-100" step="0.1" value="0" inputmode="decimal"></label>
                 <label class="field"><span>格挡 %</span><input id="neigong-block" type="number" min="-100" step="0.1" value="0" inputmode="decimal"></label>
                 <label class="field"><span>反伤 %</span><input id="neigong-reflect" type="number" min="-100" step="0.1" value="0" inputmode="decimal"></label>
-                <label class="field"><span>回复</span><input id="neigong-recovery" type="number" min="-100" step="1" value="0" inputmode="numeric"></label>
+                <label class="field"><span>回复 %</span><input id="neigong-recovery" type="number" min="-100" step="1" value="0" inputmode="numeric"></label>
               </div>
             </details>
           </section>
@@ -397,6 +424,59 @@
         <div id="saved-card-list" class="saved-card-list"></div>
       </section>
 
+      <section class="collection-view encyclopedia-view" id="encyclopedia-view" hidden aria-label="图鉴">
+        <div class="section-heading collection-heading">
+          <div>
+            <p class="section-kicker">ENCYCLOPEDIA</p>
+            <h2>图鉴</h2>
+          </div>
+          <div class="encyclopedia-heading-side">
+            <p class="encyclopedia-credit">感谢 @邩木与@染羽 大佬提供的攻略数据</p>
+            <span class="collection-count" id="encyclopedia-count">0 条</span>
+          </div>
+        </div>
+        <div class="collection-toolbar encyclopedia-toolbar" id="encyclopedia-toolbar">
+          <label class="field">
+            <span>分类</span>
+            <select id="encyclopedia-type">
+              <option value="characters">角色</option>
+              <option value="techniques">技艺</option>
+              <option value="inner_skills">内功</option>
+              <option value="martial_arts">武学</option>
+              <option value="equipment">装备</option>
+            </select>
+          </label>
+          <label class="field encyclopedia-filter-field" id="encyclopedia-martial-filter-field" hidden>
+            <span>职业筛选</span>
+            <select id="encyclopedia-martial-filter">
+              <option value="">全部职业</option>
+              <option value="拳">拳法</option>
+              <option value="剑">剑法</option>
+              <option value="刀">刀法</option>
+              <option value="棍">棍法</option>
+            </select>
+          </label>
+          <label class="field encyclopedia-filter-field" id="encyclopedia-equipment-filter-field" hidden>
+            <span>装备部位</span>
+            <select id="encyclopedia-equipment-filter">
+              <option value="">全部部位</option>
+              <option value="weapon-staff">棍武器</option>
+              <option value="weapon-blade">刀武器</option>
+              <option value="weapon-fist">拳武器</option>
+              <option value="weapon-sword">剑武器</option>
+              <option value="armor">衣甲</option>
+              <option value="ring">戒指</option>
+              <option value="wrist">护腕</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>搜索</span>
+            <input id="encyclopedia-search" type="search" placeholder="名称、属性或获取方式" autocomplete="off">
+          </label>
+        </div>
+        <div id="encyclopedia-list" class="encyclopedia-list"></div>
+      </section>
+
       <div class="modal-shell" id="name-modal" hidden>
         <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="name-modal-title">
           <div class="modal-heading">
@@ -488,6 +568,6 @@
         </div>
       </div>
     </main>
-    <script src="app.js?v=20260927-64"></script>
+    <script src="app.js?v=20260929-93"></script>
   </body>
 </html>
