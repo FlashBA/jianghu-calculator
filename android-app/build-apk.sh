@@ -42,7 +42,7 @@ mkdir -p "$BUILD_DIR/classes" "$BUILD_DIR/tool-classes" "$BUILD_DIR/dex" "$BUILD
 rm -f "$ASSET_DIR/index.html" "$ASSET_DIR/app.js" "$ASSET_DIR/style.css" \
   "$ASSET_DIR/uc540_doc.json" "$ASSET_DIR/whiterabbit_data.json" "$ASSET_DIR/app.vault"
 
-"$JAVAC" --release 8 -d "$BUILD_DIR/tool-classes" \
+"$JAVAC" --release 8 -encoding UTF-8 -d "$BUILD_DIR/tool-classes" \
   "$APP_DIR/tools/AssetVaultBuilder.java"
 "$JAVA" -cp "$BUILD_DIR/tool-classes" com.flashba.jianghucalculator.AssetVaultBuilder \
   "$ASSET_DIR/app.vault" \
@@ -53,13 +53,7 @@ rm -f "$ASSET_DIR/index.html" "$ASSET_DIR/app.js" "$ASSET_DIR/style.css" \
   "uc540_doc.json=$ROOT_DIR/web/uc540_doc.json" \
   "whiterabbit_data.json=$ROOT_DIR/web/whiterabbit_data.json"
 
-"$JAVAC" --release 8 -classpath "$PLATFORM" -d "$BUILD_DIR/classes" \
-  "$APP_DIR/src/main/java/com/flashba/jianghucalculator/MainActivity.java" \
-  "$APP_DIR/src/main/java/com/flashba/jianghucalculator/UpdateApkProvider.java" \
-  "$BUILD_DIR/generated/com/flashba/jianghucalculator/AssetVaultKey.java"
-"$BUILD_TOOLS/d8" --lib "$PLATFORM" --min-api 23 --output "$BUILD_DIR/dex" \
-  "$BUILD_DIR/classes/com/flashba/jianghucalculator/"*.class
-
+# Generate Android resources before compiling the activity so javac can use R.java.
 "$BUILD_TOOLS/aapt2" compile --dir "$APP_DIR/src/main/res" -o "$BUILD_DIR/res/resources.zip"
 "$BUILD_TOOLS/aapt2" link \
   -I "$PLATFORM" \
@@ -72,6 +66,14 @@ rm -f "$ASSET_DIR/index.html" "$ASSET_DIR/app.js" "$ASSET_DIR/style.css" \
   --version-name "$VERSION_NAME" \
   -o "$BUILD_DIR/unsigned.apk" \
   "$BUILD_DIR/res/resources.zip"
+
+"$JAVAC" --release 8 -encoding UTF-8 -classpath "$PLATFORM" -d "$BUILD_DIR/classes" \
+  "$APP_DIR/src/main/java/com/flashba/jianghucalculator/MainActivity.java" \
+  "$APP_DIR/src/main/java/com/flashba/jianghucalculator/UpdateApkProvider.java" \
+  "$BUILD_DIR/generated/com/flashba/jianghucalculator/R.java" \
+  "$BUILD_DIR/generated/com/flashba/jianghucalculator/AssetVaultKey.java"
+"$BUILD_TOOLS/d8" --lib "$PLATFORM" --min-api 23 --output "$BUILD_DIR/dex" \
+  "$BUILD_DIR/classes/com/flashba/jianghucalculator/"*.class
 
 cp "$BUILD_DIR/dex/classes.dex" "$BUILD_DIR/classes.dex"
 zip -q -j "$BUILD_DIR/unsigned.apk" "$BUILD_DIR/classes.dex"
