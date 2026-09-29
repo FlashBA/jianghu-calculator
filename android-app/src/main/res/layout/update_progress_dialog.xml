@@ -1,0 +1,49 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="22dp"
+    android:background="@drawable/dialog_panel">
+
+    <TextView
+        android:id="@+id/download_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="@color/dialog_ink"
+        android:textSize="20sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/download_status"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="7dp"
+        android:text="正在连接下载服务器"
+        android:textColor="@color/dialog_muted"
+        android:textSize="13sp" />
+
+    <ProgressBar
+        android:id="@+id/download_progress"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="8dp"
+        android:layout_marginTop="18dp"
+        android:indeterminate="true"
+        android:progressTint="@color/dialog_accent"
+        android:indeterminateTint="@color/dialog_accent" />
+
+    <Button
+        android:id="@+id/download_cancel"
+        android:layout_width="wrap_content"
+        android:layout_height="44dp"
+        android:layout_gravity="end"
+        android:layout_marginTop="14dp"
+        android:minWidth="0dp"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:background="@drawable/dialog_secondary_button"
+        android:text="取消"
+        android:textAllCaps="false"
+        android:textColor="@color/dialog_ink"
+        android:textSize="13sp" />
+</LinearLayout>

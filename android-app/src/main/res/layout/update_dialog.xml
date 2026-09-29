@@ -1,0 +1,120 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="22dp"
+    android:background="@drawable/dialog_panel">
+
+    <TextView
+        android:id="@+id/update_kicker"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="UPDATE NOTICE"
+        android:textColor="@color/dialog_accent"
+        android:textSize="11sp"
+        android:textStyle="bold"
+        android:letterSpacing="0.12" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/update_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="发现新版本"
+            android:textColor="@color/dialog_ink"
+            android:textSize="21sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/update_version"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:paddingStart="9dp"
+            android:paddingTop="5dp"
+            android:paddingEnd="9dp"
+            android:paddingBottom="5dp"
+            android:background="@drawable/dialog_badge"
+            android:textColor="#FFF2DC"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/update_intro"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="GitHub 已发布新的 APK。"
+        android:textColor="@color/dialog_muted"
+        android:textSize="13sp"
+        android:lineSpacingExtra="3dp" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginTop="14dp"
+        android:layout_marginBottom="2dp"
+        android:background="#C9B9A6" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:minHeight="150dp"
+        android:fillViewport="true">
+
+        <TextView
+            android:id="@+id/update_notes"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="10dp"
+            android:paddingBottom="10dp"
+            android:textColor="@color/dialog_ink"
+            android:textSize="13sp"
+            android:lineSpacingExtra="4dp" />
+    </ScrollView>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:gravity="end"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/update_later"
+            android:layout_width="wrap_content"
+            android:layout_height="44dp"
+            android:minWidth="0dp"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:background="@drawable/dialog_secondary_button"
+            android:text="稍后"
+            android:textAllCaps="false"
+            android:textColor="@color/dialog_ink"
+            android:textSize="13sp" />
+
+        <Button
+            android:id="@+id/update_action"
+            android:layout_width="wrap_content"
+            android:layout_height="44dp"
+            android:layout_marginStart="8dp"
+            android:minWidth="0dp"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:background="@drawable/dialog_primary_button"
+            android:text="立即更新"
+            android:textAllCaps="false"
+            android:textColor="#FFF2DC"
+            android:textSize="13sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+</LinearLayout>

@@ -1,0 +1,10 @@
+<resources>
+    <color name="dialog_canvas">#F4EEE6</color>
+    <color name="dialog_surface">#E9E0D4</color>
+    <color name="dialog_ink">#1B1917</color>
+    <color name="dialog_muted">#625A52</color>
+    <color name="dialog_line">#332E29</color>
+    <color name="dialog_accent">#87342A</color>
+    <color name="dialog_accent_dark">#4E1C17</color>
+    <color name="dialog_gold">#C49B45</color>
+</resources>

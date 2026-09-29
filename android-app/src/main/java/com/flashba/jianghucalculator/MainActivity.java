@@ -10,7 +10,11 @@ import android.os.Bundle;
 import android.provider.Settings;
 import android.content.pm.PackageInfo;
 import android.view.Window;
+import android.view.WindowManager;
+import android.view.View;
+import android.widget.Button;
 import android.widget.ProgressBar;
+import android.widget.TextView;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -51,6 +55,7 @@ public final class MainActivity extends Activity {
     private Map<String, byte[]> assets;
     private AlertDialog downloadDialog;
     private ProgressBar downloadProgress;
+    private TextView downloadStatus;
     private volatile boolean cancelDownload;
     private File pendingInstallFile;
 
@@ -142,16 +147,20 @@ public final class MainActivity extends Activity {
 
     private void showUpdateDialog(String version, String apkUrl, String releaseNotes) {
         if (isFinishing() || (Build.VERSION.SDK_INT >= 17 && isDestroyed())) return;
-        String message = "GitHub 已发布新的 APK。\n\n"
-            + (releaseNotes.isEmpty() ? "建议更新后继续使用。" : limitReleaseNotes(releaseNotes));
-        new AlertDialog.Builder(this)
-            .setTitle("发现新版本 " + version)
-            .setMessage(message)
-            .setNegativeButton("稍后", null)
-            .setPositiveButton("立即更新", (dialog, which) -> {
-                downloadAndInstall(version, apkUrl);
-            })
-            .show();
+        View content = getLayoutInflater().inflate(R.layout.update_dialog, null);
+        ((TextView) content.findViewById(R.id.update_version)).setText("v" + version);
+        ((TextView) content.findViewById(R.id.update_intro)).setText("GitHub 已发布新的 APK，下载完成后会交给系统安装器确认。");
+        ((TextView) content.findViewById(R.id.update_notes)).setText(
+            releaseNotes.isEmpty() ? "本次版本暂无文字更新说明。" : limitReleaseNotes(releaseNotes));
+        final AlertDialog dialog = new AlertDialog.Builder(this).setView(content).create();
+        content.findViewById(R.id.update_later).setOnClickListener(view -> dialog.dismiss());
+        content.findViewById(R.id.update_action).setOnClickListener(view -> {
+            dialog.dismiss();
+            downloadAndInstall(version, apkUrl);
+        });
+        dialog.setCanceledOnTouchOutside(true);
+        dialog.show();
+        styleDialogWindow(dialog);
     }
 
     private static String limitReleaseNotes(String notes) {
@@ -162,16 +171,20 @@ public final class MainActivity extends Activity {
     private void downloadAndInstall(String version, String apkUrl) {
         if (downloadDialog != null && downloadDialog.isShowing()) return;
         cancelDownload = false;
-        downloadProgress = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
+        View content = getLayoutInflater().inflate(R.layout.update_progress_dialog, null);
+        ((TextView) content.findViewById(R.id.download_title)).setText("正在下载 v" + version);
+        downloadProgress = content.findViewById(R.id.download_progress);
+        downloadStatus = content.findViewById(R.id.download_status);
         downloadProgress.setIndeterminate(true);
-        downloadProgress.setPadding(48, 0, 48, 0);
-        downloadDialog = new AlertDialog.Builder(this)
-            .setTitle("正在下载 " + version)
-            .setView(downloadProgress)
-            .setNegativeButton("取消", (dialog, which) -> cancelDownload = true)
-            .create();
+        downloadDialog = new AlertDialog.Builder(this).setView(content).create();
+        content.findViewById(R.id.download_cancel).setOnClickListener(view -> {
+            cancelDownload = true;
+            closeDownloadDialog();
+        });
         downloadDialog.setOnCancelListener(dialog -> cancelDownload = true);
         downloadDialog.show();
+        downloadDialog.setCanceledOnTouchOutside(false);
+        styleDialogWindow(downloadDialog);
 
         new Thread(() -> {
             File temporaryFile = null;
@@ -228,11 +241,9 @@ public final class MainActivity extends Activity {
                 runOnUiThread(() -> {
                     closeDownloadDialog();
                     if (!cancelDownload && !isFinishing()) {
-                        new AlertDialog.Builder(this)
-                            .setTitle("更新失败")
-                            .setMessage(error.getMessage() == null ? "无法下载更新，请稍后重试。" : error.getMessage())
-                            .setPositiveButton("知道了", null)
-                            .show();
+                        showNoticeDialog("更新失败",
+                            error.getMessage() == null ? "无法下载更新，请稍后重试。" : error.getMessage(),
+                            null, "知道了", null);
                     }
                 });
             }
@@ -245,6 +256,11 @@ public final class MainActivity extends Activity {
             if (total > 0 && total <= Integer.MAX_VALUE) {
                 downloadProgress.setIndeterminate(false);
                 downloadProgress.setProgress((int) Math.min(100, downloaded * 100 / total));
+                if (downloadStatus != null) {
+                    downloadStatus.setText((downloaded * 100 / total) + "% · 正在保存更新文件");
+                }
+            } else if (downloadStatus != null) {
+                downloadStatus.setText("正在下载更新文件");
             }
         });
     }
@@ -253,6 +269,7 @@ public final class MainActivity extends Activity {
         if (downloadDialog != null && downloadDialog.isShowing()) downloadDialog.dismiss();
         downloadDialog = null;
         downloadProgress = null;
+        downloadStatus = null;
     }
 
     private File updateApkFile() {
@@ -268,16 +285,13 @@ public final class MainActivity extends Activity {
         }
         if (Build.VERSION.SDK_INT >= 26 && !getPackageManager().canRequestPackageInstalls()) {
             pendingInstallFile = apkFile;
-            new AlertDialog.Builder(this)
-                .setTitle("需要允许安装更新")
-                .setMessage("请在系统设置中允许本应用安装未知来源应用，返回后会继续安装。")
-                .setNegativeButton("稍后", null)
-                .setPositiveButton("去设置", (dialog, which) -> {
+            showNoticeDialog("需要允许安装更新",
+                "请在系统设置中允许本应用安装未知来源应用，返回后会继续安装。",
+                "稍后", "去设置", () -> {
                     Intent intent = new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
                         Uri.parse("package:" + getPackageName()));
                     startActivity(intent);
-                })
-                .show();
+                });
             return;
         }
         pendingInstallFile = null;
@@ -294,11 +308,40 @@ public final class MainActivity extends Activity {
 
     private void showInstallError(String message) {
         if (isFinishing()) return;
-        new AlertDialog.Builder(this)
-            .setTitle("无法安装更新")
-            .setMessage(message)
-            .setPositiveButton("知道了", null)
-            .show();
+        showNoticeDialog("无法安装更新", message, null, "知道了", null);
+    }
+
+    private void showNoticeDialog(String title, String message, String secondaryLabel,
+                                  String actionLabel, Runnable action) {
+        if (isFinishing() || (Build.VERSION.SDK_INT >= 17 && isDestroyed())) return;
+        View content = getLayoutInflater().inflate(R.layout.notice_dialog, null);
+        ((TextView) content.findViewById(R.id.notice_title)).setText(title);
+        ((TextView) content.findViewById(R.id.notice_message)).setText(message);
+        Button secondary = content.findViewById(R.id.notice_secondary);
+        Button actionButton = content.findViewById(R.id.notice_action);
+        final AlertDialog dialog = new AlertDialog.Builder(this).setView(content).create();
+        if (secondaryLabel == null || secondaryLabel.isEmpty()) {
+            secondary.setVisibility(View.GONE);
+        } else {
+            secondary.setText(secondaryLabel);
+            secondary.setOnClickListener(view -> dialog.dismiss());
+        }
+        actionButton.setText(actionLabel == null || actionLabel.isEmpty() ? "知道了" : actionLabel);
+        actionButton.setOnClickListener(view -> {
+            dialog.dismiss();
+            if (action != null) action.run();
+        });
+        dialog.show();
+        styleDialogWindow(dialog);
+    }
+
+    private void styleDialogWindow(AlertDialog dialog) {
+        Window window = dialog.getWindow();
+        if (window == null) return;
+        window.setBackgroundDrawableResource(android.R.color.transparent);
+        int screenWidth = getResources().getDisplayMetrics().widthPixels;
+        int dialogWidth = Math.min(screenWidth - 32, (int) (screenWidth * 0.92f));
+        window.setLayout(dialogWidth, WindowManager.LayoutParams.WRAP_CONTENT);
     }
 
     @Override

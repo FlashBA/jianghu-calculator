@@ -3201,6 +3201,131 @@ h2 {
   font-size: 0.68rem !important;
 }
 
+.dungeon-drop-section {
+  min-width: 0;
+  border: 2px solid var(--line);
+  background: #eee5d7;
+  box-shadow: inset 0 0 0 1px #c9b9a6;
+}
+
+.dungeon-drop-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 13px;
+  color: var(--muted);
+  border-bottom: 2px solid var(--line);
+  background: #e3d5c4;
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.dungeon-drop-heading > div {
+  display: grid;
+  gap: 2px;
+}
+
+.dungeon-drop-kicker {
+  color: var(--amber);
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+}
+
+.dungeon-drop-heading strong {
+  color: var(--teal-dark);
+  font-size: 1rem;
+}
+
+.dungeon-boss-list {
+  display: grid;
+  gap: 0;
+}
+
+.dungeon-boss-group {
+  min-width: 0;
+  padding: 10px 13px 11px;
+  border-bottom: 1px solid #c9b9a6;
+}
+
+.dungeon-boss-group:last-child {
+  border-bottom: 0;
+}
+
+.dungeon-boss-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.dungeon-boss-heading strong {
+  color: var(--ink);
+  font-size: 0.82rem;
+}
+
+.dungeon-boss-heading span {
+  color: var(--muted);
+  font-size: 0.66rem;
+  white-space: nowrap;
+}
+
+.dungeon-drop-items {
+  display: grid;
+  gap: 4px;
+}
+
+.dungeon-drop-item {
+  display: grid;
+  grid-template-columns: minmax(0, 0.72fr) minmax(0, 1.28fr);
+  gap: 12px;
+  align-items: baseline;
+  min-width: 0;
+  padding: 5px 0;
+  border-top: 1px solid rgba(123, 103, 82, 0.18);
+}
+
+.dungeon-drop-item > div {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  min-width: 0;
+}
+
+.dungeon-drop-item strong {
+  overflow: hidden;
+  color: var(--teal-dark);
+  font-size: 0.76rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dungeon-drop-item span,
+.dungeon-drop-item p,
+.dungeon-drop-item small {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.66rem;
+  line-height: 1.45;
+}
+
+.dungeon-drop-item span {
+  flex: 0 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dungeon-drop-item p {
+  overflow-wrap: anywhere;
+}
+
+.dungeon-drop-item small {
+  grid-column: 1 / -1;
+  color: var(--amber);
+}
+
 @media (max-width: 640px) {
   .app-nav-button {
     min-height: 36px;
@@ -3254,5 +3379,20 @@ h2 {
 
   .encyclopedia-card-meta {
     text-align: left;
+  }
+
+  .dungeon-drop-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .dungeon-drop-item {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+
+  .dungeon-drop-item p {
+    grid-column: 1 / -1;
   }
 }
