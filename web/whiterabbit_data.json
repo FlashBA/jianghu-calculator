@@ -80,9 +80,7 @@
       "source": "白兔版武学表"
     },
     "降龙十八掌": {
-      "damage_effects": [
-        { "source": "final_attack", "percent": 200, "chance_percent": 100 }
-      ],
+      "post_damage_multiplier": 3,
       "source": "白兔版武学表"
     },
     "破锋八斩": {
@@ -372,6 +370,7 @@
       "max_level": 1,
       "scope": "主角",
       "effect": "10%爆伤",
+      "secondary": { "critDamage": 10 },
       "hp_percent": null,
       "attack_percent": null,
       "calculate": true,
@@ -562,7 +561,8 @@
       "name": "棍势",
       "max_level": 300,
       "scope": "主角，棍主",
-      "effect": "20%暴击，20%棍法伤害",
+      "effect": "20%爆伤，20%棍法伤害",
+      "secondary": { "critDamage": 20 },
       "hp_percent": null,
       "attack_percent": null,
       "calculate": true,
@@ -2075,7 +2075,7 @@
       "crit_percent": 10,
       "crit_damage": 3.2,
       "buff": "？%概率眩晕，8%流血两回合",
-      "special": "攻击附加200%伤害",
+      "special": "基础伤害附加200%（总伤害为基础伤害的3倍）",
       "access": "囚龙谷外围狂龙掌 石猛概率掉落信物后找洛阳小乞丐开启支线获取，限1"
     },
     {
@@ -2137,7 +2137,11 @@
       "crit_percent": 50,
       "crit_damage": 4,
       "buff": "15%概率眩晕，6%流血两回合",
-      "special": "本次攻击暴击则再次出手，但下次出手暴击率衰减30%",
+      "special": "本次攻击暴击则再次出手；每次追加出手的暴击率衰减30%，下一段连击概率低于3%后停止计算",
+      "combo_on_crit": {
+        "crit_decay_percent": 30,
+        "min_next_probability_percent": 3
+      },
       "access": "人生目标盖世武功选择绝世拳法，限1"
     },
     {
@@ -2732,8 +2736,10 @@
       "crit_percent": 10,
       "crit_damage": 2.8,
       "buff": "20%概率降低25%攻击两回合",
-      "special": "50%附伤（结算后伤害×1.5）",
+      "special": "暴击后30%概率触发附伤（结算后伤害×1.5）",
       "post_damage_multiplier": 1.5,
+      "post_damage_trigger": "crit",
+      "post_damage_chance_percent": 30,
       "access": "囚龙谷外围怯薛都统 慕容飞概率掉落整本，限1"
     },
     {

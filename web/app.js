@@ -132,11 +132,13 @@ const CALCULATION_DOCUMENT = [
       '最终暴击倍率 = 理论伤害爆伤值 ÷ 100',
       '暴击伤害浮动 = trunc(本次伤害基数 × 伤害系数 × 90%～110% × 最终暴击倍率 × (1 - min(对方免伤, 50%)))',
       '多段武学伤害 = 各段分别按对应爆伤倍率计算后求和；多段概率按已知的二连/三连触发概率展示',
-      '结算后附伤 = 已完成免伤计算的伤害 × 武学附伤倍率（例如天狼破穹枪 × 1.5）',
+      '结算后附伤 = 按武学触发条件，将已完成免伤计算的伤害乘以后置附伤倍率',
+      '天狼破穹枪触发概率 = 暴击率 × 30%；触发时暴击伤害再 × 1.5',
       '阵法独立伤害乘区 = 1 + 阵法独立伤害%',
       '最终伤害 = 结算后附伤 × 阵法独立伤害乘区',
       '理论伤害上限 = max(普通伤害上限, 暴击伤害上限)',
       '理论上限概率 = 暴击率 × 多段上限概率 × 概率附伤触发率（无多段数据时取 1；周期附伤按对应回合判断）',
+      '白兔追命拳理论期望段数 = 各段到达概率之和；追加出手暴击率每段衰减 30%，下一段到达概率低于 3% 后停止',
       '实际伤害 = trunc(浮动伤害 × (1 - min(目标免伤, 50%)))',
     ],
     notes: ['人物基础附伤只取基础攻击原值 B；武器白值附伤只取武器编辑器中的当前强化最终白值，百分比攻击词条不作为白值。理论上限概率使用最终面板暴击率，并把已知概率/周期附伤视为触发态，但不会把它们当作每次出手必定生效。随1/随2/随3/邻2/邻3是目标范围，不自动套用统一分摊系数。'],
@@ -171,6 +173,9 @@ let pendingConfirmation = null;
 let expandedTeamId = null;
 let damageFactorCustomized = false;
 let damageCritCustomized = false;
+let haremBonusCustomized = false;
+
+const HAREM_EXCLUDED_MARTIALS = new Set(['白兔三仙剑', '白兔追命拳', '白兔斩天刀', '白兔千钧棍']);
 
 const $ = (id) => document.getElementById(id);
 
@@ -362,7 +367,7 @@ function secondaryStatsFromText(text) {
     恢复: 'recovery', 疗伤: 'recovery',
   };
   const normalized = String(text || '');
-  const pattern = /(降低|减少)?\s*(\d+(?:\.\d+)?)\s*%?\s*(暴击伤害|暴击率|暴击|免伤|闪避|吸血|反伤|格挡|招架|回复|恢复|疗伤|速度)/g;
+  const pattern = /(降低|减少)?\s*(\d+(?:\.\d+)?)\s*%?\s*(暴击伤害|爆伤|暴击率|暴击|免伤|闪避|吸血|反伤|格挡|招架|回复|恢复|疗伤|速度)/g;
   let match;
   while ((match = pattern.exec(normalized))) {
     const key = statMap[match[3]];
@@ -552,30 +557,95 @@ function martialDamageFactor(item) {
   const value = Number(item?.damage_factor);
   return Number.isFinite(value) && value >= 0 ? value : 1;
 }
-function martialPostDamageMultiplier(item) {
+function martialPostDamageRule(item) {
   const value = Number(item?.post_damage_multiplier);
-  return Number.isFinite(value) && value >= 0 ? value : 1;
+  const multiplier = Number.isFinite(value) && value >= 0 ? value : 1;
+  const trigger = String(item?.post_damage_trigger || 'always').trim().toLowerCase();
+  const defaultChance = trigger === 'always' ? 100 : 0;
+  const chanceValue = Number(item?.post_damage_chance_percent);
+  const chancePercent = Number.isFinite(chanceValue)
+    ? Math.max(0, Math.min(100, chanceValue))
+    : defaultChance;
+  return { multiplier, trigger, chancePercent };
 }
-function martialHitProfiles(item) {
+function martialPostDamageMultiplier(item) {
+  return martialPostDamageRule(item).multiplier;
+}
+function martialComboHitModel(item, totalCritPercent = Number(item?.crit_percent) || 0) {
+  const config = item?.combo_on_crit;
+  if (!config || typeof config !== 'object') return null;
+  const baseCritValue = Number(config.crit_percent ?? totalCritPercent);
+  const baseCritChance = Math.max(0, Math.min(100, Number.isFinite(baseCritValue) ? baseCritValue : 0)) / 100;
+  const decayValue = Number(config.crit_decay_percent);
+  const decayMultiplier = 1 - Math.max(0, Math.min(100, Number.isFinite(decayValue) ? decayValue : 0)) / 100;
+  const thresholdValue = Number(config.min_next_probability_percent);
+  const threshold = Math.max(0, Math.min(100, Number.isFinite(thresholdValue) ? thresholdValue : 3)) / 100;
+  const reaches = [1];
+  const critChances = [baseCritChance];
+  let reach = 1;
+  let nextCritChance = baseCritChance;
+  while (reach * nextCritChance >= threshold && nextCritChance > 0) {
+    const nextSegmentProbability = reach * nextCritChance;
+    reach = nextSegmentProbability;
+    reaches.push(reach);
+    nextCritChance *= decayMultiplier;
+    critChances.push(nextCritChance);
+  }
+  const profiles = reaches.map((reachProbability, index) => ({
+    segments: index + 1,
+    reachProbabilityRaw: reachProbability,
+    reachProbability: Number((reachProbability * 100).toFixed(4)),
+    probability: Number(((reachProbability - (reaches[index + 1] || 0)) * 100).toFixed(4)),
+    critProbabilityRaw: critChances[index],
+    critProbability: Number((critChances[index] * 100).toFixed(4)),
+  }));
+  return {
+    combo: true,
+    profiles,
+    expectedSegments: reaches.reduce((sum, value) => sum + value, 0),
+    decayPercent: (1 - decayMultiplier) * 100,
+    thresholdPercent: threshold * 100,
+  };
+}
+function standardHitModel(item) {
   const probabilityMap = Object.fromEntries(Object.entries(item?.multi_hit_probabilities || {})
     .map(([segments, probability]) => [Number(segments), Math.max(0, Math.min(100, Number(probability) || 0))])
     .filter(([segments, probability]) => Number.isFinite(segments) && segments > 1 && Number.isFinite(probability)));
   const probabilitySegments = Object.keys(probabilityMap).map(Number);
-  if (!probabilitySegments.length) return [{ segments: 1, probability: 100, reachProbability: 100 }];
+  if (!probabilitySegments.length) {
+    return {
+      combo: false,
+      profiles: [{ segments: 1, probability: 100, probabilityRaw: 1, reachProbability: 100, reachProbabilityRaw: 1 }],
+      expectedSegments: 1,
+    };
+  }
   const maxSegments = Math.max(1, Number(item?.segments) || 0, ...probabilitySegments);
-  return Array.from({ length: maxSegments }, (_, index) => {
+  const profiles = Array.from({ length: maxSegments }, (_, index) => {
     const segments = index + 1;
     const reachProbability = segments === 1 ? 100 : probabilityMap[segments] || 0;
     const nextReachProbability = segments < maxSegments ? (probabilityMap[segments + 1] || 0) : 0;
     return {
       segments,
+      reachProbabilityRaw: reachProbability / 100,
       reachProbability,
       probability: Number((Math.max(0, reachProbability - nextReachProbability)).toFixed(2)),
+      probabilityRaw: Math.max(0, reachProbability - nextReachProbability) / 100,
     };
   });
+  return {
+    combo: false,
+    profiles,
+    expectedSegments: profiles.reduce((sum, profile) => sum + profile.reachProbability / 100, 0),
+  };
 }
-function martialHitProbabilityLabel(item) {
-  const profiles = martialHitProfiles(item);
+function martialHitModel(item, totalCritPercent = Number(item?.crit_percent) || 0) {
+  return martialComboHitModel(item, totalCritPercent) || standardHitModel(item);
+}
+function martialHitProfiles(item, totalCritPercent = Number(item?.crit_percent) || 0) {
+  return martialHitModel(item, totalCritPercent).profiles;
+}
+function martialHitProbabilityLabel(item, totalCritPercent = Number(item?.crit_percent) || 0) {
+  const profiles = martialHitProfiles(item, totalCritPercent);
   if (profiles.length <= 1) return '';
   return profiles.map((profile) => profile.segments === 1
     ? '1段'
@@ -583,25 +653,28 @@ function martialHitProbabilityLabel(item) {
 }
 function damageUpperLimitProbability(item, totalCritPercent = Number(item?.crit_percent) || 0) {
   const critPercent = Math.max(0, Math.min(100, Number(totalCritPercent) || 0));
-  const probabilities = Object.entries(item?.multi_hit_probabilities || {})
-    .map(([segments, probability]) => ({ segments: Number(segments), probability: Number(probability) }))
-    .filter((entry) => Number.isFinite(entry.segments) && entry.segments > 1
-      && Number.isFinite(entry.probability) && entry.probability >= 0)
-    .sort((left, right) => right.segments - left.segments);
-  const maxSegments = probabilities[0];
-  let probability = maxSegments ? maxSegments.probability / 100 : 1;
+  const model = martialHitModel(item, critPercent);
+  const maxProfile = model.profiles[model.profiles.length - 1];
+  let probability = maxProfile?.reachProbabilityRaw ?? ((maxProfile?.reachProbability || 0) / 100);
+  if (model.combo) {
+    probability *= maxProfile?.critProbabilityRaw ?? ((maxProfile?.critProbability || 0) / 100);
+  } else {
+    probability *= critPercent / 100;
+  }
+  const postRule = martialPostDamageRule(item);
+  if (postRule.trigger === 'crit') probability *= postRule.chancePercent / 100;
   martialDamageEffects(item).forEach((effect) => {
     if (effect.periodRounds <= 0 && effect.chancePercent < 100) {
       probability *= effect.chancePercent / 100;
     }
   });
-  return Number((critPercent * probability).toFixed(2));
+  return Number((probability * 100).toFixed(2));
 }
 function martialRange(item) {
   if (item?.range) return String(item.range);
   return ({ 21: '随1', 22: '随2', 23: '随3', 24: '邻2', 25: '邻3' })[Number(item?.mode)] || '单体范围待补';
 }
-function calculateDamagePreview({ attack, baseAttackRaw, weaponWhiteAttack, maxHp, martial, stats, damageFactor, targetMitigation, critDamageValue = null, formationDamagePercent = 0 }) {
+function calculateDamagePreview({ attack, baseAttackRaw, weaponWhiteAttack, maxHp, martial, stats, damageFactor, targetMitigation, critDamageValue = null, formationDamagePercent = 0, haremAttackMultiplier = 1 }) {
   if (!martial) return null;
   const attackValue = Math.max(0, Number(attack) || 0);
   const factor = Math.max(0, Number(damageFactor) || 0);
@@ -611,17 +684,38 @@ function calculateDamagePreview({ attack, baseAttackRaw, weaponWhiteAttack, maxH
   const attachmentInputs = { baseAttackRaw, weaponWhiteAttack, finalAttack: attackValue, maxHp };
   const attachmentTotals = damageAttachmentTotals(guaranteedEffects, attachmentInputs);
   const maxAttachmentTotals = damageAttachmentTotals(damageEffects, attachmentInputs);
+  const expectedAttachmentTotals = damageEffects.reduce((totals, effect) => {
+    if (effect.periodRounds > 0) return totals;
+    const chance = Math.max(0, Math.min(100, effect.chancePercent)) / 100;
+    const sourceValue = {
+      base_attack: baseAttackRaw,
+      weapon_attack: weaponWhiteAttack,
+      final_attack: attackValue,
+      max_hp: maxHp,
+    }[effect.source];
+    const amount = sourceValue * effect.percent / 100 * chance;
+    if (Object.prototype.hasOwnProperty.call(totals, effect.source)) {
+      totals[effect.source] += Number.isFinite(amount) ? amount : 0;
+    }
+    return totals;
+  }, { base_attack: 0, weapon_attack: 0, final_attack: 0, max_hp: 0 });
   const attachmentDamage = Object.values(attachmentTotals).reduce((sum, value) => sum + value, 0);
   const maxAttachmentDamage = Object.values(maxAttachmentTotals).reduce((sum, value) => sum + value, 0);
+  const expectedAttachmentDamage = Object.values(expectedAttachmentTotals).reduce((sum, value) => sum + value, 0);
   const effectiveAttack = (attackValue + attachmentDamage) * factor * (1 - mitigation / 100);
   const maxEffectiveAttack = (attackValue + maxAttachmentDamage) * factor * (1 - mitigation / 100);
-  const postDamageMultiplier = martialPostDamageMultiplier(martial);
+  const expectedEffectiveAttack = (attackValue + expectedAttachmentDamage) * factor * (1 - mitigation / 100);
+  const postDamageRule = martialPostDamageRule(martial);
+  const postDamageMultiplier = postDamageRule.multiplier;
+  const alwaysPostDamageMultiplier = postDamageRule.trigger === 'always' ? postDamageMultiplier : 1;
   const formationDamageMultiplier = 1 + Math.max(0, Number(formationDamagePercent) || 0) / 100;
-  const finalDamageMultiplier = postDamageMultiplier * formationDamageMultiplier;
+  const finalDamageMultiplier = alwaysPostDamageMultiplier * formationDamageMultiplier;
   const criticalMultipliers = martialCriticalMultipliers(martial);
   const baseCritMultiplier = Math.max(...criticalMultipliers);
   const baseCritMultiplierMin = Math.min(...criticalMultipliers);
-  const hitProfiles = martialHitProfiles(martial);
+  const totalCritPercent = Math.max(0, Math.min(100, Number(stats?.crit ?? martial?.crit_percent) || 0));
+  const hitModel = martialHitModel(martial, totalCritPercent);
+  const hitProfiles = hitModel.profiles;
   const panelCritDamage = Number(stats?.critDamage) || 0;
   const defaultCritDamageValue = baseCritMultiplier * 100 + panelCritDamage;
   const customCritDamageValue = critDamageValue === null || critDamageValue === undefined
@@ -659,18 +753,53 @@ function calculateDamagePreview({ attack, baseAttackRaw, weaponWhiteAttack, maxH
       .reduce((sum, multiplier) => sum + multiplier, 0);
     return {
       ...profile,
-      min: trunc(maxEffectiveAttack * 0.9 * multiplierTotal * finalDamageMultiplier),
-      max: trunc(maxEffectiveAttack * 1.1 * multiplierTotal * finalDamageMultiplier),
+      min: trunc(maxEffectiveAttack * 0.9 * multiplierTotal * formationDamageMultiplier * postDamageMultiplier),
+      max: trunc(maxEffectiveAttack * 1.1 * multiplierTotal * formationDamageMultiplier * postDamageMultiplier),
     };
   });
   const normal = normalSegments[0];
   const critical = criticalSegments[0];
   const theoreticalMax = Math.max(maxNormal[maxNormal.length - 1].max, maxCritical[maxCritical.length - 1].max);
+  const expectedBaseUnit = expectedEffectiveAttack * formationDamageMultiplier;
+  const expectedDamage = hitProfiles.reduce((sum, profile, index) => {
+    const reachProbability = Math.max(0, Math.min(1, Number(profile.reachProbabilityRaw
+      ?? (Number(profile.reachProbability) || 0) / 100)));
+    const critChance = Math.max(0, Math.min(1, Number(profile.critProbabilityRaw
+      ?? (Number(profile.critProbability ?? totalCritPercent) || 0) / 100)));
+    const critMultiplierForHit = segmentCritMultipliers[index] || critMultiplier;
+    let hitMultiplier = 1 + critChance * (critMultiplierForHit - 1);
+    if (postDamageRule.trigger === 'always') {
+      hitMultiplier *= postDamageMultiplier;
+    } else if (postDamageRule.trigger === 'crit') {
+      hitMultiplier += critChance * (postDamageRule.chancePercent / 100)
+        * critMultiplierForHit * (postDamageMultiplier - 1);
+    }
+    return sum + reachProbability * hitMultiplier;
+  }, 0) * expectedBaseUnit;
+  const expectedSegments = hitModel.expectedSegments;
+  const attachmentText = damageEffects.length ? '(攻击+附伤)' : '攻击';
+  const postText = postDamageRule.trigger === 'always'
+    ? '后置附伤'
+    : postDamageRule.trigger === 'crit'
+      ? '暴击后附伤'
+      : '';
+  const comboText = hitModel.combo
+    ? '暴击连击（低于阈值停止）'
+    : '';
+  const formulaParts = [
+    `${attachmentText}×系数×浮动×免伤`,
+    '暴击×爆伤',
+    formationDamageMultiplier !== 1 ? '阵法独立乘区' : '',
+    postText,
+    comboText,
+    haremAttackMultiplier !== 1 ? '后宫独立乘区' : '',
+  ].filter(Boolean);
+  const formula = formulaParts.join(' · ');
   return {
     range: martialRange(martial),
     segmentCount: hitProfiles.length,
     hitProfiles,
-    hitProbabilityLabel: martialHitProbabilityLabel(martial),
+    hitProbabilityLabel: martialHitProbabilityLabel(martial, totalCritPercent),
     normalSegments,
     criticalSegments,
     normal,
@@ -689,16 +818,25 @@ function calculateDamagePreview({ attack, baseAttackRaw, weaponWhiteAttack, maxH
     maxAttachmentDamage,
     attachmentTotals,
     maxAttachmentTotals,
+    expectedAttachmentDamage,
+    expectedAttachmentTotals,
     maxNormal,
     maxCritical,
     damageEffects,
     guaranteedDamageEffects: guaranteedEffects,
     postDamageMultiplier,
+    postDamageTrigger: postDamageRule.trigger,
+    postDamageChancePercent: postDamageRule.chancePercent,
+    alwaysPostDamageMultiplier,
     formationDamagePercent: Math.max(0, Number(formationDamagePercent) || 0),
     formationDamageMultiplier,
     finalDamageMultiplier,
     targetMitigation: mitigation,
-    upperLimitProbability: damageUpperLimitProbability(martial, stats?.crit),
+    totalCritPercent,
+    expectedSegments,
+    expectedDamage,
+    formula,
+    upperLimitProbability: damageUpperLimitProbability(martial, totalCritPercent),
     max: theoreticalMax,
   };
 }
@@ -712,6 +850,9 @@ function renderDamagePreview(damage) {
     $('damage-crit-range').textContent = '--';
     $('damage-max-value').textContent = '--';
     $('damage-max-probability').textContent = '上限概率 --';
+    $('damage-expected-value').textContent = '--';
+    $('damage-preview-formula').textContent = '--';
+    $('harem-bonus-control').hidden = true;
     return;
   }
   section.hidden = false;
@@ -728,6 +869,8 @@ function renderDamagePreview(damage) {
   $('damage-crit-range').textContent = formatSegmentRanges(damage.criticalSegments);
   $('damage-max-value').textContent = formatNumber(damage.max);
   $('damage-max-probability').textContent = `上限概率 ${formatPercent(damage.upperLimitProbability)}`;
+  $('damage-expected-value').textContent = formatNumber(Math.round(damage.expectedDamage));
+  $('damage-preview-formula').textContent = damage.formula;
   [
     ['damage-target-mitigation', damage.targetMitigation],
     ['damage-factor', damage.damageFactor],
@@ -1097,6 +1240,32 @@ function getSelectedInner() {
     return item ? { source: 'game', item } : null;
   }
   return null;
+}
+function haremBonusEligible(martial = getSelectedMartial()?.item, inner = getSelectedInner()) {
+  const personName = $('person-name')?.value.trim() || '自定义角色';
+  const isFemaleMain = personName === '主角' && $('person-gender')?.value === '女号';
+  if (!isFemaleMain) return false;
+
+  const martialExcluded = Boolean(martial)
+    && HAREM_EXCLUDED_MARTIALS.has(normalizedDataName(martial.name || martial.nick));
+  const whiteRabbitInner = inner?.source === 'white';
+  return !martialExcluded || !whiteRabbitInner;
+}
+function renderHaremBonusControl(martial = getSelectedMartial()?.item, inner = getSelectedInner()) {
+  const control = $('harem-bonus-control');
+  const checkbox = $('harem-bonus-enabled');
+  if (!control || !checkbox) return false;
+  const eligible = haremBonusEligible(martial, inner);
+  control.hidden = !eligible;
+  control.classList.toggle('is-enabled', eligible && checkbox.checked);
+  if (!eligible) {
+    checkbox.checked = false;
+    control.classList.remove('is-enabled');
+    return false;
+  }
+  if (!haremBonusCustomized) checkbox.checked = true;
+  control.classList.toggle('is-enabled', checkbox.checked);
+  return checkbox.checked;
 }
 function innerScopeEligible(item) {
   const scope = String(item?.scope || '').replace(/\s/g, '');
@@ -1619,6 +1788,8 @@ function currentConfig() {
     damageCritAdjustment: $('damage-crit-adjustment').value,
     damageCritCustomized,
     damageFactorCustomized,
+    haremBonusEnabled: $('harem-bonus-enabled').checked,
+    haremBonusCustomized,
   };
 }
 
@@ -1907,6 +2078,8 @@ function restoreConfig(sourceConfig = null) {
   Object.entries(fieldMap).forEach(([key, id]) => { if (config[key] !== undefined) $(id).value = config[key]; });
   damageCritCustomized = config.damageCritCustomized === true;
   damageFactorCustomized = config.damageFactorCustomized === true;
+  haremBonusCustomized = config.haremBonusCustomized === true;
+  if (typeof config.haremBonusEnabled === 'boolean') $('harem-bonus-enabled').checked = config.haremBonusEnabled;
   applyCharacterDefaults({ resetBaseStats: false });
   populateMartialArts();
   populateNeigong();
@@ -2296,6 +2469,7 @@ function calculate({ commit = false } = {}) {
   const inner = getSelectedInner();
   const innerDetails = autoInnerStats(inner);
   const selectedMartial = getSelectedMartial();
+  const haremBonusActive = renderHaremBonusControl(selectedMartial?.item, inner);
   const autoStats = innerStatsMode() === 'auto' ? innerDetails : null;
   const neigongHp = inner ? (autoStats?.hp ?? numberValue('neigong-hp')) : 0;
   const neigongAttack = inner ? (autoStats?.attack ?? numberValue('neigong-attack')) : 0;
@@ -2346,6 +2520,8 @@ function calculate({ commit = false } = {}) {
   const largeRenAttackCount = largeRenEnabled ? Math.max(0, numberValue('large-ren-attack-count', 10)) : 0;
   const largeRenSpeed = largeRenEnabled ? 8 : 0;
   secondaryStats.speed += largeRenSpeed;
+  const haremSpeedMultiplier = haremBonusActive ? 1.1 : 1;
+  secondaryStats.speed = trunc(secondaryStats.speed * haremSpeedMultiplier);
   // Blood pills and ordinary life percentages are calculated first. Formation
   // life is a separate multiplier on the resulting life value.
   const bloodPillBaseHp = baseHpRaw * (100 + pillHp) / 100;
@@ -2389,7 +2565,9 @@ function calculate({ commit = false } = {}) {
   const learnedSMartialCount = Math.max(0, numberValue('learned-s-martial-count', 5));
   const sMartialMultiplier = 1 + learnedSMartialCount * 0.05;
   const formationAttackMultiplier = 1 + activeFormation.attack / 100;
-  const finalAttack = trunc(attackBeforeSMultiplier * formationAttackMultiplier * sMartialMultiplier) + trunc(achievementAttack);
+  const finalAttackBeforeHarem = trunc(attackBeforeSMultiplier * formationAttackMultiplier * sMartialMultiplier) + trunc(achievementAttack);
+  const haremAttackMultiplier = haremBonusActive ? 1.25 : 1;
+  const finalAttack = trunc(finalAttackBeforeHarem * haremAttackMultiplier);
   if (!damageFactorCustomized) $('damage-factor').value = martialDamageFactor(selectedMartial?.item);
   const weaponWhiteAttack = weaponTotals.attackFlat;
   const damagePreview = calculateDamagePreview({
@@ -2403,6 +2581,7 @@ function calculate({ commit = false } = {}) {
     targetMitigation: numberValue('damage-target-mitigation', 0),
     critDamageValue: damageCritCustomized ? numberValue('damage-crit-adjustment', 0) : null,
     formationDamagePercent: activeFormation.damage,
+    haremAttackMultiplier,
   });
   // 回复按 APK 面板口径：玄武的基础回复量也要乘内功生命加成。
   const recoveryBase = baseHpRaw * (100 + neigongHp) / 100;
@@ -2414,7 +2593,7 @@ function calculate({ commit = false } = {}) {
   $('final-attack').textContent = formatNumber(finalAttack);
   renderDamagePreview(damagePreview);
   $('hp-detail').textContent = `基础 ${formatNumber(baseHp)} · 百分比 ${formatPercent(hpPercent)} · 成就 +${formatNumber(achievementHp)}`;
-  $('attack-detail').textContent = `基础项 ${formatNumber(trunc(baseAttackDetailTerm))} · 武学项 ${formatNumber(martialPower)} · S武学 ${formatPercent(learnedSMartialCount * 5)} · 成就 +${formatNumber(achievementAttack)}`;
+  $('attack-detail').textContent = `基础项 ${formatNumber(trunc(baseAttackDetailTerm))} · 武学项 ${formatNumber(martialPower)} · S武学 ${formatPercent(learnedSMartialCount * 5)} · 成就 +${formatNumber(achievementAttack)}${haremBonusActive ? ' · 后宫×1.25' : ''}`;
   SECONDARY_KEYS.forEach((key) => {
     const domKey = key.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
     const value = key === 'critDamage' && damagePreview
@@ -2913,7 +3092,6 @@ const ENCYCLOPEDIA_DUNGEONS = [
   { id: 'wulongta', name: '五龙塔', aliases: ['五龙塔'] },
   { id: 'baxiantu', name: '八阵图', aliases: ['八阵图'] },
   { id: 'shaolancangjingge', name: '少林藏经阁', aliases: ['少林寺藏经阁', '少林藏经阁'] },
-  { id: 'fengxiangling', name: '凤翔令', aliases: ['凤翔令'] },
 ];
 const ENCYCLOPEDIA_TYPE_LABELS = {
   techniques: '技艺',
@@ -3453,6 +3631,11 @@ function bindEvents() {
   $('damage-target-mitigation').addEventListener('input', () => calculate({ commit: true }));
   $('damage-factor').addEventListener('input', () => { damageFactorCustomized = true; calculate({ commit: true }); });
   $('damage-crit-adjustment').addEventListener('input', () => { damageCritCustomized = true; calculate({ commit: true }); });
+  $('harem-bonus-enabled').addEventListener('change', () => {
+    haremBonusCustomized = true;
+    $('harem-bonus-control').classList.toggle('is-enabled', $('harem-bonus-enabled').checked);
+    calculate({ commit: true });
+  });
   $('technique-options').addEventListener('change', (event) => {
     const input = event.target.closest('.technique-option');
     if (!input) return;
@@ -3572,6 +3755,7 @@ function bindEvents() {
     $('martial-bonus-percent').value = 0;
     $('damage-target-mitigation').value = 0; $('damage-factor').value = 1; $('damage-crit-adjustment').value = 0;
     damageFactorCustomized = false; damageCritCustomized = false;
+    $('harem-bonus-enabled').checked = true; haremBonusCustomized = false;
     $('level-input').value = 90; $('martial-select').value = ''; $('neigong-select').value = '';
     $('neigong-level').value = 9;
     INNER_MANUAL_FIELD_IDS.forEach((id) => { $(id).value = 0; });

@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#172027">
     <title>江湖风云录 · 角色数值模拟</title>
-    <link rel="stylesheet" href="style.css?v=20260929-95">
+    <link rel="stylesheet" href="style.css?v=20260929-99">
   </head>
   <body>
     <main class="app-shell">
@@ -68,6 +68,10 @@
           <label><span>对方免伤 %</span><input id="damage-target-mitigation" type="number" min="0" max="50" step="0.1" value="0" inputmode="decimal"></label>
           <label><span>伤害系数</span><input id="damage-factor" type="number" min="0" step="0.01" value="1" inputmode="decimal"></label>
           <label><span>爆伤调整 %</span><input id="damage-crit-adjustment" type="number" min="0" step="0.1" value="0" inputmode="decimal"></label>
+          <label class="damage-preview-toggle" id="harem-bonus-control" title="攻击×1.25，速度×1.1，独立乘区" hidden>
+            <input id="harem-bonus-enabled" type="checkbox" aria-label="后宫加成" checked>
+            <span>后宫加成</span>
+          </label>
         </div>
         <div class="damage-preview-grid">
           <div class="damage-preview-card">
@@ -80,6 +84,11 @@
           </div>
         </div>
         <div class="damage-preview-limit"><span>理论上限</span><strong id="damage-max-value">--</strong><em id="damage-max-probability">上限概率 --</em></div>
+        <div class="damage-preview-expected"><span>理论期望</span><strong id="damage-expected-value">--</strong></div>
+        <div class="damage-preview-debug" aria-label="计算公式">
+          <span>公式</span>
+          <small id="damage-preview-formula">--</small>
+        </div>
       </section>
 
       <div id="error-message" class="error-message" role="alert" hidden></div>
@@ -570,6 +579,6 @@
         </div>
       </div>
     </main>
-    <script src="app.js?v=20260929-95"></script>
+    <script src="app.js?v=20260929-98"></script>
   </body>
 </html>
