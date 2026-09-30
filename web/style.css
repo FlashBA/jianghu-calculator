@@ -3129,34 +3129,6 @@ body {
   font-weight: 700;
 }
 
-.v03-home-search {
-  display: grid;
-  grid-template-columns: 25px minmax(0, 1fr);
-  align-items: center;
-  min-height: 46px;
-  margin-bottom: 11px;
-  padding: 0 12px;
-  border: 1px solid #c9c0b3;
-  border-radius: 6px;
-  background: #fffdf8;
-  color: var(--muted);
-}
-
-.v03-home-search svg {
-  width: 19px;
-  height: 19px;
-}
-
-.v03-home-search input {
-  width: 100%;
-  min-width: 0;
-  border: 0;
-  outline: 0;
-  background: transparent;
-  color: var(--ink);
-  font-size: 0.9rem;
-}
-
 .v03-quick-row {
   display: flex;
   align-items: center;
@@ -4064,20 +4036,25 @@ body {
 
 .v03-guide-search-result {
   display: block;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .v03-guide-result-top {
-  display: flex;
-  align-items: center;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
   gap: 8px;
   margin-bottom: 5px;
 }
 
 .v03-guide-result-top strong {
-  flex: 1 1 auto;
+  grid-column: 1;
+  grid-row: 1;
   min-width: 0;
   margin-right: auto;
   overflow-wrap: anywhere;
+  word-break: break-word;
   line-height: 1.4;
   font-size: 0.82rem;
 }
@@ -4089,11 +4066,18 @@ body {
 }
 
 .v03-guide-result-top > span {
-  flex: 0 0 auto;
+  grid-column: 1 / -1;
+  grid-row: 2;
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  line-height: 1.35;
 }
 
 .v03-guide-result-top .v03-favorite-button {
-  flex: 0 0 auto;
+  grid-column: 2;
+  grid-row: 1;
 }
 
 .v03-guide-search-result small {
@@ -6045,6 +6029,12 @@ body {
 .encyclopedia-favorite-button:focus-visible,
 .encyclopedia-favorite-button.is-favorite {
   color: var(--teal);
+}
+
+.encyclopedia-card.is-target,
+.encyclopedia-character-card.is-target {
+  border-color: var(--teal);
+  box-shadow: 0 0 0 2px rgba(28, 119, 116, 0.14);
 }
 
 .encyclopedia-card-action b {

@@ -9,6 +9,7 @@
   const ACHIEVEMENT_RECORDS = [];
   let guideFavorites = readGuideFavorites();
   let achievementProgress = readAchievementProgress();
+  let pendingFavoriteChunkId = '';
   let detailEventsBound = false;
 
   const STRATEGY_TABLES = {
@@ -200,6 +201,11 @@
   function guideFavoriteButton(id, label) {
     const active = guideFavorites.has(id);
     return `<button type="button" class="v03-favorite-button${active ? ' is-favorite' : ''}" data-guide-favorite="${escapeHtml(id)}" aria-label="${active ? '取消收藏' : '收藏'}${escapeHtml(label)}" aria-pressed="${active ? 'true' : 'false'}"><span aria-hidden="true">${active ? '♥' : '♡'}</span></button>`;
+  }
+
+  function encyclopediaFavoriteButton(id, label) {
+    const active = Boolean(window.jianghuEncyclopedia?.getFavoriteEntries?.().some((item) => item.key === id));
+    return `<button type="button" class="v03-favorite-button${active ? ' is-favorite' : ''}" data-encyclopedia-favorite="${escapeHtml(id)}" aria-label="${active ? '取消收藏' : '收藏'}${escapeHtml(label)}" aria-pressed="${active ? 'true' : 'false'}"><span aria-hidden="true">${active ? '♥' : '♡'}</span></button>`;
   }
 
   function correctStrategyText(strategyText) {
@@ -452,7 +458,15 @@
     }
     count.textContent = guideState.searchQuery ? `匹配 ${filtered.length} 条，展示前 20 条` : `推荐 ${filtered.length} 条支线记录 · 输入关键词检索全部 ${records.length} 条`;
     const visible = filtered.slice(0, 20);
-    result.innerHTML = visible.length ? visible.map((item) => `<article class="v03-guide-search-result"><div class="v03-guide-result-top"><strong>${escapeHtml(originalDisplayText(item.title || '未命名条目'))}</strong><span>${escapeHtml(originalDisplayText(item.section || item.category || '攻略'))}</span>${guideFavoriteButton(`chunk:${item.id}`, originalDisplayText(item.title || '攻略条目'))}</div><p>${escapeHtml(originalDisplayText(item.text || ''))}</p><small>${escapeHtml(item.source_label || item.source || '')}${item.source_version ? ` · ${escapeHtml(item.source_version)}` : ''}</small></article>`).join('') : '<p class="v03-guide-empty">没有匹配内容，换一个任务名、NPC 或地点试试。</p>';
+    result.innerHTML = visible.length ? visible.map((item) => `<article class="v03-guide-search-result" data-guide-record-id="${escapeHtml(item.id)}"><div class="v03-guide-result-top"><strong>${escapeHtml(originalDisplayText(item.title || '未命名条目'))}</strong><span>${escapeHtml(originalDisplayText(item.section || item.category || '攻略'))}</span>${guideFavoriteButton(`chunk:${item.id}`, originalDisplayText(item.title || '攻略条目'))}</div><p>${escapeHtml(originalDisplayText(item.text || ''))}</p><small>${escapeHtml(item.source_label || item.source || '')}${item.source_version ? ` · ${escapeHtml(item.source_version)}` : ''}</small></article>`).join('') : '<p class="v03-guide-empty">没有匹配内容，换一个任务名、NPC 或地点试试。</p>';
+    if (pendingFavoriteChunkId) {
+      const target = [...result.querySelectorAll('[data-guide-record-id]')].find((element) => element.dataset.guideRecordId === pendingFavoriteChunkId);
+      if (target) {
+        target.classList.add('is-target');
+        target.scrollIntoView({ block: 'center', behavior: 'auto' });
+      }
+      pendingFavoriteChunkId = '';
+    }
   }
 
   function renderFavorites() {
@@ -461,7 +475,7 @@
     if (!list || !count) return;
     const catalog = getGuideCatalog();
     const chunks = guideState.searchIndex?.records || [];
-    const favorites = [...guideFavorites].map((key) => {
+    const guideItems = [...guideFavorites].map((key) => {
       if (key.startsWith('guide:')) {
         const item = catalog.find((entry) => `guide:${entry.id}` === key);
         return item ? { key, type: 'guide', title: item.title, meta: item.source, guideId: item.id } : null;
@@ -472,17 +486,26 @@
       }
       return null;
     }).filter(Boolean);
+    const encyclopediaItems = (window.jianghuEncyclopedia?.getFavoriteEntries?.() || []).map(({ key, type, id, record }) => ({
+      key,
+      type: 'encyclopedia',
+      encyclopediaType: type,
+      recordId: id,
+      title: record.name || '未命名条目',
+      meta: record.meta || record.style || type,
+    }));
+    const favorites = [...guideItems, ...encyclopediaItems];
     count.textContent = `${favorites.length} 条`;
     if (!favorites.length) {
-      list.innerHTML = '<p class="v03-home-favorites-empty">暂未收藏攻略内容</p>';
+      list.innerHTML = '<p class="v03-home-favorites-empty">暂未收藏内容</p>';
       return;
     }
     list.innerHTML = favorites.map((item) => `
       <article class="v03-home-favorite-item">
-        <button type="button" class="v03-home-favorite-open" data-home-favorite-type="${item.type}" data-home-favorite-guide="${item.guideId || ''}" data-home-favorite-chunk="${item.record?.id || ''}">
+        <button type="button" class="v03-home-favorite-open" data-home-favorite-type="${item.type}" data-home-favorite-guide="${item.guideId || ''}" data-home-favorite-chunk="${item.record?.id || ''}" data-home-favorite-encyclopedia-type="${item.encyclopediaType || ''}" data-home-favorite-record="${item.recordId || ''}">
           <strong>${escapeHtml(item.title)}</strong><small>${escapeHtml(item.meta)}</small>
         </button>
-        ${guideFavoriteButton(item.key, item.title)}
+        ${item.type === 'encyclopedia' ? encyclopediaFavoriteButton(item.key, item.title) : guideFavoriteButton(item.key, item.title)}
       </article>
     `).join('');
   }
@@ -772,16 +795,6 @@
     }
   }
 
-  function openSearch(value) {
-    const query = String(value || '').trim();
-    if (!query) return;
-    show('encyclopedia');
-    const input = document.getElementById('encyclopedia-search');
-    if (!input) return;
-    input.value = query;
-    input.dispatchEvent(new Event('input', { bubbles: true }));
-  }
-
   async function copyGroupNumber(button) {
     const value = button?.dataset.copyGroup;
     if (!value) return;
@@ -837,6 +850,14 @@
     });
     document.getElementById('guide-back')?.addEventListener('click', () => show('guide', { updateHash: true }));
     document.getElementById('favorites-list')?.addEventListener('click', (event) => {
+      const encyclopediaFavorite = event.target.closest('[data-encyclopedia-favorite]');
+      if (encyclopediaFavorite) {
+        event.preventDefault();
+        event.stopPropagation();
+        window.jianghuEncyclopedia?.toggleFavorite?.(encyclopediaFavorite.dataset.encyclopediaFavorite);
+        renderFavorites();
+        return;
+      }
       const favoriteButton = event.target.closest('[data-guide-favorite]');
       if (favoriteButton) {
         event.preventDefault();
@@ -850,25 +871,23 @@
         show('guide', { guideId: button.dataset.homeFavoriteGuide, updateHash: true });
         return;
       }
+      if (button.dataset.homeFavoriteType === 'encyclopedia') {
+        show('encyclopedia', { encyclopediaType: button.dataset.homeFavoriteEncyclopediaType, updateHash: true });
+        window.setTimeout(() => window.jianghuEncyclopedia?.focusRecord?.(
+          button.dataset.homeFavoriteEncyclopediaType,
+          button.dataset.homeFavoriteRecord,
+        ), 0);
+        return;
+      }
+      pendingFavoriteChunkId = button.dataset.homeFavoriteChunk || '';
       guideState.searchQuery = button.querySelector('strong')?.textContent || '';
       show('guide', { guideId: 'original-search', updateHash: true });
-      const input = document.getElementById('guide-search-input');
-      if (input) {
-        input.value = guideState.searchQuery;
-        renderOriginalResults();
-      }
     });
     document.getElementById('achievements-list')?.addEventListener('change', (event) => {
       const input = event.target.closest('[data-achievement-id]');
       if (input) toggleAchievement(input.dataset.achievementId);
     });
 
-    const homeSearch = document.getElementById('home-search');
-    homeSearch?.addEventListener('keydown', (event) => { if (event.key === 'Enter') openSearch(homeSearch.value); });
-    document.querySelectorAll('[data-home-search]').forEach((button) => button.addEventListener('click', () => {
-      homeSearch.value = button.dataset.homeSearch;
-      openSearch(button.dataset.homeSearch);
-    }));
     document.querySelectorAll('[data-copy-group]').forEach((button) => button.addEventListener('click', () => copyGroupNumber(button)));
 
     const count = document.getElementById('home-encyclopedia-count');
@@ -905,10 +924,12 @@
   loadGuideSources();
   const initialRoute = routeFromHash();
   show(initialRoute.target, { guideId: initialRoute.guideId, encyclopediaType: initialRoute.encyclopediaType });
-  window.addEventListener('jianghu-app-ready', () => {
+    window.addEventListener('jianghu-app-ready', () => {
+    renderFavorites();
     const route = routeFromHash();
     show(route.target, { guideId: route.guideId, encyclopediaType: route.encyclopediaType });
   });
+  window.addEventListener('jianghu-encyclopedia-favorites-changed', () => renderFavorites());
   window.addEventListener('hashchange', () => {
     const route = routeFromHash();
     show(route.target, { guideId: route.guideId, encyclopediaType: route.encyclopediaType });
