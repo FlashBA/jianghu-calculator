@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#f4f1ea">
     <title>白兔江湖宝典 · v0.3</title>
-    <link rel="stylesheet" href="style.css?v=20260930-03">
+    <link rel="stylesheet" href="style.css?v=20260930-10">
     <style>
       .full-demo-banner { display: none; }
     </style>
@@ -62,7 +62,49 @@
             <span><strong>武学图鉴</strong><small>武学效果、获取方式与职业筛选</small></span>
             <b>›</b>
           </button>
+          <button class="v03-entry-card" type="button" data-v03-target="favorites">
+            <span class="v03-entry-icon v03-entry-icon-gray"><span aria-hidden="true">♡</span></span>
+            <span><strong>我的收藏</strong><small>已收藏的攻略和原版资料片段</small></span>
+            <b>›</b>
+          </button>
+          <button class="v03-entry-card" type="button" data-v03-target="achievements">
+            <span class="v03-entry-icon v03-entry-icon-gold"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 4h8v5a4 4 0 0 1-8 0V4Z"></path><path d="M8 6H5v2a3 3 0 0 0 3 3M16 6h3v2a3 3 0 0 1-3 3M12 13v4M8 20h8M9 17h6"></path></svg></span>
+            <span><strong>成就记录</strong><small>手动记录成就完成情况</small></span>
+            <b>›</b>
+          </button>
+        </section>
+      </section>
+
+      <section class="collection-view v03-favorites-view" id="favorites-view" hidden aria-label="我的收藏">
+        <div class="section-heading collection-heading">
+          <div>
+            <p class="section-kicker">FAVORITES</p>
+            <h2>我的收藏</h2>
+            <p class="v03-favorites-subtitle">已收藏的攻略和原版资料片段</p>
+          </div>
+          <span class="collection-count" id="favorites-count">0 条</span>
         </div>
+        <button type="button" class="v03-guide-back v03-favorites-back" data-v03-target="home">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"></path></svg>
+          <span>返回主页</span>
+        </button>
+        <div id="favorites-list" class="v03-home-favorites-list"></div>
+      </section>
+
+      <section class="collection-view v03-achievements-view" id="achievements-view" hidden aria-label="成就记录">
+        <div class="section-heading collection-heading">
+          <div>
+            <p class="section-kicker">ACHIEVEMENTS</p>
+            <h2>成就记录</h2>
+            <p class="v03-achievements-subtitle">手动记录已完成的成就</p>
+          </div>
+          <span class="collection-count" id="achievements-count">0 项</span>
+        </div>
+        <button type="button" class="v03-guide-back v03-achievements-back" data-v03-target="home">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"></path></svg>
+          <span>返回主页</span>
+        </button>
+        <div id="achievements-list" class="v03-achievements-list"></div>
       </section>
 
       <div id="calculator-view" class="app-view" hidden>
@@ -496,15 +538,14 @@
         <div class="section-heading collection-heading">
           <div>
             <p class="section-kicker">ENCYCLOPEDIA</p>
-            <h2>图鉴</h2>
+            <h2 id="encyclopedia-title">图鉴</h2>
           </div>
           <div class="encyclopedia-heading-side">
-            <p class="encyclopedia-credit">感谢 @邩木与@染羽 大佬提供的攻略数据</p>
             <span class="collection-count" id="encyclopedia-count">0 条</span>
           </div>
         </div>
         <div class="collection-toolbar encyclopedia-toolbar" id="encyclopedia-toolbar">
-          <label class="field">
+          <label class="field encyclopedia-type-field">
             <span>分类</span>
             <select id="encyclopedia-type">
               <option value="characters">角色</option>
@@ -525,6 +566,28 @@
               <option value="棍">棍法</option>
             </select>
           </label>
+          <label class="field encyclopedia-filter-field encyclopedia-rank-filter-field" id="encyclopedia-martial-rank-filter-field" hidden>
+            <span>等级筛选</span>
+            <select id="encyclopedia-martial-rank-filter">
+              <option value="">全部等级</option>
+              <option value="S">S</option>
+              <option value="A">A</option>
+              <option value="B">B</option>
+              <option value="C">C</option>
+              <option value="?">?</option>
+            </select>
+          </label>
+          <label class="field encyclopedia-filter-field encyclopedia-rank-filter-field" id="encyclopedia-inner-rank-filter-field" hidden>
+            <span>等级筛选</span>
+            <select id="encyclopedia-inner-rank-filter">
+              <option value="">全部等级</option>
+              <option value="S">S</option>
+              <option value="A">A</option>
+              <option value="B">B</option>
+              <option value="C">C</option>
+              <option value="?">?</option>
+            </select>
+          </label>
           <label class="field encyclopedia-filter-field" id="encyclopedia-equipment-filter-field" hidden>
             <span>装备部位</span>
             <select id="encyclopedia-equipment-filter">
@@ -543,7 +606,27 @@
             <input id="encyclopedia-search" type="search" placeholder="名称、属性或获取方式" autocomplete="off">
           </label>
         </div>
+        <div id="character-filter-bar" class="character-filter-bar" hidden aria-label="角色流派筛选"></div>
+        <div id="character-sort-bar" class="character-sort-bar" hidden aria-label="角色排序">
+          <span class="character-sort-label">排序：</span>
+          <button type="button" class="character-sort-button is-active" data-character-sort="total">综合成长降序</button>
+          <button type="button" class="character-sort-button" data-character-sort="hp">生命成长</button>
+          <button type="button" class="character-sort-button" data-character-sort="power">攻击成长</button>
+        </div>
+        <div id="martial-sort-bar" class="character-sort-bar encyclopedia-sort-bar" hidden aria-label="武学排序">
+          <span class="character-sort-label">排序：</span>
+          <button type="button" class="character-sort-button is-active" data-martial-sort="power">威力降序</button>
+          <button type="button" class="character-sort-button" data-martial-sort="speed">速度</button>
+          <button type="button" class="character-sort-button" data-martial-sort="crit">暴击率</button>
+        </div>
+        <div id="inner-sort-bar" class="character-sort-bar encyclopedia-sort-bar" hidden aria-label="内功排序">
+          <span class="character-sort-label">排序：</span>
+          <button type="button" class="character-sort-button is-active" data-inner-sort="mitigation">免伤降序</button>
+          <button type="button" class="character-sort-button" data-inner-sort="hp">血量加成</button>
+          <button type="button" class="character-sort-button" data-inner-sort="attack">攻击加成</button>
+        </div>
         <div id="encyclopedia-list" class="encyclopedia-list"></div>
+        <div id="encyclopedia-detail-view" class="encyclopedia-detail-view" hidden></div>
       </section>
 
       <div class="modal-shell" id="name-modal" hidden>
@@ -661,9 +744,9 @@
       </nav>
     </main>
     <script>window.APP_DATA_BASE = './';</script>
-    <script src="new-ui-reference/wiki-data.js?v=20260930-03"></script>
-    <script src="guide-directory-data.js?v=20260930-03"></script>
-    <script src="app.js?v=20260930-03"></script>
-    <script src="v03-ui.js?v=20260930-03"></script>
+    <script src="new-ui-reference/wiki-data.js?v=20260930-04"></script>
+    <script src="guide-directory-data.js?v=20260930-04"></script>
+    <script src="app.js?v=20260930-12"></script>
+    <script src="v03-ui.js?v=20260930-08"></script>
   </body>
 </html>

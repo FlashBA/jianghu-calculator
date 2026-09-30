@@ -1,5 +1,11 @@
 const STORAGE_KEY = 'jianghu-stat-simulator:character:v6';
-const REMOTE_WHITE_RABBIT_URL = 'https://raw.githubusercontent.com/FlashBA/jianghu-calculator/main/web/whiterabbit_data.json';
+const ENCYCLOPEDIA_FAVORITES_KEY = 'jianghu-stat-simulator:encyclopedia:favorites:v1';
+const WHITE_RABBIT_CACHE_KEY = 'jianghu-stat-simulator:whiterabbit-data:v1';
+const REMOTE_WHITE_RABBIT_URLS = [
+  'https://flashba.github.io/jianghu-calculator/whiterabbit_data.json',
+  'https://cdn.jsdelivr.net/gh/FlashBA/jianghu-calculator@main/web/whiterabbit_data.json',
+  'https://raw.githubusercontent.com/FlashBA/jianghu-calculator/main/web/whiterabbit_data.json',
+];
 const APP_DATA_BASE = window.APP_DATA_BASE || './';
 const BASE_SPEED_DEFAULTS_VERSION = 2;
 const BASE_CRIT_DEFAULTS_VERSION = 1;
@@ -175,8 +181,107 @@ let expandedTeamId = null;
 let damageFactorCustomized = false;
 let damageCritCustomized = false;
 let haremBonusCustomized = false;
+let characterStyleFilter = '';
+let characterSort = 'total';
+let characterSortDirection = 'desc';
+let martialSort = 'power';
+let martialSortDirection = 'desc';
+let innerSort = 'mitigation';
+let innerSortDirection = 'desc';
+let encyclopediaFavorites = readEncyclopediaFavorites();
 
 const HAREM_EXCLUDED_MARTIALS = new Set(['白兔三仙剑', '白兔追命拳', '白兔斩天刀', '白兔千钧棍']);
+
+function readEncyclopediaFavorites() {
+  try {
+    const value = JSON.parse(localStorage.getItem(ENCYCLOPEDIA_FAVORITES_KEY) || '[]');
+    return new Set(Array.isArray(value) ? value.map(String) : []);
+  } catch {
+    return new Set();
+  }
+}
+
+function saveEncyclopediaFavorites() {
+  localStorage.setItem(ENCYCLOPEDIA_FAVORITES_KEY, JSON.stringify([...encyclopediaFavorites]));
+}
+
+function toggleEncyclopediaFavorite(id) {
+  if (encyclopediaFavorites.has(id)) {
+    encyclopediaFavorites.delete(id);
+  } else {
+    encyclopediaFavorites.add(id);
+    if (id.startsWith('characters:')) encyclopediaFavorites.delete(id.slice('characters:'.length));
+  }
+  saveEncyclopediaFavorites();
+}
+
+function whiteRabbitDataValid(data) {
+  return Boolean(data
+    && Array.isArray(data.characters)
+    && Array.isArray(data.techniques)
+    && Array.isArray(data.inner_skills)
+    && Array.isArray(data.martial_arts)
+    && Array.isArray(data.equipment));
+}
+
+function whiteRabbitVersionParts(data) {
+  return String(data?.version || '0')
+    .split(/[^\d]+/)
+    .filter(Boolean)
+    .map((part) => Number(part) || 0);
+}
+
+function compareWhiteRabbitVersion(left, right) {
+  const leftParts = whiteRabbitVersionParts(left);
+  const rightParts = whiteRabbitVersionParts(right);
+  const length = Math.max(leftParts.length, rightParts.length);
+  for (let index = 0; index < length; index += 1) {
+    const diff = (leftParts[index] || 0) - (rightParts[index] || 0);
+    if (diff) return diff;
+  }
+  return 0;
+}
+
+function whiteRabbitSignature(data) {
+  if (!whiteRabbitDataValid(data)) return '';
+  return [
+    data.version || '',
+    data.characters.length,
+    data.techniques.length,
+    data.inner_skills.length,
+    data.martial_arts.length,
+    data.equipment.length,
+    JSON.stringify(data.source || {}),
+  ].join('|');
+}
+
+function chooseWhiteRabbitData(primary, fallback) {
+  if (!whiteRabbitDataValid(primary)) return whiteRabbitDataValid(fallback) ? fallback : null;
+  if (!whiteRabbitDataValid(fallback)) return primary;
+  return compareWhiteRabbitVersion(primary, fallback) > 0 ? primary : fallback;
+}
+
+function readCachedWhiteRabbitData() {
+  try {
+    const cache = JSON.parse(localStorage.getItem(WHITE_RABBIT_CACHE_KEY) || 'null');
+    return whiteRabbitDataValid(cache?.data) ? cache.data : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveCachedWhiteRabbitData(data) {
+  if (!whiteRabbitDataValid(data)) return;
+  try {
+    localStorage.setItem(WHITE_RABBIT_CACHE_KEY, JSON.stringify({
+      savedAt: Date.now(),
+      version: data.version || '',
+      data,
+    }));
+  } catch {
+    // Storage may be unavailable in a restricted WebView; bundled data remains usable.
+  }
+}
 
 const $ = (id) => document.getElementById(id);
 
@@ -3121,6 +3226,15 @@ function innerEncyclopediaEffect(item) {
       : '',
   ].filter(Boolean).join('；') || '特殊效果待补';
 }
+function innerEncyclopediaMeta(item) {
+  const format = (value) => formatPercent(Number(value) || 0);
+  return encyclopediaText(
+    String(item?.rank || '').trim().replace('？', '?').toUpperCase(),
+    `免伤 ${format(item?.mitigation_percent)}`,
+    `血量 ${format(item?.hp_percent)}`,
+    `攻击 ${format(item?.attack_percent)}`,
+  );
+}
 function martialRuleSummary(item) {
   const rule = martialRule(item);
   const parts = [];
@@ -3240,6 +3354,10 @@ function encyclopediaRecords(type) {
     return (white.characters || []).map((item, index) => ({
       id: item.id || `character-${index}`,
       name: item.name,
+      style: item.style || '',
+      hpFactor: Number(item.hp_factor) || 0,
+      powerFactor: Number(item.power_factor) || 0,
+      totalGrowth: (Number(item.hp_factor) || 0) + (Number(item.power_factor) || 0),
       meta: encyclopediaText(item.style || '职业待补', `生命系数 ${item.hp_factor}`, `攻击系数 ${item.power_factor}`),
       summaryLabel: '特性',
       summary: item.talent || '特性待补',
@@ -3264,7 +3382,11 @@ function encyclopediaRecords(type) {
     return (white.inner_skills || []).filter((item) => String(item.rank || '').trim()).map((item, index) => ({
       id: item.id || `inner-${index}`,
       name: item.name,
-      meta: item.rank,
+      rank: String(item.rank || '').trim().replace('？', '?').toUpperCase(),
+      hpPercent: Number(item.hp_percent) || 0,
+      attackPercent: Number(item.attack_percent) || 0,
+      mitigationPercent: Number(item.mitigation_percent) || 0,
+      meta: innerEncyclopediaMeta(item),
       summaryLabel: '内功效果',
       summary: innerEncyclopediaEffect(item),
       access: item.access || '获取方式待补',
@@ -3277,11 +3399,25 @@ function encyclopediaRecords(type) {
       id: item.id || `martial-${index}`,
       name: item.name,
       style: item.style || '',
+      rank: displayMartialRank(item.rank),
+      power: Number(item.power) || 0,
+      speed: Number(item.speed) || 0,
+      critPercent: Number(item.crit_percent) || 0,
       meta: encyclopediaText(item.style || '流派待补', displayMartialRank(item.rank), `威力 ${Number(item.power) || 0}`, `速度 ${Number(item.speed) || 0}`, martialRange(item)),
       summaryLabel: '武学效果',
       summary: encyclopediaText(item.double_break, item.crit_percent != null && `暴击 ${formatPercent(item.crit_percent)}`, martialCritDamageLabel(item.crit_damage), item.buff, item.special, martialRuleSummary(item)) || '武学效果待补',
       access: item.access || '获取方式待补',
       detail: '',
+      rank: displayMartialRank(item.rank),
+      power: Number(item.power) || 0,
+      speed: Number(item.speed) || 0,
+      range: martialRange(item),
+      doubleBreak: item.double_break || '',
+      critPercent: item.crit_percent,
+      critDamage: item.crit_damage,
+      buff: item.buff || '',
+      special: item.special || '',
+      ruleSummary: martialRuleSummary(item),
       sourceText: item.access || '',
     }));
   }
@@ -3328,29 +3464,337 @@ function encyclopediaRecords(type) {
   }
   return [];
 }
+
+function characterStyleOptions() {
+  return ['', '刀法', '剑法', '棍法', '拳法'];
+}
+
+function renderCharacterControls() {
+  const filterBar = $('character-filter-bar');
+  const sortBar = $('character-sort-bar');
+  if (!filterBar || !sortBar) return;
+  filterBar.innerHTML = characterStyleOptions().map((style) => `
+    <button type="button" class="character-filter-button${characterStyleFilter === style ? ' is-active' : ''}" data-character-style="${escapeHtml(style)}">${escapeHtml(style || '全部')}</button>
+  `).join('');
+  sortBar.querySelectorAll('[data-character-sort]').forEach((button) => {
+    button.classList.toggle('is-active', button.dataset.characterSort === characterSort);
+  });
+  updateEncyclopediaSortButtons('character-sort-bar', 'characterSort', characterSort, characterSortDirection, {
+    total: '综合成长',
+    hp: '生命成长',
+    power: '攻击成长',
+  });
+}
+
+function encyclopediaFavoriteId(type, record) {
+  return `${type}:${record.id}`;
+}
+
+function isEncyclopediaFavorite(type, record) {
+  const id = encyclopediaFavoriteId(type, record);
+  return encyclopediaFavorites.has(id) || (type === 'characters' && encyclopediaFavorites.has(String(record.id)));
+}
+
+function sortCharacterRecords(records) {
+  const valueFor = (record) => {
+    if (characterSort === 'hp') return record.hpFactor;
+    if (characterSort === 'power') return record.powerFactor;
+    return record.totalGrowth;
+  };
+  return records.slice().sort((left, right) => (
+    (valueFor(right) - valueFor(left)) * (characterSortDirection === 'desc' ? 1 : -1)
+    || right.totalGrowth - left.totalGrowth
+    || left.name.localeCompare(right.name, 'zh-CN')
+  ));
+}
+
+function sortEncyclopediaRecords(records, type) {
+  const sortKey = type === 'martial_arts' ? martialSort : innerSort;
+  const valueFor = (record) => {
+    if (type === 'martial_arts') {
+      if (sortKey === 'speed') return record.speed;
+      if (sortKey === 'crit') return record.critPercent;
+      return record.power;
+    }
+    if (sortKey === 'hp') return record.hpPercent;
+    if (sortKey === 'attack') return record.attackPercent;
+    return record.mitigationPercent;
+  };
+  return records.slice().sort((left, right) => (
+    (valueFor(right) - valueFor(left)) * ((type === 'martial_arts' ? martialSortDirection : innerSortDirection) === 'desc' ? 1 : -1)
+    || left.name.localeCompare(right.name, 'zh-CN')
+  ));
+}
+
+function updateEncyclopediaSortButtons(id, dataKey, activeKey, direction, labels) {
+  const bar = $(id);
+  if (!bar) return;
+  bar.querySelectorAll(`[data-${dataKey}]`).forEach((button) => {
+    const key = button.dataset[dataKey];
+    button.classList.toggle('is-active', key === activeKey);
+    button.textContent = `${labels[key]}${key === activeKey ? (direction === 'desc' ? '降序' : '升序') : ''}`;
+  });
+}
+
+function renderCharacterCard(record) {
+  const favoriteId = encyclopediaFavoriteId('characters', record);
+  const isFavorite = isEncyclopediaFavorite('characters', record);
+  return `
+    <details class="encyclopedia-character-card">
+      <summary class="character-card-summary">
+        <div class="character-card-title">
+          <h3>${escapeHtml(record.name || '未命名')}</h3>
+        </div>
+        <span class="character-card-meta">${escapeHtml(record.meta || '数据待补')}</span>
+      </summary>
+      <div class="character-card-detail">
+        <div class="character-detail-heading">
+          <div class="character-detail-style">
+            <span>流派</span>
+            <strong>${escapeHtml(record.style || '职业待补')}</strong>
+          </div>
+          <button type="button" class="character-favorite-button${isFavorite ? ' is-favorite' : ''}" data-encyclopedia-favorite="${escapeHtml(favoriteId)}" aria-label="${isFavorite ? '取消收藏' : '收藏'}${escapeHtml(record.name || '角色')}" aria-pressed="${isFavorite ? 'true' : 'false'}">
+            <span aria-hidden="true">${isFavorite ? '♥' : '♡'}</span>
+          </button>
+        </div>
+        <div class="character-growth-grid" aria-label="${escapeHtml(record.name || '角色')}成长属性">
+          <div><span>生命成长</span><strong>${record.hpFactor.toFixed(2)}</strong></div>
+          <div><span>攻击成长</span><strong>${record.powerFactor.toFixed(2)}</strong></div>
+          <div class="is-total"><span>综合成长</span><strong>${record.totalGrowth.toFixed(2)}</strong></div>
+        </div>
+        <div class="character-talent">
+          <strong>天赋：</strong>
+          <p>${escapeHtml(record.summary || '特性待补')}</p>
+        </div>
+        <div class="character-access">
+          <span>获取：</span>
+          <p>${escapeHtml(record.access || '获取方式待补')}</p>
+        </div>
+      </div>
+    </details>
+  `;
+}
+
+function encyclopediaCardBadge(type, record) {
+  if (type === 'martial_arts') return record.style || '武学';
+  if (type === 'inner_skills') return '';
+  if (type === 'techniques') return '';
+  if (type === 'equipment') return ENCYCLOPEDIA_EQUIPMENT_SLOT_LABELS[record.equipmentSlot] || '装备';
+  return '';
+}
+
+function encyclopediaCardMeta(type, record) {
+  const parts = String(record.meta || '').split(' · ').filter(Boolean);
+  if (type === 'martial_arts' || type === 'equipment') return parts.slice(1).join(' · ');
+  return parts.join(' · ');
+}
+
+function renderEncyclopediaCard(type, record) {
+  const badge = encyclopediaCardBadge(type, record);
+  const meta = encyclopediaCardMeta(type, record);
+  const favoriteId = encyclopediaFavoriteId(type, record);
+  const isFavorite = isEncyclopediaFavorite(type, record);
+  if (type === 'martial_arts') {
+    return `
+      <article class="encyclopedia-card encyclopedia-martial-card">
+        <div class="encyclopedia-card-summary">
+          <span class="encyclopedia-card-heading">
+            <span class="encyclopedia-card-title-line">
+              <span class="encyclopedia-card-badge">${escapeHtml(badge || '武学')}</span>
+              <strong>${escapeHtml(record.name || '未命名')}</strong>
+            </span>
+            ${meta ? `<span class="encyclopedia-card-meta">${escapeHtml(meta)}</span>` : ''}
+          </span>
+          <span class="encyclopedia-card-action">
+            <button type="button" class="encyclopedia-favorite-button${isFavorite ? ' is-favorite' : ''}" data-encyclopedia-favorite="${escapeHtml(favoriteId)}" aria-label="${isFavorite ? '取消收藏' : '收藏'}${escapeHtml(record.name || '武学')}" aria-pressed="${isFavorite ? 'true' : 'false'}"><span aria-hidden="true">${isFavorite ? '♥' : '♡'}</span></button>
+            <button type="button" class="encyclopedia-card-detail-button" data-martial-detail="${escapeHtml(record.id)}">详情 <b aria-hidden="true">›</b></button>
+          </span>
+        </div>
+      </article>
+    `;
+  }
+  return `
+    <details class="encyclopedia-card">
+      <summary class="encyclopedia-card-summary">
+        <span class="encyclopedia-card-heading">
+          <span class="encyclopedia-card-title-line">
+            ${badge ? `<span class="encyclopedia-card-badge">${escapeHtml(badge)}</span>` : ''}
+            <strong>${escapeHtml(record.name || '未命名')}</strong>
+          </span>
+          ${meta ? `<span class="encyclopedia-card-meta">${escapeHtml(meta)}</span>` : ''}
+        </span>
+        <span class="encyclopedia-card-action">
+          <button type="button" class="encyclopedia-favorite-button${isFavorite ? ' is-favorite' : ''}" data-encyclopedia-favorite="${escapeHtml(favoriteId)}" aria-label="${isFavorite ? '取消收藏' : '收藏'}${escapeHtml(record.name || '条目')}" aria-pressed="${isFavorite ? 'true' : 'false'}"><span aria-hidden="true">${isFavorite ? '♥' : '♡'}</span></button>
+          <span class="encyclopedia-card-action-label">详情</span><b aria-hidden="true">›</b>
+        </span>
+      </summary>
+      <div class="encyclopedia-card-detail${record.summary ? '' : ' is-detail-only'}">
+        ${record.summary ? `<p><strong class="encyclopedia-detail-label">${escapeHtml(record.summaryLabel || '说明')}</strong>${escapeHtml(record.summary)}</p>` : ''}
+        ${record.access ? `<p class="encyclopedia-card-access"><strong class="encyclopedia-detail-label">获取</strong>${escapeHtml(record.access)}</p>` : ''}
+        ${record.detail ? `<p class="encyclopedia-card-note"><strong class="encyclopedia-detail-label">备注</strong>${escapeHtml(record.detail)}</p>` : ''}
+      </div>
+    </details>
+  `;
+}
+
+function martialDetailValue(value, fallback = '待补') {
+  return value === null || value === undefined || value === '' ? fallback : String(value);
+}
+
+function renderMartialDetail(record) {
+  const favoriteId = encyclopediaFavoriteId('martial_arts', record);
+  const isFavorite = isEncyclopediaFavorite('martial_arts', record);
+  const effects = [
+    ['破防属性', martialDetailValue(record.doubleBreak)],
+    ['暴击率', record.critPercent != null ? formatPercent(record.critPercent) : '待补'],
+    ['暴击倍率', martialDetailValue(record.critDamage)],
+  ];
+  const stateEffectPattern = /流血|中毒|眩晕|降低|减少|封穴|麻痹|沉默|虚弱|灼烧|减速|禁疗|无法行动|不能行动|禁止出手/;
+  const buffText = [record.buff, record.special].filter((value) => value && value !== '/');
+  const stateEffects = buffText.filter((value) => stateEffectPattern.test(value));
+  const specialEffects = [
+    ...buffText.filter((value) => !stateEffectPattern.test(value)),
+    record.ruleSummary,
+  ].filter((value) => value && value !== '/');
+  const sections = [
+    ['特殊效果', specialEffects.join('；')],
+    ['状态效果（BUFF）', stateEffects.join('；')],
+  ].filter(([, value]) => value);
+  return `
+    <div class="encyclopedia-detail-topbar">
+      <button type="button" class="encyclopedia-detail-back" data-encyclopedia-detail-back><span aria-hidden="true">‹</span> 返回</button>
+      <strong>武学资料</strong>
+      <button type="button" class="encyclopedia-detail-favorite${isFavorite ? ' is-favorite' : ''}" data-encyclopedia-favorite="${escapeHtml(favoriteId)}" aria-label="${isFavorite ? '取消收藏' : '收藏'}${escapeHtml(record.name || '武学')}" aria-pressed="${isFavorite ? 'true' : 'false'}"><span aria-hidden="true">${isFavorite ? '♥' : '♡'}</span></button>
+    </div>
+    <section class="encyclopedia-detail-hero">
+      <div class="encyclopedia-detail-title">
+        <h2>${escapeHtml(record.name || '未命名')}</h2>
+        <div class="encyclopedia-detail-tags">
+          <span>${escapeHtml(record.style || '流派待补')}</span>
+          <span>${escapeHtml(record.rank || '品阶待补')}</span>
+        </div>
+      </div>
+      <div class="encyclopedia-detail-access">
+        <strong>【获取途径】</strong>
+        <p>${escapeHtml(record.access || '获取方式待补')}</p>
+      </div>
+    </section>
+    <section class="encyclopedia-detail-section">
+      <h3><span aria-hidden="true">⚔</span> 武学基础数值</h3>
+      <div class="encyclopedia-stat-grid">
+        <div><span>威力</span><strong class="is-accent">${martialDetailValue(record.power)}</strong></div>
+        <div><span>速度</span><strong>${martialDetailValue(record.speed)}</strong></div>
+        <div><span>范围</span><strong>${escapeHtml(martialDetailValue(record.range))}</strong></div>
+        ${effects.map(([label, value]) => `<div><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>`).join('')}
+      </div>
+    </section>
+    ${sections.map(([title, value]) => `
+      <section class="encyclopedia-detail-section">
+        <h3><span aria-hidden="true">${title === '获取途径' ? '⌖' : title === '规则说明' ? '◇' : '✦'}</span> ${escapeHtml(title)}</h3>
+        <div class="encyclopedia-detail-copy">${escapeHtml(value)}</div>
+      </section>
+    `).join('')}
+  `;
+}
+
+function openMartialDetail(record) {
+  const detail = $('encyclopedia-detail-view');
+  const heading = document.querySelector('#encyclopedia-view > .collection-heading');
+  const toolbar = $('encyclopedia-toolbar');
+  const list = $('encyclopedia-list');
+  const characterFilterBar = $('character-filter-bar');
+  const characterSortBar = $('character-sort-bar');
+  const martialSortBar = $('martial-sort-bar');
+  const innerSortBar = $('inner-sort-bar');
+  if (!detail || !record) return;
+  detail.innerHTML = renderMartialDetail(record);
+  detail.hidden = false;
+  if (heading) heading.hidden = true;
+  if (toolbar) toolbar.hidden = true;
+  if (list) list.hidden = true;
+  if (characterFilterBar) characterFilterBar.hidden = true;
+  if (characterSortBar) characterSortBar.hidden = true;
+  if (martialSortBar) martialSortBar.hidden = true;
+  if (innerSortBar) innerSortBar.hidden = true;
+}
+
+function closeEncyclopediaDetail() {
+  const detail = $('encyclopedia-detail-view');
+  const heading = document.querySelector('#encyclopedia-view > .collection-heading');
+  const toolbar = $('encyclopedia-toolbar');
+  const list = $('encyclopedia-list');
+  if (detail) detail.hidden = true;
+  if (heading) heading.hidden = false;
+  if (toolbar) toolbar.hidden = false;
+  if (list) list.hidden = false;
+  renderEncyclopedia();
+}
+
 function renderEncyclopedia() {
   const content = $('encyclopedia-list');
   if (!content) return;
+  const detail = $('encyclopedia-detail-view');
+  const heading = document.querySelector('#encyclopedia-view > .collection-heading');
+  const toolbarShell = $('encyclopedia-toolbar');
+  if (detail) detail.hidden = true;
+  if (heading) heading.hidden = false;
+  if (toolbarShell) toolbarShell.hidden = false;
+  content.hidden = false;
   const type = $('encyclopedia-type')?.value || 'characters';
   const query = ($('encyclopedia-search')?.value || '').trim().toLocaleLowerCase();
   const toolbar = $('encyclopedia-toolbar');
   const martialFilterField = $('encyclopedia-martial-filter-field');
+  const martialRankFilterField = $('encyclopedia-martial-rank-filter-field');
+  const innerRankFilterField = $('encyclopedia-inner-rank-filter-field');
   const equipmentFilterField = $('encyclopedia-equipment-filter-field');
+  const characterFilterBar = $('character-filter-bar');
+  const characterSortBar = $('character-sort-bar');
+  const martialSortBar = $('martial-sort-bar');
+  const innerSortBar = $('inner-sort-bar');
+  const encyclopediaTitle = $('encyclopedia-title');
   const martialFilter = $('encyclopedia-martial-filter')?.value || '';
+  const martialRankFilter = $('encyclopedia-martial-rank-filter')?.value || '';
+  const innerRankFilter = $('encyclopedia-inner-rank-filter')?.value || '';
   const equipmentFilter = $('encyclopedia-equipment-filter')?.value || '';
   const dungeonGroups = type === 'dungeon_drops' ? encyclopediaDungeonGroups() : [];
   const hasSecondaryFilter = type === 'martial_arts' || type === 'equipment';
+  const hasRankFilter = type === 'martial_arts' || type === 'inner_skills';
   toolbar?.classList.toggle('has-secondary-filter', hasSecondaryFilter);
+  toolbar?.classList.toggle('has-rank-filter', hasRankFilter);
+  toolbar?.classList.toggle('is-character-mode', type === 'characters');
   if (martialFilterField) martialFilterField.hidden = type !== 'martial_arts';
+  if (martialRankFilterField) martialRankFilterField.hidden = type !== 'martial_arts';
+  if (innerRankFilterField) innerRankFilterField.hidden = type !== 'inner_skills';
   if (equipmentFilterField) equipmentFilterField.hidden = type !== 'equipment';
+  if (characterFilterBar) characterFilterBar.hidden = type !== 'characters';
+  if (characterSortBar) characterSortBar.hidden = type !== 'characters';
+  if (martialSortBar) martialSortBar.hidden = type !== 'martial_arts';
+  if (innerSortBar) innerSortBar.hidden = type !== 'inner_skills';
+  updateEncyclopediaSortButtons('martial-sort-bar', 'martialSort', martialSort, martialSortDirection, {
+    power: '威力',
+    speed: '速度',
+    crit: '暴击率',
+  });
+  updateEncyclopediaSortButtons('inner-sort-bar', 'innerSort', innerSort, innerSortDirection, {
+    mitigation: '免伤',
+    hp: '血量加成',
+    attack: '攻击加成',
+  });
+  if (encyclopediaTitle) encyclopediaTitle.textContent = type === 'characters' ? '伙伴角色图鉴' : '图鉴';
+  if (type === 'characters') renderCharacterControls();
   const records = encyclopediaRecords(type);
   const filteredRecords = records.filter((record) => {
+    if (type === 'characters' && characterStyleFilter && record.style !== characterStyleFilter) return false;
     if (type === 'martial_arts' && martialFilter && !String(record.style || '').includes(martialFilter)) return false;
+    if (type === 'martial_arts' && martialRankFilter && record.rank !== martialRankFilter) return false;
+    if (type === 'inner_skills' && innerRankFilter && record.rank !== innerRankFilter) return false;
     if (type === 'equipment' && equipmentFilter && record.equipmentSlot !== equipmentFilter) return false;
     return true;
   });
-  const visible = filteredRecords.filter((record) => !query
+  let visible = filteredRecords.filter((record) => !query
     || [record.dungeonName, record.bossName, record.name, record.meta, record.summary, record.detail, record.access, record.style].filter(Boolean).join(' ').toLocaleLowerCase().includes(query));
+  if (type === 'characters') visible = sortCharacterRecords(visible);
+  if (type === 'martial_arts' || type === 'inner_skills') visible = sortEncyclopediaRecords(visible, type);
   $('encyclopedia-count').textContent = type === 'dungeon_drops'
     ? `${visible.length} / ${filteredRecords.length} 个掉落`
     : `${visible.length} / ${filteredRecords.length} 条`;
@@ -3382,20 +3826,11 @@ function renderEncyclopedia() {
       </details>`).join('');
     return;
   }
-  content.innerHTML = visible.map((record) => `
-    <details class="encyclopedia-card">
-      <summary class="encyclopedia-card-summary">
-        <span class="encyclopedia-card-heading">
-          <strong>${escapeHtml(record.name || '未命名')}</strong>
-        </span>
-        <span class="encyclopedia-card-meta">${escapeHtml(record.meta || '数据待补')}</span>
-      </summary>
-      <div class="encyclopedia-card-detail${record.summary ? '' : ' is-detail-only'}">
-        ${record.summary ? `<p><strong class="encyclopedia-detail-label">${escapeHtml(record.summaryLabel || '说明')}</strong>${escapeHtml(record.summary)}</p>` : ''}
-        ${record.access ? `<p class="encyclopedia-card-access"><strong class="encyclopedia-detail-label">获取</strong>${escapeHtml(record.access)}</p>` : ''}
-        ${record.detail ? `<p class="encyclopedia-card-note"><strong class="encyclopedia-detail-label">备注</strong>${escapeHtml(record.detail)}</p>` : ''}
-      </div>
-    </details>`).join('');
+  if (type === 'characters') {
+    content.innerHTML = visible.map(renderCharacterCard).join('');
+    return;
+  }
+  content.innerHTML = visible.map((record) => renderEncyclopediaCard(type, record)).join('');
 }
 
 function switchView(view, { persist = true } = {}) {
@@ -3797,8 +4232,85 @@ function bindEvents() {
   $('card-role-filter').addEventListener('change', renderSavedCards);
   $('encyclopedia-type').addEventListener('change', renderEncyclopedia);
   $('encyclopedia-martial-filter').addEventListener('change', renderEncyclopedia);
+  $('encyclopedia-martial-rank-filter').addEventListener('change', renderEncyclopedia);
+  $('encyclopedia-inner-rank-filter').addEventListener('change', renderEncyclopedia);
   $('encyclopedia-equipment-filter').addEventListener('change', renderEncyclopedia);
   $('encyclopedia-search').addEventListener('input', renderEncyclopedia);
+  $('character-filter-bar').addEventListener('click', (event) => {
+    const button = event.target.closest('[data-character-style]');
+    if (!button) return;
+    characterStyleFilter = button.dataset.characterStyle || '';
+    renderEncyclopedia();
+  });
+  $('character-sort-bar').addEventListener('click', (event) => {
+    const button = event.target.closest('[data-character-sort]');
+    if (!button) return;
+    const nextSort = button.dataset.characterSort || 'total';
+    if (characterSort === nextSort) characterSortDirection = characterSortDirection === 'desc' ? 'asc' : 'desc';
+    else {
+      characterSort = nextSort;
+      characterSortDirection = 'desc';
+    }
+    renderEncyclopedia();
+  });
+  $('martial-sort-bar').addEventListener('click', (event) => {
+    const button = event.target.closest('[data-martial-sort]');
+    if (!button) return;
+    const nextSort = button.dataset.martialSort || 'power';
+    if (martialSort === nextSort) martialSortDirection = martialSortDirection === 'desc' ? 'asc' : 'desc';
+    else {
+      martialSort = nextSort;
+      martialSortDirection = 'desc';
+    }
+    renderEncyclopedia();
+  });
+  $('inner-sort-bar').addEventListener('click', (event) => {
+    const button = event.target.closest('[data-inner-sort]');
+    if (!button) return;
+    const nextSort = button.dataset.innerSort || 'mitigation';
+    if (innerSort === nextSort) innerSortDirection = innerSortDirection === 'desc' ? 'asc' : 'desc';
+    else {
+      innerSort = nextSort;
+      innerSortDirection = 'desc';
+    }
+    renderEncyclopedia();
+  });
+  $('encyclopedia-list').addEventListener('click', (event) => {
+    const detailButton = event.target.closest('[data-martial-detail]');
+    if (detailButton) {
+      event.preventDefault();
+      const record = encyclopediaRecords('martial_arts').find((item) => String(item.id) === String(detailButton.dataset.martialDetail));
+      openMartialDetail(record);
+      return;
+    }
+    const button = event.target.closest('[data-encyclopedia-favorite]');
+    if (!button) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const id = String(button.dataset.encyclopediaFavorite || '');
+    if (!id) return;
+    toggleEncyclopediaFavorite(id);
+    const isFavorite = encyclopediaFavorites.has(id);
+    button.classList.toggle('is-favorite', isFavorite);
+    button.setAttribute('aria-label', `${isFavorite ? '取消收藏' : '收藏'}${button.getAttribute('aria-label')?.replace(/^(取消收藏|收藏)/, '') || ''}`);
+    button.setAttribute('aria-pressed', String(isFavorite));
+    const icon = button.querySelector('span[aria-hidden="true"]');
+    if (icon) icon.textContent = isFavorite ? '♥' : '♡';
+  });
+  $('encyclopedia-detail-view').addEventListener('click', (event) => {
+    if (event.target.closest('[data-encyclopedia-detail-back]')) {
+      closeEncyclopediaDetail();
+      return;
+    }
+    const button = event.target.closest('[data-encyclopedia-favorite]');
+    if (!button) return;
+    event.preventDefault();
+    const id = String(button.dataset.encyclopediaFavorite || '');
+    if (!id) return;
+    toggleEncyclopediaFavorite(id);
+    const record = encyclopediaRecords('martial_arts').find((item) => `martial_arts:${item.id}` === id);
+    openMartialDetail(record);
+  });
 
   $('name-modal-confirm').addEventListener('click', () => {
     const value = validateNameDialog();
@@ -3862,20 +4374,113 @@ function fetchJsonWithTimeout(url, timeoutMs = 3500) {
   return Promise.race([request, timeout]);
 }
 
-async function loadWhiteRabbitData() {
-  const localUrl = `${APP_DATA_BASE}whiterabbit_data.json?updated=${Date.now()}`;
-  const remoteUrl = `${REMOTE_WHITE_RABBIT_URL}?updated=${Date.now()}`;
-  const embeddedApp = window.location.hostname === 'appassets.androidplatform.net';
-  const sources = embeddedApp ? [remoteUrl, localUrl] : [localUrl, remoteUrl];
-  for (const url of sources) {
+async function fetchFirstRemoteWhiteRabbitData() {
+  for (const source of REMOTE_WHITE_RABBIT_URLS) {
+    const url = `${source}?updated=${Date.now()}`;
     try {
       const data = await fetchJsonWithTimeout(url);
-      if (Array.isArray(data?.techniques) && Array.isArray(data?.martial_arts)) return data;
+      if (whiteRabbitDataValid(data)) return data;
     } catch (error) {
-      // Offline APKs fall back to the encrypted copy bundled at build time.
+      // Try the next mirror. The app must stay quiet when the network is bad.
     }
   }
   return null;
+}
+
+async function loadWhiteRabbitData() {
+  const localUrl = `${APP_DATA_BASE}whiterabbit_data.json?updated=${Date.now()}`;
+  let localData = null;
+  try {
+    localData = await fetchJsonWithTimeout(localUrl);
+  } catch (error) {
+    // A broken local HTTP/file context can still recover from the cached copy.
+  }
+  const cachedData = readCachedWhiteRabbitData();
+  return chooseWhiteRabbitData(cachedData, localData);
+}
+
+function restoreWhiteRabbitSelections(snapshot) {
+  if (snapshot.characterName && [...$('person-name').options].some((option) => option.value === snapshot.characterName)) {
+    $('person-name').value = snapshot.characterName;
+    applyCharacterDefaults({ resetBaseStats: false });
+  }
+  if (snapshot.martialName) {
+    const index = findWhiteMartialIndexByName(snapshot.martialName);
+    $('martial-select').value = index >= 0 ? `wr-skill:${index}` : '';
+  }
+  if (snapshot.innerName) {
+    const index = findWhiteInnerIndexByName(snapshot.innerName);
+    $('neigong-select').value = index >= 0 ? `wr:${index}` : '';
+  }
+  if (snapshot.weaponName && state.weaponId) {
+    const item = findWhiteEquipmentByName(snapshot.weaponName);
+    state.weaponId = item && isWeapon(item) ? String(item.id) : '';
+  }
+  if (snapshot.techniqueSignatures?.length && techniqueSelectionCustomized) {
+    const signatures = new Set(snapshot.techniqueSignatures);
+    const ids = techniqueOptionEntries()
+      .filter((item) => signatures.has(`${item.group || ''}|${item.parentName || ''}|${item.name || ''}`))
+      .map((item) => item.id);
+    setTechniqueSelections(ids, { customized: true });
+  }
+}
+
+function applyWhiteRabbitDataUpdate(data) {
+  if (!whiteRabbitDataValid(data)) return;
+  const expandedCharacterNames = [...document.querySelectorAll('#encyclopedia-list .encyclopedia-character-card[open] h3')]
+    .map((heading) => heading.textContent.trim())
+    .filter(Boolean);
+  const openMartialDetailName = !$('encyclopedia-detail-view')?.hidden
+    ? $('encyclopedia-detail-view h2')?.textContent.trim()
+    : '';
+  const snapshot = {
+    characterName: $('person-name')?.value || '',
+    martialName: getSelectedMartial()?.source === 'white' ? getSelectedMartial().item?.name : '',
+    innerName: getSelectedInner()?.source === 'white' ? getSelectedInner().item?.name : '',
+    weaponName: state.weaponId ? equipmentName(getWhiteEquipment(state.weaponId)) : '',
+    techniqueSelectionCustomized,
+    techniqueSignatures: selectedTechniques().map((item) => `${item.group || ''}|${item.parentName || ''}|${item.name || ''}`),
+  };
+  state.whiteRabbit = data;
+  populateCharacterPresets();
+  populateNeigong();
+  populateMartialArts();
+  populateTechniques();
+  populateWeaponAffixes();
+  techniqueSelectionCustomized = snapshot.techniqueSelectionCustomized;
+  restoreWhiteRabbitSelections(snapshot);
+  if (innerStatsMode() === 'auto') syncAutoInnerStats();
+  if (techniqueStatsMode() === 'auto') syncTechniqueStats();
+  renderTechniqueScope();
+  renderWeaponAffixes();
+  renderEquipmentSlots();
+  renderSavedCards();
+  renderTeams();
+  renderEncyclopedia();
+  expandedCharacterNames.forEach((name) => {
+    const card = [...document.querySelectorAll('#encyclopedia-list .encyclopedia-character-card')]
+      .find((item) => item.querySelector('h3')?.textContent.trim() === name);
+    if (card) card.open = true;
+  });
+  if (openMartialDetailName) {
+    const record = encyclopediaRecords('martial_arts')
+      .find((item) => item.name === openMartialDetailName);
+    if (record) openMartialDetail(record);
+  }
+  refreshSelectProxies();
+  calculate();
+  window.dispatchEvent(new CustomEvent('jianghu-white-rabbit-data-updated'));
+}
+
+async function refreshWhiteRabbitDataInBackground() {
+  const remoteData = await fetchFirstRemoteWhiteRabbitData();
+  if (!whiteRabbitDataValid(remoteData)) return;
+  const baseline = state.whiteRabbit;
+  if (baseline && compareWhiteRabbitVersion(remoteData, baseline) < 0) return;
+  saveCachedWhiteRabbitData(remoteData);
+  if (whiteRabbitSignature(remoteData) !== whiteRabbitSignature(baseline)) {
+    applyWhiteRabbitDataUpdate(remoteData);
+  }
 }
 
 async function init() {
@@ -3893,6 +4498,7 @@ async function init() {
     renderTechniqueScope();
     renderWeaponAffixes(); renderEquipmentSlots(); enhanceSelects(); refreshSelectProxies(); calculate();
     window.dispatchEvent(new CustomEvent('jianghu-app-ready'));
+    refreshWhiteRabbitDataInBackground().catch((error) => console.warn('图鉴数据自动更新失败', error));
   } catch (error) {
     setError(`${error.message}。请通过本地 HTTP 服务打开页面，不要直接双击 HTML 文件。`);
   }
