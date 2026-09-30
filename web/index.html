@@ -437,10 +437,20 @@
       <section class="collection-view" id="guide-view" hidden aria-label="攻略">
         <div class="v03-guide-heading">
           <p class="section-kicker">GUIDE NOTES</p>
-          <h2>攻略笔记</h2>
-          <p>按原版攻略拆成可展开条目，后续继续补充任务分支与菜谱。</p>
+          <h2>攻略目录</h2>
+          <p>按资料来源拆分，每项进入独立详情页。</p>
         </div>
-        <div id="guide-list" class="v03-guide-list"></div>
+        <div id="guide-directory" class="v03-guide-directory"></div>
+        <section id="guide-detail" class="v03-guide-detail" hidden aria-live="polite">
+          <div class="v03-guide-detail-heading">
+            <button id="guide-back" class="v03-guide-back" type="button">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"></path></svg>
+              <span>攻略目录</span>
+            </button>
+            <div id="guide-detail-title"></div>
+          </div>
+          <div id="guide-detail-content" class="v03-guide-detail-content"></div>
+        </section>
       </section>
 
       <section class="collection-view" id="teams-view" hidden aria-label="配队">
@@ -651,8 +661,9 @@
       </nav>
     </main>
     <script>window.APP_DATA_BASE = './';</script>
-    <script src="new-ui-reference/wiki-data.js?v=20260930-01"></script>
-    <script src="app.js?v=20260930-01"></script>
-    <script src="v03-ui.js?v=20260930-01"></script>
+    <script src="new-ui-reference/wiki-data.js?v=20260930-03"></script>
+    <script src="guide-directory-data.js?v=20260930-03"></script>
+    <script src="app.js?v=20260930-03"></script>
+    <script src="v03-ui.js?v=20260930-03"></script>
   </body>
 </html>
