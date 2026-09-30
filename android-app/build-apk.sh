@@ -45,6 +45,7 @@ rm -f "$ASSET_DIR/index.html" "$ASSET_DIR/app.js" "$ASSET_DIR/style.css" \
 
 "$JAVAC" --release 8 -encoding UTF-8 -d "$BUILD_DIR/tool-classes" \
   "$APP_DIR/tools/AssetVaultBuilder.java"
+# Strategy PNGs stay as web/reference materials; the APK uses OCR text instead.
 "$JAVA" -cp "$BUILD_DIR/tool-classes" com.flashba.jianghucalculator.AssetVaultBuilder \
   "$ASSET_DIR/app.vault" \
   "$BUILD_DIR/generated/com/flashba/jianghucalculator/AssetVaultKey.java" \
@@ -58,11 +59,6 @@ rm -f "$ASSET_DIR/index.html" "$ASSET_DIR/app.js" "$ASSET_DIR/style.css" \
   "strategy_guides.json=$ROOT_DIR/web/strategy_guides.json" \
   "strategy_ocr_data.json=$ROOT_DIR/web/strategy_ocr_data.json" \
   "tencent_recipe_data.json=$ROOT_DIR/web/tencent_recipe_data.json" \
-  "strategy-assets/miegu_equipment.png=$ROOT_DIR/web/strategy-assets/miegu_equipment.png" \
-  "strategy-assets/miegu_followers.png=$ROOT_DIR/web/strategy-assets/miegu_followers.png" \
-  "strategy-assets/miegu_lineups.png=$ROOT_DIR/web/strategy-assets/miegu_lineups.png" \
-  "strategy-assets/miegu_martial_inner.png=$ROOT_DIR/web/strategy-assets/miegu_martial_inner.png" \
-  "strategy-assets/whiterabbit_martial_rating.png=$ROOT_DIR/web/strategy-assets/whiterabbit_martial_rating.png" \
   "uc540_doc.json=$ROOT_DIR/web/uc540_doc.json" \
   "whiterabbit_data.json=$ROOT_DIR/web/whiterabbit_data.json"
 
