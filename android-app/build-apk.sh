@@ -59,6 +59,7 @@ rm -f "$ASSET_DIR/index.html" "$ASSET_DIR/app.js" "$ASSET_DIR/style.css" \
   "strategy_guides.json=$ROOT_DIR/web/strategy_guides.json" \
   "strategy_ocr_data.json=$ROOT_DIR/web/strategy_ocr_data.json" \
   "tencent_recipe_data.json=$ROOT_DIR/web/tencent_recipe_data.json" \
+  "update_logs.json=$ROOT_DIR/web/update_logs.json" \
   "uc540_doc.json=$ROOT_DIR/web/uc540_doc.json" \
   "whiterabbit_data.json=$ROOT_DIR/web/whiterabbit_data.json"
 
