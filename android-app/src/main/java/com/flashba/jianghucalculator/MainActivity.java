@@ -48,6 +48,11 @@ public final class MainActivity extends Activity {
     private static final String ASSET_HOST = "appassets.androidplatform.net";
     private static final String RELEASES_API_URL =
         "https://api.github.com/repos/FlashBA/jianghu-calculator/releases/latest";
+    private static final int UPDATE_ATTEMPTS = 3;
+    private static final int UPDATE_CHECK_CONNECT_TIMEOUT_MS = 12000;
+    private static final int UPDATE_CHECK_READ_TIMEOUT_MS = 15000;
+    private static final int APK_CONNECT_TIMEOUT_MS = 15000;
+    private static final int APK_READ_TIMEOUT_MS = 60000;
     private static final byte[] VAULT_MAGIC = new byte[]{
         'J', 'H', 'C', 'V', 'A', 'U', 'L', 'T'
     };
@@ -120,9 +125,23 @@ public final class MainActivity extends Activity {
     }
 
     private static JSONObject fetchLatestRelease() throws IOException, JSONException {
+        IOException lastError = null;
+        for (int attempt = 1; attempt <= UPDATE_ATTEMPTS; attempt++) {
+            try {
+                return fetchLatestReleaseOnce();
+            } catch (IOException error) {
+                lastError = error;
+                if (attempt < UPDATE_ATTEMPTS) waitBeforeRetry(attempt);
+            }
+        }
+        throw lastError == null ? new IOException("无法检查更新") : lastError;
+    }
+
+    private static JSONObject fetchLatestReleaseOnce() throws IOException, JSONException {
         HttpURLConnection connection = (HttpURLConnection) new URL(RELEASES_API_URL).openConnection();
-        connection.setConnectTimeout(4500);
-        connection.setReadTimeout(4500);
+        connection.setConnectTimeout(UPDATE_CHECK_CONNECT_TIMEOUT_MS);
+        connection.setReadTimeout(UPDATE_CHECK_READ_TIMEOUT_MS);
+        connection.setInstanceFollowRedirects(true);
         connection.setRequestProperty("Accept", "application/vnd.github+json");
         connection.setRequestProperty("User-Agent", "jianghu-calculator");
         try {
@@ -130,6 +149,15 @@ public final class MainActivity extends Activity {
             return new JSONObject(new String(readAll(connection.getInputStream()), "UTF-8"));
         } finally {
             connection.disconnect();
+        }
+    }
+
+    private static void waitBeforeRetry(int attempt) throws IOException {
+        try {
+            Thread.sleep(1000L * attempt);
+        } catch (InterruptedException error) {
+            Thread.currentThread().interrupt();
+            throw new IOException("更新请求被中断", error);
         }
     }
 
@@ -199,30 +227,19 @@ public final class MainActivity extends Activity {
                     throw new IOException("无法清理旧更新文件");
                 }
 
-                HttpURLConnection connection = (HttpURLConnection) new URL(apkUrl).openConnection();
-                connection.setConnectTimeout(8000);
-                connection.setReadTimeout(15000);
-                connection.setRequestProperty("User-Agent", "jianghu-calculator");
-                try {
-                    if (connection.getResponseCode() != HttpURLConnection.HTTP_OK) {
-                        throw new IOException("下载失败（HTTP " + connection.getResponseCode() + "）");
+                IOException downloadError = null;
+                for (int attempt = 1; attempt <= UPDATE_ATTEMPTS; attempt++) {
+                    try {
+                        downloadApkOnce(apkUrl, temporaryFile);
+                        downloadError = null;
+                        break;
+                    } catch (IOException error) {
+                        downloadError = error;
+                        if (cancelDownload) throw error;
+                        if (attempt < UPDATE_ATTEMPTS) waitBeforeRetry(attempt);
                     }
-                    long total = connection.getContentLengthLong();
-                    long downloaded = 0;
-                    byte[] buffer = new byte[8192];
-                    try (InputStream input = connection.getInputStream();
-                         FileOutputStream output = new FileOutputStream(temporaryFile)) {
-                        int count;
-                        while ((count = input.read(buffer)) != -1) {
-                            if (cancelDownload) throw new IOException("下载已取消");
-                            output.write(buffer, 0, count);
-                            downloaded += count;
-                            updateDownloadProgress(downloaded, total);
-                        }
-                    }
-                } finally {
-                    connection.disconnect();
                 }
+                if (downloadError != null) throw downloadError;
 
                 if (cancelDownload) throw new IOException("下载已取消");
                 if (apkFile.exists() && !apkFile.delete()) {
@@ -248,6 +265,35 @@ public final class MainActivity extends Activity {
                 });
             }
         }, "jianghu-apk-download").start();
+    }
+
+    private void downloadApkOnce(String apkUrl, File target) throws IOException {
+        HttpURLConnection connection = (HttpURLConnection) new URL(apkUrl).openConnection();
+        connection.setConnectTimeout(APK_CONNECT_TIMEOUT_MS);
+        connection.setReadTimeout(APK_READ_TIMEOUT_MS);
+        connection.setInstanceFollowRedirects(true);
+        connection.setRequestProperty("User-Agent", "jianghu-calculator");
+        try {
+            int responseCode = connection.getResponseCode();
+            if (responseCode != HttpURLConnection.HTTP_OK) {
+                throw new IOException("下载失败（HTTP " + responseCode + "）");
+            }
+            long total = connection.getContentLengthLong();
+            long downloaded = 0;
+            byte[] buffer = new byte[8192];
+            try (InputStream input = connection.getInputStream();
+                 FileOutputStream output = new FileOutputStream(target)) {
+                int count;
+                while ((count = input.read(buffer)) != -1) {
+                    if (cancelDownload) throw new IOException("下载已取消");
+                    output.write(buffer, 0, count);
+                    downloaded += count;
+                    updateDownloadProgress(downloaded, total);
+                }
+            }
+        } finally {
+            connection.disconnect();
+        }
     }
 
     private void updateDownloadProgress(long downloaded, long total) {
