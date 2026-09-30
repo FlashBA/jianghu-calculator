@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#f4f1ea">
     <title>白兔江湖宝典 · v0.3</title>
-    <link rel="stylesheet" href="style.css?v=20260930-10">
+    <link rel="stylesheet" href="style.css?v=20260930-14">
     <style>
       .full-demo-banner { display: none; }
     </style>
@@ -25,22 +25,23 @@
       <section id="home-view" class="v03-home-view" aria-label="主页">
         <div class="v03-home-title">
           <div>
-            <h2>资料入口</h2>
+            <h2>白兔江湖宝典</h2>
             <p>角色、武学、掉落和面板计算，统一在这里查。</p>
+            <div class="v03-home-groups" aria-label="交流群号">
+              <button type="button" class="v03-home-group" data-copy-group="965445167" aria-label="复制 1 群群号">
+                <span>1群</span><strong>965445167</strong><small>复制</small>
+              </button>
+              <button type="button" class="v03-home-group" data-copy-group="1107446042" aria-label="复制 2 群群号">
+                <span>2群</span><strong>1107446042</strong><small>复制</small>
+              </button>
+            </div>
+            <small class="v03-home-author">作者：邩木 &amp; Koi</small>
           </div>
-          <span class="v03-offline-tag">离线数据</span>
         </div>
         <label class="v03-home-search">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"></circle><path d="m16.5 16.5 4 4"></path></svg>
           <input id="home-search" type="search" placeholder="搜索角色、武学、内功、副本、技艺..." autocomplete="off">
         </label>
-        <div class="v03-quick-row" aria-label="常用搜索">
-          <span>常用</span>
-          <button type="button" data-home-search="宗泽">宗泽</button>
-          <button type="button" data-home-search="穆云缨">穆云缨</button>
-          <button type="button" data-home-search="辟邪剑法">辟邪剑法</button>
-          <button type="button" data-home-search="易筋经">易筋经</button>
-        </div>
         <div class="v03-entry-list">
           <button class="v03-entry-card" type="button" data-v03-target="guide" data-guide-id="pitfalls">
             <span class="v03-entry-icon v03-entry-icon-red"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3 21 19H3L12 3Z"></path><path d="M12 9v4M12 16h.01"></path></svg></span>
@@ -49,7 +50,7 @@
           </button>
           <button class="v03-entry-card" type="button" data-v03-target="calculator">
             <span class="v03-entry-icon v03-entry-icon-red"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3h12v18H6z"></path><path d="M9 7h6M9 12h2M13 12h2M9 16h2M13 16h2"></path></svg></span>
-            <span><strong>数值计算</strong><small>等级、装备、武学与战斗结果</small></span>
+            <span><strong>数值计算</strong><small>计算理论伤害、理论属性配置</small></span>
             <b>›</b>
           </button>
           <button class="v03-entry-card" type="button" data-v03-target="encyclopedia" data-encyclopedia-type="characters">
@@ -214,16 +215,6 @@
                 <span>等级</span>
                 <input id="level-input" type="number" min="1" max="90" value="90" inputmode="numeric">
               </label>
-              <label class="field factor-field">
-                <span>生命系数</span>
-                <input id="hp-factor" type="number" min="0" step="0.01" value="1" inputmode="decimal">
-              </label>
-              <label class="field factor-field">
-                <span>攻击系数</span>
-                <input id="power-factor" type="number" min="0" step="0.01" value="1" inputmode="decimal">
-              </label>
-            </div>
-            <div class="field-grid two-up role-meta-grid">
               <label class="field">
                 <span>职业</span>
                 <select id="person-style">
@@ -233,6 +224,14 @@
                   <option value="刀主">刀主</option>
                   <option value="棍主">棍主</option>
                 </select>
+              </label>
+              <label class="field factor-field">
+                <span>生命系数</span>
+                <input id="hp-factor" type="number" min="0" step="0.01" value="1" inputmode="decimal">
+              </label>
+              <label class="field factor-field">
+                <span>攻击系数</span>
+                <input id="power-factor" type="number" min="0" step="0.01" value="1" inputmode="decimal">
               </label>
               <label class="field">
                 <span>性别</span>
@@ -478,7 +477,6 @@
 
       <section class="collection-view" id="guide-view" hidden aria-label="攻略">
         <div class="v03-guide-heading">
-          <p class="section-kicker">GUIDE NOTES</p>
           <h2>攻略目录</h2>
           <p>按资料来源拆分，每项进入独立详情页。</p>
         </div>
@@ -498,7 +496,6 @@
       <section class="collection-view" id="teams-view" hidden aria-label="配队">
         <div class="section-heading collection-heading">
           <div>
-            <p class="section-kicker">TEAM BUILDER</p>
             <h2>配队</h2>
           </div>
           <button class="primary-button compact-action" id="create-team-button" type="button">＋ 新建配队</button>
@@ -508,7 +505,7 @@
             <span>筛选配队</span>
             <input id="team-search" type="search" placeholder="输入配队名称" autocomplete="off">
           </label>
-          <span class="collection-count" id="team-count">0 个配队</span>
+          <span class="collection-count" id="team-count">0 / 100 个配队</span>
         </div>
         <div id="team-list" class="team-list"></div>
       </section>
@@ -537,7 +534,6 @@
       <section class="collection-view encyclopedia-view" id="encyclopedia-view" hidden aria-label="图鉴">
         <div class="section-heading collection-heading">
           <div>
-            <p class="section-kicker">ENCYCLOPEDIA</p>
             <h2 id="encyclopedia-title">图鉴</h2>
           </div>
           <div class="encyclopedia-heading-side">
@@ -747,6 +743,6 @@
     <script src="new-ui-reference/wiki-data.js?v=20260930-04"></script>
     <script src="guide-directory-data.js?v=20260930-04"></script>
     <script src="app.js?v=20260930-12"></script>
-    <script src="v03-ui.js?v=20260930-08"></script>
+    <script src="v03-ui.js?v=20260930-16"></script>
   </body>
 </html>

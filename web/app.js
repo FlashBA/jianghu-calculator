@@ -54,6 +54,7 @@ const DEFAULT_CHARACTER_BASE_STATS = {
 const MAX_COMPARISON_SNAPSHOTS = 300;
 const MAX_CARD_NAME_LENGTH = 20;
 const MAX_TEAM_NAME_LENGTH = 20;
+const MAX_TEAMS = 100;
 const MAX_TEAM_SLOTS = 9;
 const INNER_MANUAL_FIELD_IDS = ['neigong-hp', 'neigong-attack', ...SECONDARY_KEYS.map((key) => (
   `neigong-${key.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}`
@@ -2064,7 +2065,7 @@ function teamSlotRoleAllowed(roleName, slotIndex) {
 
 function normalizeTeams(value) {
   if (!Array.isArray(value)) return [];
-  return value.map((team, index) => ({
+  return value.slice(0, MAX_TEAMS).map((team, index) => ({
     id: String(team?.id || localId(`team${index}`)),
     name: normalizedName(team?.name || `配队${String(index + 1).padStart(3, '0')}`)
       || `配队${String(index + 1).padStart(3, '0')}`,
@@ -3086,6 +3087,10 @@ async function renameTeam(teamId) {
 }
 
 async function createTeam() {
+  if (teams.length >= MAX_TEAMS) {
+    setSaveStatus(`配队已达到 ${MAX_TEAMS} 个上限`);
+    return -1;
+  }
   const name = await openNameDialog({ title: '新建配队', label: '配队名称', defaultValue: defaultTeamName(), kind: 'team' });
   if (!name) return;
   teams.push({ id: localId('team'), name, slots: Array(MAX_TEAM_SLOTS).fill(null), createdAt: Date.now(), updatedAt: Date.now() });
@@ -3133,7 +3138,13 @@ function renderTeams() {
   if (!content) return;
   const query = ($('team-search')?.value || '').trim().toLocaleLowerCase();
   const visible = teams.filter((team) => !query || team.name.toLocaleLowerCase().includes(query));
-  $('team-count').textContent = `${teams.length} 个配队`;
+  $('team-count').textContent = `${teams.length} / ${MAX_TEAMS} 个配队`;
+  const createButton = $('create-team-button');
+  if (createButton) {
+    const atLimit = teams.length >= MAX_TEAMS;
+    createButton.disabled = atLimit;
+    createButton.title = atLimit ? `配队已达到 ${MAX_TEAMS} 个上限` : '新建配队';
+  }
   if (!visible.length) {
     content.innerHTML = `<div class="empty-collection"><strong>${teams.length ? '没有匹配的配队' : '配队还是空的'}</strong><span>${teams.length ? '更换搜索内容试试' : '点击右上角“新建配队”，再用加号填入数据卡片'}</span></div>`;
     return;

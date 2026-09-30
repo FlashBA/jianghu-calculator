@@ -3,7 +3,7 @@
   const directoryData = window.GUIDE_DIRECTORY_DATA || {};
   const appViewNames = ['calculator', 'teams', 'cards', 'encyclopedia', 'favorites', 'achievements'];
   const dataBase = window.APP_DATA_BASE || './';
-  const guideState = { searchIndex: null, strategyGuides: null, recipeData: null, strategyText: null, current: null, searchQuery: '' };
+  const guideState = { searchIndex: null, strategyGuides: null, recipeData: null, strategyText: null, updateLogs: null, current: null, searchQuery: '', updateLogQuery: '', updateLogVersion: '' };
   const GUIDE_FAVORITES_KEY = 'jianghu-stat-simulator:guide:favorites:v1';
   const ACHIEVEMENT_PROGRESS_KEY = 'jianghu-stat-simulator:achievements:v1';
   const ACHIEVEMENT_RECORDS = [];
@@ -268,12 +268,13 @@
     const docxCount = records.filter((item) => item.source === 'original_guide').length;
     const recipes = guideState.recipeData?.recipes || directoryData.recipes || [];
     return [
-      { id: 'pitfalls', title: '避坑指南', icon: 'alert', tone: 'red', source: 'Excel 汇总', summary: '开局选择、任务道具、令牌和版本机制的易错点。', meta: `${directoryData.pitfalls?.length || 11} 条注意事项` },
-      { id: 'recipes', title: '菜谱大全', icon: 'food', tone: 'gold', source: '腾讯文档 · 菜谱配方', summary: '按线上原件整理的菜名与材料配方。', meta: `${recipes.length} 道菜谱记录` },
+      { id: 'pitfalls', title: '避坑指南', author: '@邩木', icon: 'alert', tone: 'red', source: 'Excel 汇总', summary: '开局选择、任务道具、令牌和版本机制的易错点。', meta: `${directoryData.pitfalls?.length || 11} 条注意事项` },
+      { id: 'recipes', title: '菜谱大全', author: '@邩木', icon: 'food', tone: 'gold', source: '腾讯文档 · 菜谱配方', summary: '按线上原件整理的菜名与材料配方。', meta: `${recipes.length} 道菜谱记录` },
       { id: 'original-search', title: '原版攻略检索', icon: 'search', tone: 'red', source: 'DOCX 检索索引', summary: '只检索原版攻略 DOCX 的任务、NPC、地点和关键词。', meta: `${docxCount || 221} 条原攻略分块` },
       { id: 'longgu-outer-points', title: '龙谷外围点位', icon: 'map', tone: 'gold', source: '专题攻略', summary: '灭谷相关 Boss 的外围坐标与标记信息。', meta: strategyCount('longgu-outer-points') },
-      { id: 'miegu-lineup-summary', title: '灭谷阵容汇总', icon: 'formation', tone: 'red', source: '专题攻略', summary: '武学、内功、装备与随从出场数据。', meta: strategyCount('miegu-lineup-summary') },
-      { id: 'white-rabbit-martial-rating', title: '白兔武功评级', icon: 'sword', tone: 'gold', source: '专题攻略', summary: '白兔 2.83 孤本武学强度梯度与个人向文字评级。', meta: strategyCount('white-rabbit-martial-rating') },
+      { id: 'miegu-lineup-summary', title: '灭谷阵容汇总', author: '@染羽', icon: 'formation', tone: 'red', source: '专题攻略', summary: '武学、内功、装备与随从出场数据。', meta: strategyCount('miegu-lineup-summary') },
+      { id: 'white-rabbit-martial-rating', title: '白兔 2.83 武功评级', author: '@染羽', icon: 'sword', tone: 'gold', source: '专题攻略', summary: '白兔 2.83 孤本武学强度梯度与个人向文字评级。', meta: strategyCount('white-rabbit-martial-rating') },
+      { id: 'update-logs', title: '更新日志', icon: 'info', tone: 'gray', source: '白兔更新日志', summary: '按版本倒序查看游戏更新内容。', meta: `${guideState.updateLogs?.logs?.length || 0} 个版本` },
       { id: 'version-notes', title: '版本规则', icon: 'info', tone: 'gray', source: '白兔版数据', summary: '速度条、状态阈值、技艺和任督等基础规则。', meta: `${data.guide_notes?.length || 0} 条版本提示` },
     ];
   }
@@ -284,7 +285,7 @@
     list.innerHTML = getGuideCatalog().map((item) => `
       <button class="v03-guide-directory-card" type="button" data-guide-id="${escapeHtml(item.id)}">
         ${iconSvg(item.icon, item.tone)}
-        <span class="v03-guide-directory-copy"><small>${escapeHtml(item.source)}</small><strong>${escapeHtml(item.title)}</strong><em>${escapeHtml(item.summary)}</em><b>${escapeHtml(item.meta)}</b></span>
+        <span class="v03-guide-directory-copy"><small>${escapeHtml(item.author ? `作者：${item.author}` : item.source)}</small><strong>${escapeHtml(item.title)}</strong><em>${escapeHtml(item.summary)}</em><b>${escapeHtml(item.meta)}</b></span>
         <span class="v03-guide-directory-arrow" aria-hidden="true">›</span>
       </button>
     `).join('');
@@ -306,7 +307,7 @@
       ? '<p class="v03-guide-freshness-note">PS：攻略具有时效性，随时可能因为版本更新而发生变化，查询时请注意时间。</p>'
       : '';
     const isLibrary = item.id === 'original-search';
-    title.innerHTML = `<div class="v03-guide-detail-title-row${isLibrary ? '' : ' has-favorite'}">${iconSvg(item.icon, item.tone)}<div><p class="section-kicker">${escapeHtml(item.source)}</p><h2>${escapeHtml(item.title)}</h2><p>${escapeHtml(item.summary)}</p>${freshnessNote}</div>${isLibrary ? '' : guideFavoriteButton(`guide:${item.id}`, item.title)}</div>`;
+    title.innerHTML = `<div class="v03-guide-detail-title-row${isLibrary ? '' : ' has-favorite'}">${iconSvg(item.icon, item.tone)}<div><p class="section-kicker">${escapeHtml(item.author ? `作者：${item.author}` : item.source)}</p><h2>${escapeHtml(item.title)}</h2><p>${escapeHtml(item.summary)}</p>${freshnessNote}</div>${isLibrary ? '' : guideFavoriteButton(`guide:${item.id}`, item.title)}</div>`;
   }
 
   function renderPitfalls() {
@@ -345,39 +346,97 @@
     return terms;
   }
 
+  function normalizeOriginalSearch(value) {
+    return normalizeGuideSearch(String(value || '').replaceAll('吸心', '吸星'));
+  }
+
+  function originalSearchTerms(value) {
+    return guideSearchTerms(String(value || '').replaceAll('吸心', '吸星'));
+  }
+
+  function originalDisplayText(value) {
+    return String(value || '').replaceAll('吸心大法', '吸星大法');
+  }
+
+  const DEFAULT_ORIGINAL_GUIDE_GROUPS = [
+    { label: '吸星大法', titleTerms: ['临安篇1 · 支线任务1', '临安篇1 · 拼酒顺序', '临安篇1 · 水牢走法'], terms: ['吸星大法', '吸心大法'] },
+    { label: '灵石岛任务', terms: ['灵石岛'] },
+    { label: '泰山送信任务', terms: ['送信给金刀门王元霸', '泰山商店开启 · 任务一'] },
+  ];
+
+  function originalRecordContains(item, terms) {
+    const searchable = normalizeOriginalSearch([
+      item.title,
+      item.section,
+      item.topic,
+      item.text,
+      ...(item.keywords || []),
+    ].join(' '));
+    return terms.some((term) => searchable.includes(normalizeOriginalSearch(term)));
+  }
+
+  function defaultOriginalRecords(records) {
+    const selected = [];
+    const seen = new Set();
+    DEFAULT_ORIGINAL_GUIDE_GROUPS.forEach((group) => {
+      records.filter((item) => {
+        if (item.category !== 'task') return false;
+        if (group.titleTerms?.length) {
+          const title = normalizeOriginalSearch(item.title);
+          return group.titleTerms.some((term) => title.includes(normalizeOriginalSearch(term)));
+        }
+        return originalRecordContains(item, group.terms);
+      }).forEach((item) => {
+        if (seen.has(item.id)) return;
+        seen.add(item.id);
+        selected.push(item);
+      });
+    });
+    return selected;
+  }
+
   function rankOriginalRecord(item, query) {
-    const title = normalizeGuideSearch(item.title);
-    const section = normalizeGuideSearch(item.section);
-    const topic = normalizeGuideSearch(item.topic);
-    const keywords = (item.keywords || []).map(normalizeGuideSearch).join('|');
-    const text = normalizeGuideSearch(item.text);
-    const terms = guideSearchTerms(query);
+    const title = normalizeOriginalSearch(item.title);
+    const section = normalizeOriginalSearch(item.section);
+    const topic = normalizeOriginalSearch(item.topic);
+    const keywords = (item.keywords || []).map(normalizeOriginalSearch);
+    const text = normalizeOriginalSearch(item.text);
+    const terms = originalSearchTerms(query);
     let score = 0;
     let matchedTerms = 0;
     terms.forEach((term, index) => {
       let termScore = 0;
       if (title.includes(term)) termScore = Math.max(termScore, index === 0 ? 120 : 72);
       if (topic.includes(term)) termScore = Math.max(termScore, 100);
-      if (keywords.includes(term)) termScore = Math.max(termScore, 84);
+      if (keywords.some((keyword) => keyword === term)) termScore = Math.max(termScore, 84);
+      else if (keywords.some((keyword) => keyword.includes(term))) termScore = Math.max(termScore, 48);
       if (section.includes(term)) termScore = Math.max(termScore, 58);
       if (text.includes(term)) termScore = Math.max(termScore, 24);
       if (termScore) matchedTerms += 1;
       score += termScore;
     });
     if (terms.length > 1 && matchedTerms === terms.length) score += 36;
-    if (item.task_like) score += 3;
     return score;
+  }
+
+  function originalRecordHasStructuredMatch(item, query) {
+    const fields = [item.title, item.section, item.topic].map(normalizeOriginalSearch);
+    return originalSearchTerms(query).some((term) => fields.some((field) => field.includes(normalizeGuideSearch(term))));
   }
 
   function originalRecords(query = '') {
     const records = (guideState.searchIndex?.records || []).filter((item) => item.source === 'original_guide');
     const normalized = normalizeGuideSearch(query);
-    if (!normalized) return { records, filtered: records.filter((item) => item.task_like).slice(0, 12) };
-    const filtered = records
+    if (!normalized) return { records, filtered: defaultOriginalRecords(records) };
+    const scored = records
       .map((item) => ({ item, score: rankOriginalRecord(item, query) }))
       .filter(({ score }) => score > 0)
-      .sort((left, right) => right.score - left.score || (left.item.paragraph_start ?? 999999) - (right.item.paragraph_start ?? 999999))
-      .map(({ item }) => item);
+      .sort((left, right) => right.score - left.score || (left.item.paragraph_start ?? 999999) - (right.item.paragraph_start ?? 999999));
+    const hasStructuredMatch = scored.some(({ item }) => originalRecordHasStructuredMatch(item, query));
+    const filtered = (hasStructuredMatch
+      ? scored.filter(({ item }) => originalRecordHasStructuredMatch(item, query) || item.category === 'task')
+      : scored
+    ).map(({ item }) => item);
     return { records, filtered };
   }
 
@@ -391,9 +450,9 @@
       result.innerHTML = '<p class="v03-guide-empty">正在读取离线索引…</p>';
       return;
     }
-    count.textContent = guideState.searchQuery ? `匹配 ${filtered.length} 条，展示前 40 条` : `共 ${records.length} 条，先显示 12 条任务相关记录`;
-    const visible = filtered.slice(0, 40);
-    result.innerHTML = visible.length ? visible.map((item) => `<article class="v03-guide-search-result"><div class="v03-guide-result-top"><strong>${escapeHtml(item.title || '未命名条目')}</strong><span>${escapeHtml(item.section || item.category || '攻略')}</span>${guideFavoriteButton(`chunk:${item.id}`, item.title || '攻略条目')}</div><p>${escapeHtml(item.text || '')}</p><small>${escapeHtml(item.source_label || item.source || '')}${item.source_version ? ` · ${escapeHtml(item.source_version)}` : ''}</small></article>`).join('') : '<p class="v03-guide-empty">没有匹配内容，换一个任务名、NPC 或地点试试。</p>';
+    count.textContent = guideState.searchQuery ? `匹配 ${filtered.length} 条，展示前 20 条` : `推荐 ${filtered.length} 条支线记录 · 输入关键词检索全部 ${records.length} 条`;
+    const visible = filtered.slice(0, 20);
+    result.innerHTML = visible.length ? visible.map((item) => `<article class="v03-guide-search-result"><div class="v03-guide-result-top"><strong>${escapeHtml(originalDisplayText(item.title || '未命名条目'))}</strong><span>${escapeHtml(originalDisplayText(item.section || item.category || '攻略'))}</span>${guideFavoriteButton(`chunk:${item.id}`, originalDisplayText(item.title || '攻略条目'))}</div><p>${escapeHtml(originalDisplayText(item.text || ''))}</p><small>${escapeHtml(item.source_label || item.source || '')}${item.source_version ? ` · ${escapeHtml(item.source_version)}` : ''}</small></article>`).join('') : '<p class="v03-guide-empty">没有匹配内容，换一个任务名、NPC 或地点试试。</p>';
   }
 
   function renderFavorites() {
@@ -520,7 +579,9 @@
   }
 
   function renderStrategyTextSection(section, textSection) {
-    const title = textSection?.title || section.title;
+    const title = section.id === 'whiterabbit_martial_rating'
+      ? '白兔 2.83 武功评级'
+      : textSection?.title || section.title;
     const text = textSection?.text || '';
     if (section.id === 'whiterabbit_martial_rating') {
       return `<section class="v03-strategy-text-section"><h3>${escapeHtml(title)}</h3>${renderRatingText(text)}</section>`;
@@ -552,7 +613,9 @@
   function renderStrategy(guide) {
     if (!guide) return '<p class="v03-guide-empty">专题攻略数据加载中…</p>';
     const visibleSections = guide.sections.filter((section) => section.id !== 'miegu_lineups');
-    return `<div class="v03-strategy-detail"><p class="v03-guide-source-note">来源：${escapeHtml(guide.source?.file || guide.title || '')}</p>${visibleSections.map((section) => {
+    const hideSource = ['miegu-lineup-summary', 'white-rabbit-martial-rating'].includes(guide.id);
+    const sourceNote = hideSource ? '' : `<p class="v03-guide-source-note">来源：${escapeHtml(guide.source?.file || guide.title || '')}</p>`;
+    return `<div class="v03-strategy-detail">${sourceNote}${visibleSections.map((section) => {
       if (section.type === 'image') {
         const textSection = guideState.strategyText?.sections?.[section.id];
         return renderStrategyTextSection(section, textSection);
@@ -567,12 +630,45 @@
     return `<div class="v03-guide-note-list">${(data.guide_notes || []).map((item) => `<article class="v03-guide-note-card"><span class="v03-guide-note-index">P${escapeHtml(item.page || '-')}</span><div><h3>${escapeHtml(item.title)}</h3><p>${escapeHtml(item.text)}</p></div></article>`).join('')}</div>`;
   }
 
+  function updateLogEntries() {
+    const logs = guideState.updateLogs?.logs;
+    if (!Array.isArray(logs)) return [];
+    return [...logs].sort((left, right) => {
+      const version = (item) => String(item.version || '').split('.').map((part) => Number(part) || 0);
+      const a = version(left); const b = version(right);
+      for (let index = 0; index < Math.max(a.length, b.length); index += 1) {
+        const delta = (b[index] || 0) - (a[index] || 0);
+        if (delta) return delta;
+      }
+      return String(right.id || '').localeCompare(String(left.id || ''));
+    });
+  }
+
+  function renderUpdateLogs() {
+    const logs = updateLogEntries();
+    const isLoading = !guideState.updateLogs;
+    const query = normalizeGuideSearch(guideState.updateLogQuery);
+    const visible = logs.filter((item) => {
+      if (guideState.updateLogVersion && item.version !== guideState.updateLogVersion) return false;
+      if (!query) return true;
+      return normalizeGuideSearch(`${item.version} ${item.title} ${item.meta} ${item.body}`).includes(query);
+    });
+    const options = logs.map((item) => `<option value="${escapeHtml(item.version)}"${item.version === guideState.updateLogVersion ? ' selected' : ''}>${escapeHtml(item.version)}</option>`).join('');
+    const listMarkup = isLoading
+      ? '<p class="v03-guide-empty">更新日志加载中…</p>'
+      : visible.length
+        ? visible.map((item) => `<article class="v03-update-log-card" id="update-log-${escapeHtml(item.id || item.version)}"><header><div><span>版本 ${escapeHtml(item.version || '-')}</span><h3>${escapeHtml(item.title || `版本 ${item.version || '-'}`)}</h3></div><small>${escapeHtml(item.meta || '')}</small></header><div class="v03-update-log-body">${escapeHtml(item.body || '').split(/\n\n+/).map((paragraph) => `<p>${paragraph.replaceAll('\n', '<br>')}</p>`).join('')}</div></article>`).join('')
+        : '<p class="v03-guide-empty">没有匹配的更新日志。</p>';
+    return `<div class="v03-update-log-tools"><label class="v03-guide-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="10.8" cy="10.8" r="6.8"></circle><path d="m16 16 5 5"></path></svg><input id="update-log-search" type="search" value="${escapeHtml(guideState.updateLogQuery)}" placeholder="搜索更新日志" autocomplete="off"${isLoading ? ' disabled' : ''}></label><label class="v03-update-log-version"><span>版本</span><select id="update-log-version" aria-label="选择更新日志版本"${isLoading ? ' disabled' : ''}><option value="">全部版本</option>${options}</select></label></div><div class="v03-update-log-list">${listMarkup}</div>`;
+  }
+
   function renderGuideDetailContent(id) {
     const content = document.getElementById('guide-detail-content');
     if (!content) return;
     if (id === 'pitfalls') content.innerHTML = renderPitfalls();
     else if (id === 'recipes') content.innerHTML = renderRecipes();
     else if (id === 'original-search') content.innerHTML = renderOriginalSearch();
+    else if (id === 'update-logs') content.innerHTML = renderUpdateLogs();
     else if (id === 'version-notes') content.innerHTML = renderVersionNotes();
     else content.innerHTML = renderStrategy(strategyById(id));
     if (id === 'original-search') renderOriginalResults();
@@ -583,9 +679,18 @@
     const detailTitle = document.getElementById('guide-detail-title');
     const detailContent = document.getElementById('guide-detail-content');
     detailContent?.addEventListener('input', (event) => {
-      if (event.target.id !== 'guide-search-input') return;
-      guideState.searchQuery = event.target.value;
-      renderOriginalResults();
+      if (event.target.id === 'guide-search-input') {
+        guideState.searchQuery = event.target.value;
+        renderOriginalResults();
+      } else if (event.target.id === 'update-log-search') {
+        guideState.updateLogQuery = event.target.value;
+        detailContent.innerHTML = renderUpdateLogs();
+      }
+    });
+    detailContent?.addEventListener('change', (event) => {
+      if (event.target.id !== 'update-log-version') return;
+      guideState.updateLogVersion = event.target.value;
+      detailContent.innerHTML = renderUpdateLogs();
     });
     detailTitle?.addEventListener('click', (event) => {
       const button = event.target.closest('[data-guide-favorite]');
@@ -615,6 +720,10 @@
     if (detail) detail.hidden = false;
     guideState.current = id;
     if (id !== 'original-search') guideState.searchQuery = '';
+    if (id !== 'update-logs') {
+      guideState.updateLogQuery = '';
+      guideState.updateLogVersion = '';
+    }
     setGuideDetailHeading(item);
     renderGuideDetailContent(id);
     bindDetailEvents();
@@ -673,6 +782,40 @@
     input.dispatchEvent(new Event('input', { bubbles: true }));
   }
 
+  async function copyGroupNumber(button) {
+    const value = button?.dataset.copyGroup;
+    if (!value) return;
+    let copied = false;
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(value);
+        copied = true;
+      }
+    } catch {
+      copied = false;
+    }
+    if (!copied) {
+      const helper = document.createElement('textarea');
+      helper.value = value;
+      helper.setAttribute('readonly', '');
+      helper.style.position = 'fixed';
+      helper.style.opacity = '0';
+      document.body.appendChild(helper);
+      helper.select();
+      try { copied = document.execCommand('copy'); } catch { copied = false; }
+      helper.remove();
+    }
+    const status = button.querySelector('small');
+    if (!status) return;
+    const original = status.textContent;
+    status.textContent = copied ? '已复制' : '复制失败';
+    button.classList.toggle('is-copied', copied);
+    window.setTimeout(() => {
+      status.textContent = original;
+      button.classList.remove('is-copied');
+    }, 1400);
+  }
+
   function routeFromHash() {
     const hash = location.hash.replace(/^#/, '');
     if (hash.startsWith('guide/')) return { target: 'guide', guideId: decodeURIComponent(hash.slice(6)) };
@@ -726,17 +869,19 @@
       homeSearch.value = button.dataset.homeSearch;
       openSearch(button.dataset.homeSearch);
     }));
+    document.querySelectorAll('[data-copy-group]').forEach((button) => button.addEventListener('click', () => copyGroupNumber(button)));
 
     const count = document.getElementById('home-encyclopedia-count');
     if (count) count.textContent = `${data.characters?.length || 0} 位角色 · ${data.martial_arts?.length || 0} 门武学`;
   }
 
   function loadGuideSources() {
-    Promise.all([fetchJson('guide_search_index.json'), fetchJson('strategy_guides.json'), fetchJson('tencent_recipe_data.json'), fetchJson('strategy_ocr_data.json')]).then(([searchIndex, strategyGuides, recipeData, strategyText]) => {
+    Promise.all([fetchJson('guide_search_index.json'), fetchJson('strategy_guides.json'), fetchJson('tencent_recipe_data.json'), fetchJson('strategy_ocr_data.json'), fetchJson('update_logs.json')]).then(([searchIndex, strategyGuides, recipeData, strategyText, updateLogs]) => {
       guideState.searchIndex = { ...searchIndex, records: (searchIndex.records || []).filter((item) => item.source === 'original_guide') };
       guideState.strategyGuides = strategyGuides;
       guideState.recipeData = recipeData;
       guideState.strategyText = correctStrategyText(strategyText);
+      guideState.updateLogs = updateLogs;
       renderGuideDirectory();
       renderFavorites();
       if (guideState.current) {
