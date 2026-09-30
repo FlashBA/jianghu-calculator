@@ -225,8 +225,15 @@
     return `<div class="v03-strategy-detail"><p class="v03-guide-source-note">来源：${escapeHtml(guide.source?.file || guide.title || '')}</p>${guide.sections.map((section) => {
       if (section.type === 'image') {
         const textSection = guideState.strategyText?.sections?.[section.id];
-        if (!textSection?.text) return '';
-        return `<section class="v03-strategy-text-section"><h3>${escapeHtml(textSection.title || section.title)}</h3><div class="v03-strategy-text">${escapeHtml(textSection.text)}</div></section>`;
+        const title = textSection?.title || section.title;
+        const image = section.asset
+          ? `<figure class="v03-strategy-image"><img src="${escapeHtml(assetUrl(section.asset))}" alt="${escapeHtml(title)}" loading="lazy"><figcaption><strong>${escapeHtml(section.source_name || title)}</strong><span>${escapeHtml(section.detail || '')}</span></figcaption></figure>`
+          : '';
+        const text = textSection?.text
+          ? `<div class="v03-strategy-text">${escapeHtml(textSection.text)}</div>`
+          : '';
+        if (!image && !text) return '';
+        return `<section class="v03-strategy-text-section"><h3>${escapeHtml(title)}</h3>${image}${text}</section>`;
       }
       if (guide.id === 'longgu-outer-points' && section.id === 'boss-points') return `<section class="v03-strategy-section"><h3>${escapeHtml(section.title)}</h3><div class="v03-longgu-points-grid">${(section.items || []).map((item) => `<article class="v03-longgu-point-card"><header><div><strong>${escapeHtml(item.boss || '未命名 Boss')}</strong><span>${escapeHtml(item.npc || '人物待补')}</span></div><b>${item.points?.length || 0} 个点位</b></header><div class="v03-longgu-point-list">${(item.points || []).map((point, index) => `<span class="v03-longgu-point-chip"><i>${index + 1}</i>${escapeHtml(`${point.value?.x ?? '-'}、${point.value?.y ?? '-'}`)}</span>`).join('')}</div>${item.flags?.length ? `<div class="v03-longgu-point-flags">${item.flags.map((flag) => `<span>${escapeHtml(flag)}</span>`).join('')}</div>` : ''}</article>`).join('')}</div></section>`;
       if (section.type === 'table') return `<section class="v03-strategy-section"><h3>${escapeHtml(section.title)}</h3><div class="v03-guide-table-wrap"><table class="v03-guide-table"><thead><tr>${section.columns.map((column) => `<th>${escapeHtml(column)}</th>`).join('')}</tr></thead><tbody>${(section.items || []).map((item) => `<tr>${strategyCell(item)}</tr>`).join('')}</tbody></table></div></section>`;

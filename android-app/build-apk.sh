@@ -40,7 +40,8 @@ mkdir -p "$BUILD_DIR/classes" "$BUILD_DIR/tool-classes" "$BUILD_DIR/dex" "$BUILD
 # Keep only the encrypted vault in the APK assets directory. Plaintext web files
 # may be left there by an older build, so remove these exact generated files first.
 rm -f "$ASSET_DIR/index.html" "$ASSET_DIR/app.js" "$ASSET_DIR/style.css" \
-  "$ASSET_DIR/uc540_doc.json" "$ASSET_DIR/whiterabbit_data.json" "$ASSET_DIR/app.vault"
+  "$ASSET_DIR/uc540_doc.json" "$ASSET_DIR/whiterabbit_data.json" \
+  "$ASSET_DIR/app.vault"
 
 "$JAVAC" --release 8 -encoding UTF-8 -d "$BUILD_DIR/tool-classes" \
   "$APP_DIR/tools/AssetVaultBuilder.java"
@@ -50,6 +51,18 @@ rm -f "$ASSET_DIR/index.html" "$ASSET_DIR/app.js" "$ASSET_DIR/style.css" \
   "index.html=$ROOT_DIR/web/index.html" \
   "app.js=$ROOT_DIR/web/app.js" \
   "style.css=$ROOT_DIR/web/style.css" \
+  "new-ui-reference/wiki-data.js=$ROOT_DIR/web/new-ui-reference/wiki-data.js" \
+  "guide-directory-data.js=$ROOT_DIR/web/guide-directory-data.js" \
+  "v03-ui.js=$ROOT_DIR/web/v03-ui.js" \
+  "guide_search_index.json=$ROOT_DIR/web/guide_search_index.json" \
+  "strategy_guides.json=$ROOT_DIR/web/strategy_guides.json" \
+  "strategy_ocr_data.json=$ROOT_DIR/web/strategy_ocr_data.json" \
+  "tencent_recipe_data.json=$ROOT_DIR/web/tencent_recipe_data.json" \
+  "strategy-assets/miegu_equipment.png=$ROOT_DIR/web/strategy-assets/miegu_equipment.png" \
+  "strategy-assets/miegu_followers.png=$ROOT_DIR/web/strategy-assets/miegu_followers.png" \
+  "strategy-assets/miegu_lineups.png=$ROOT_DIR/web/strategy-assets/miegu_lineups.png" \
+  "strategy-assets/miegu_martial_inner.png=$ROOT_DIR/web/strategy-assets/miegu_martial_inner.png" \
+  "strategy-assets/whiterabbit_martial_rating.png=$ROOT_DIR/web/strategy-assets/whiterabbit_martial_rating.png" \
   "uc540_doc.json=$ROOT_DIR/web/uc540_doc.json" \
   "whiterabbit_data.json=$ROOT_DIR/web/whiterabbit_data.json"
 
