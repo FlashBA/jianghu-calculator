@@ -3605,6 +3605,24 @@ body {
   padding-top: 26px;
 }
 
+#teams-view .collection-heading {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+}
+
+#teams-view .collection-heading > div {
+  grid-column: 2;
+  text-align: center;
+}
+
+#teams-view #create-team-button {
+  grid-column: 3;
+  justify-self: end;
+  align-self: center;
+  white-space: nowrap;
+}
+
 .collection-heading {
   align-items: end;
   margin-bottom: 10px;
