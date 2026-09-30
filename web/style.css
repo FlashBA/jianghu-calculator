@@ -3599,6 +3599,12 @@ body {
   padding-bottom: 13px;
 }
 
+#teams-view,
+#encyclopedia-view,
+#guide-view {
+  padding-top: 26px;
+}
+
 .collection-heading {
   align-items: end;
   margin-bottom: 10px;
