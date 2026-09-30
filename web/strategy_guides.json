@@ -1,0 +1,475 @@
+{
+  "version": 1,
+  "generated_at": "2026-09-29T18:50:39+00:00",
+  "title": "江湖风云录攻略补充",
+  "guides": [
+    {
+      "id": "longgu-outer-points",
+      "title": "龙谷外围点位",
+      "type": "table",
+      "summary": "灭谷相关 Boss 外围坐标和标记信息。",
+      "source": {
+        "file": "龙谷外围点位/龙谷外围点位.xlsx",
+        "sha256": "385e65c1663bfe4c3fe2b98c19192e138ba4423e87bf7e912de9eb3da8afa6b8"
+      },
+      "sections": [
+        {
+          "id": "boss-points",
+          "title": "Boss 点位",
+          "type": "table",
+          "columns": [
+            "Boss",
+            "人物",
+            "坐标",
+            "标记"
+          ],
+          "items": [
+            {
+              "boss": "狂龙掌",
+              "npc": "石猛",
+              "points": [
+                {
+                  "order": 1,
+                  "value": {
+                    "x": 35,
+                    "y": 7
+                  }
+                },
+                {
+                  "order": 2,
+                  "value": {
+                    "x": 5,
+                    "y": 28
+                  }
+                },
+                {
+                  "order": 3,
+                  "value": {
+                    "x": 34,
+                    "y": 19
+                  }
+                },
+                {
+                  "order": 4,
+                  "value": {
+                    "x": 20,
+                    "y": 1
+                  }
+                }
+              ],
+              "flags": [
+                "内功"
+              ],
+              "raw_cells": [
+                "35、7",
+                "5、28",
+                "34、19",
+                "20、1"
+              ],
+              "source_row": 1,
+              "search_text": "狂龙掌 石猛 35、7 5、28 34、19 20、1 内功"
+            },
+            {
+              "boss": "破浪刀",
+              "npc": "胡大海",
+              "points": [
+                {
+                  "order": 1,
+                  "value": {
+                    "x": 9,
+                    "y": 25
+                  }
+                },
+                {
+                  "order": 2,
+                  "value": {
+                    "x": 19,
+                    "y": 2
+                  }
+                },
+                {
+                  "order": 3,
+                  "value": {
+                    "x": 32,
+                    "y": 9
+                  }
+                },
+                {
+                  "order": 4,
+                  "value": {
+                    "x": 27,
+                    "y": 24
+                  }
+                },
+                {
+                  "order": 5,
+                  "value": {
+                    "x": 15,
+                    "y": 28
+                  }
+                },
+                {
+                  "order": 6,
+                  "value": {
+                    "x": 18,
+                    "y": 28
+                  }
+                }
+              ],
+              "flags": [],
+              "raw_cells": [
+                "9、25",
+                "19、2",
+                "32、9",
+                "27、24",
+                "15、28",
+                "18、28"
+              ],
+              "source_row": 2,
+              "search_text": "破浪刀 胡大海 9、25 19、2 32、9 27、24 15、28 18、28"
+            },
+            {
+              "boss": "追风神捕",
+              "npc": "柳追风",
+              "points": [
+                {
+                  "order": 1,
+                  "value": {
+                    "x": 0,
+                    "y": 0
+                  }
+                },
+                {
+                  "order": 2,
+                  "value": {
+                    "x": 23,
+                    "y": 3
+                  }
+                },
+                {
+                  "order": 3,
+                  "value": {
+                    "x": 18,
+                    "y": 28
+                  }
+                }
+              ],
+              "flags": [
+                "已标记"
+              ],
+              "raw_cells": [
+                "0、0",
+                "23、3",
+                "18、28"
+              ],
+              "source_row": 3,
+              "search_text": "追风神捕 柳追风 0、0 23、3 18、28 已标记"
+            },
+            {
+              "boss": "蛊月娘",
+              "npc": "阿萝依",
+              "points": [
+                {
+                  "order": 1,
+                  "value": {
+                    "x": 6,
+                    "y": 1
+                  }
+                },
+                {
+                  "order": 2,
+                  "value": {
+                    "x": 18,
+                    "y": 26
+                  }
+                },
+                {
+                  "order": 3,
+                  "value": {
+                    "x": 16,
+                    "y": 0
+                  }
+                },
+                {
+                  "order": 4,
+                  "value": {
+                    "x": 7,
+                    "y": 28
+                  }
+                },
+                {
+                  "order": 5,
+                  "value": {
+                    "x": 18,
+                    "y": 20
+                  }
+                },
+                {
+                  "order": 6,
+                  "value": {
+                    "x": 29,
+                    "y": 5
+                  }
+                }
+              ],
+              "flags": [
+                "已标记"
+              ],
+              "raw_cells": [
+                "6、1",
+                "18、26",
+                "16、0",
+                "7、28",
+                "18、20",
+                "29、5"
+              ],
+              "source_row": 4,
+              "search_text": "蛊月娘 阿萝依 6、1 18、26 16、0 7、28 18、20 29、5 已标记"
+            },
+            {
+              "boss": "鬼影",
+              "npc": "仇无赦",
+              "points": [
+                {
+                  "order": 1,
+                  "value": {
+                    "x": 9,
+                    "y": 25
+                  }
+                },
+                {
+                  "order": 2,
+                  "value": {
+                    "x": 25,
+                    "y": 21
+                  }
+                },
+                {
+                  "order": 3,
+                  "value": {
+                    "x": 29,
+                    "y": 0
+                  }
+                },
+                {
+                  "order": 4,
+                  "value": {
+                    "x": 19,
+                    "y": 1
+                  }
+                },
+                {
+                  "order": 5,
+                  "value": {
+                    "x": 35,
+                    "y": 11
+                  }
+                }
+              ],
+              "flags": [
+                "内功",
+                "已标记"
+              ],
+              "raw_cells": [
+                "9、25",
+                "25、21",
+                "29、0",
+                "19、1",
+                "35、11"
+              ],
+              "source_row": 5,
+              "search_text": "鬼影 仇无赦 9、25 25、21 29、0 19、1 35、11 内功 已标记"
+            },
+            {
+              "boss": "蔷薇剑仙",
+              "npc": "花照影",
+              "points": [
+                {
+                  "order": 1,
+                  "value": {
+                    "x": 26,
+                    "y": 1
+                  }
+                },
+                {
+                  "order": 2,
+                  "value": {
+                    "x": 24,
+                    "y": 28
+                  }
+                },
+                {
+                  "order": 3,
+                  "value": {
+                    "x": 14,
+                    "y": 4
+                  }
+                },
+                {
+                  "order": 4,
+                  "value": {
+                    "x": 22,
+                    "y": 3
+                  }
+                }
+              ],
+              "flags": [
+                "内功",
+                "已标记"
+              ],
+              "raw_cells": [
+                "26、1",
+                "24、28",
+                "14、4",
+                "22、3"
+              ],
+              "source_row": 6,
+              "search_text": "蔷薇剑仙 花照影 26、1 24、28 14、4 22、3 内功 已标记"
+            },
+            {
+              "boss": "怯薛都统",
+              "npc": "慕容飞",
+              "points": [
+                {
+                  "order": 1,
+                  "value": {
+                    "x": 29,
+                    "y": 5
+                  }
+                },
+                {
+                  "order": 2,
+                  "value": {
+                    "x": 27,
+                    "y": 11
+                  }
+                },
+                {
+                  "order": 3,
+                  "value": {
+                    "x": 34,
+                    "y": 23
+                  }
+                },
+                {
+                  "order": 4,
+                  "value": {
+                    "x": 26,
+                    "y": 4
+                  }
+                },
+                {
+                  "order": 5,
+                  "value": {
+                    "x": 33,
+                    "y": 7
+                  }
+                },
+                {
+                  "order": 6,
+                  "value": {
+                    "x": 17,
+                    "y": 6
+                  }
+                }
+              ],
+              "flags": [],
+              "raw_cells": [
+                "29、5",
+                "27、11",
+                "34、23",
+                "26、4",
+                "33、7",
+                "17、6"
+              ],
+              "source_row": 7,
+              "search_text": "怯薛都统 慕容飞 29、5 27、11 34、23 26、4 33、7 17、6"
+            }
+          ]
+        }
+      ],
+      "search_text": "龙谷外围点位 灭谷 Boss 坐标 狂龙掌 石猛 35、7 5、28 34、19 20、1 内功 破浪刀 胡大海 9、25 19、2 32、9 27、24 15、28 18、28 追风神捕 柳追风 0、0 23、3 18、28 已标记 蛊月娘 阿萝依 6、1 18、26 16、0 7、28 18、20 29、5 已标记 鬼影 仇无赦 9、25 25、21 29、0 19、1 35、11 内功 已标记 蔷薇剑仙 花照影 26、1 24、28 14、4 22、3 内功 已标记 怯薛都统 慕容飞 29、5 27、11 34、23 26、4 33、7 17、6"
+    },
+    {
+      "id": "miegu-lineup-summary",
+      "title": "灭谷阵容汇总",
+      "type": "image_sections",
+      "summary": "33 套灭谷阵容、随从、武学内功和装备出场数据。",
+      "source": {
+        "file": "灭谷阵容汇总/灭谷阵容汇总_武内等4个文件.zip",
+        "sha256": "1a62c3bab4cff32eadb006031fc2ecf76abe67ed0adad99d479c3b74d7f41a70"
+      },
+      "sections": [
+        {
+          "id": "miegu_martial_inner",
+          "title": "武学与内功出场率",
+          "type": "image",
+          "asset": "strategy-assets/miegu_martial_inner.png",
+          "source_name": "灭谷阵容汇总_武内.png",
+          "sha256": "acf0f850680387d52a68dd3df432fc18a3e3cf15caf5c5eafb146361ebc02f89",
+          "bytes": 206574,
+          "detail": "保留原始高清图，包含出场次数、出场率和对应排行。",
+          "search_text": "灭谷阵容汇总 武学与内功出场率"
+        },
+        {
+          "id": "miegu_lineups",
+          "title": "33套灭谷阵容",
+          "type": "image",
+          "asset": "strategy-assets/miegu_lineups.png",
+          "source_name": "灭谷阵容汇总_阵容.png",
+          "sha256": "3dd280e3833e446a523d0b4c4d3fed0d9384be9c98c917d8356f392f93a2b5db",
+          "bytes": 3515233,
+          "detail": "保留原始高清图，包含出场次数、出场率和对应排行。",
+          "search_text": "灭谷阵容汇总 33套灭谷阵容"
+        },
+        {
+          "id": "miegu_equipment",
+          "title": "灭谷装备出场率",
+          "type": "image",
+          "asset": "strategy-assets/miegu_equipment.png",
+          "source_name": "灭谷阵容汇总_装备.png",
+          "sha256": "e43035701a5f8f7c008f8f75fa136325c90a59a91a45d7330c078ceb3dc5e161",
+          "bytes": 175780,
+          "detail": "保留原始高清图，包含出场次数、出场率和对应排行。",
+          "search_text": "灭谷阵容汇总 灭谷装备出场率"
+        },
+        {
+          "id": "miegu_followers",
+          "title": "灭谷随从简析",
+          "type": "image",
+          "asset": "strategy-assets/miegu_followers.png",
+          "source_name": "灭谷阵容汇总_随从.png",
+          "sha256": "c89a4d188f507a3491d0b923004a7244bc95fa1f737831a7187c4ccd42812cb3",
+          "bytes": 460028,
+          "detail": "保留原始高清图，包含出场次数、出场率和对应排行。",
+          "search_text": "灭谷阵容汇总 灭谷随从简析"
+        }
+      ],
+      "search_text": "灭谷阵容汇总 33套阵容 随从 武学 内功 装备 出场率"
+    },
+    {
+      "id": "white-rabbit-martial-rating",
+      "title": "白兔武功评级",
+      "type": "image_sections",
+      "summary": "白兔武功评级 2.83 孤本个人向强度梯度。",
+      "source": {
+        "file": "白兔武功评级/白兔武功评级2.83—染羽.png",
+        "sha256": "44682cf821c9ecb07a10b70a8cca0ccd12e0a95d8e1b145fa98de7650b200b6a"
+      },
+      "sections": [
+        {
+          "id": "whiterabbit_martial_rating",
+          "title": "白兔武功评级 2.83",
+          "type": "image",
+          "asset": "strategy-assets/whiterabbit_martial_rating.png",
+          "source_name": "白兔武功评级2.83—染羽.png",
+          "sha256": "44682cf821c9ecb07a10b70a8cca0ccd12e0a95d8e1b145fa98de7650b200b6a",
+          "bytes": 670252,
+          "detail": "白兔武功评级 2.83 孤本武学强度梯度，包含 T0 至 T5 和个人向说明。",
+          "search_text": "白兔武功评级 2.83 孤本武学强度梯度 刀剑拳棍 T0 T1 T2 T3 T4 T5"
+        }
+      ],
+      "search_text": "白兔武功评级 2.83 孤本武学强度梯度 刀剑拳棍 T0 T1 T2 T3 T4 T5"
+    }
+  ]
+}
