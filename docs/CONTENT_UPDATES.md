@@ -157,10 +157,11 @@ revision; clients intentionally reject older content.
 
 ## Client behavior
 
-- Load the valid cached copy, or the bundled copy on a first launch. Automatic checks
-  on startup/foreground run at most once every 24 hours. The last attempt persists
-  across launches, including failures; manual checks remain available immediately.
-- Native APK checks also run at most once every 24 hours using persistent preferences.
+- Load the valid cached copy, or the bundled copy on a first launch. Check for data
+  updates on every launch after initialization; foregrounding after an hour also
+  checks. Manual checks are always available. There is no 24-hour client limit
+  and no background periodic timer. Only the server Tencent jobs run daily.
+- Native APK update checks also run on each launch, without a daily limit.
 - Home has a manual check button with checking, current, updated, and failure
   states. Simultaneous checks share one request sequence.
 - Sources: Aliyun HTTPS, GitHub Pages, jsDelivr `main`, raw GitHub `main`.

@@ -113,12 +113,6 @@ public final class MainActivity extends Activity {
     }
 
     private void checkForUpdate() {
-        android.content.SharedPreferences preferences = getSharedPreferences("update-check", MODE_PRIVATE);
-        long now = System.currentTimeMillis();
-        long previous = preferences.getLong("last-attempt", 0);
-        long elapsed = now - previous;
-        if (previous > 0 && elapsed >= 0 && elapsed < 24L * 60 * 60 * 1000) return;
-        preferences.edit().putLong("last-attempt", now).apply();
         new Thread(() -> {
             try {
                 JSONObject release = fetchLatestUpdate();

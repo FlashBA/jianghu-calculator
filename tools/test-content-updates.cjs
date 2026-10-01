@@ -193,21 +193,20 @@ async function open(savedFavorites, lastCheck) {
     const second = w.JianghuContent.checkForUpdates();
     assert.equal(first, second);
     await first;
-    const lastCheck = Number(w.localStorage.getItem('jianghu-content:last-check:v1'));
     dom.window.close();
     requests.length = 0;
-    dom = await open(favorites, lastCheck);
+    dom = await open(favorites, Date.now());
     w = dom.window;
-    assert.equal(requests.length, 0, 'Reopening within 24 hours must not auto-check');
+    assert.equal(requests.length, 1, 'Every launch checks even with a stale daily-limit preference');
     Object.defineProperty(w.document, 'visibilityState', { value: 'visible', configurable: true });
     w.document.dispatchEvent(new w.Event('visibilitychange'));
-    assert.equal(requests.length, 0, 'Foreground within 24 hours must not auto-check');
-    assert.equal(await w.JianghuContent.checkForUpdates(), 'current', 'Manual check bypasses daily interval');
-    assert.equal(requests.length, 1);
+    assert.equal(requests.length, 1, 'Immediate foreground does not duplicate startup check');
+    assert.equal(await w.JianghuContent.checkForUpdates(), 'current', 'Manual check always available');
+    assert.equal(requests.length, 2);
     dom.window.close();
     requests.length = 0;
     dom = await open(favorites, Date.now() - 86400001);
-    assert.equal(requests.length, 1, 'Auto-check resumes after 24 hours');
+    assert.equal(requests.length, 1, 'Every launch checks with old cache too');
     assert.deepEqual(errors, []);
     console.log('PASS: split updates, unchanged/changed-only downloads, partial failure rollback, fallback reuse, startup/manual updates, priority/fallback/timeout, new guides, live calculator data, 31 lineups, offline reload, favorites, hash/schema rejection, storage failure, rollback prevention, duplicate clicks');
   } finally { dom.window.close(); }
