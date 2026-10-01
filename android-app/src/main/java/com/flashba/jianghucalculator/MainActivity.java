@@ -183,7 +183,7 @@ public final class MainActivity extends Activity {
         if (isFinishing() || (Build.VERSION.SDK_INT >= 17 && isDestroyed())) return;
         View content = getLayoutInflater().inflate(R.layout.update_dialog, null);
         ((TextView) content.findViewById(R.id.update_version)).setText("v" + version);
-        ((TextView) content.findViewById(R.id.update_intro)).setText("GitHub 已发布新的 APK，下载完成后会交给系统安装器确认。");
+        ((TextView) content.findViewById(R.id.update_intro)).setText("新版本已发布，下载后安装。");
         ((TextView) content.findViewById(R.id.update_notes)).setText(
             releaseNotes.isEmpty() ? "本次版本暂无文字更新说明。" : limitReleaseNotes(releaseNotes));
         final AlertDialog dialog = new AlertDialog.Builder(this).setView(content).create();
