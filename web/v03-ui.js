@@ -280,6 +280,7 @@
       { id: 'longgu-outer-points', title: '龙谷外围点位', icon: 'map', tone: 'gold', source: '专题攻略', summary: '灭谷相关 Boss 的外围坐标与标记信息。', meta: strategyCount('longgu-outer-points') },
       { id: 'miegu-lineup-summary', title: '灭谷阵容汇总', author: '@染羽', icon: 'formation', tone: 'red', source: '专题攻略', summary: '武学、内功、装备与随从出场数据。', meta: strategyCount('miegu-lineup-summary') },
       { id: 'white-rabbit-martial-rating', title: '白兔 2.83 武功评级', author: '@染羽', icon: 'sword', tone: 'gold', source: '专题攻略', summary: '白兔 2.83 孤本武学强度梯度与个人向文字评级。', meta: strategyCount('white-rabbit-martial-rating') },
+      { id: 'wudao-insight-exchange', title: '武道感悟兑换攻略', author: '染羽', icon: 'info', tone: 'red', source: '文字整理', summary: '武道感悟的获取方式、使用提醒与内功兑换路径。', meta: strategyCount('wudao-insight-exchange') },
       { id: 'update-logs', title: '更新日志', icon: 'info', tone: 'gray', source: '白兔更新日志', summary: '按版本倒序查看游戏更新内容。', meta: `${guideState.updateLogs?.logs?.length || 0} 个版本` },
       { id: 'version-notes', title: '版本规则', icon: 'info', tone: 'gray', source: '白兔版数据', summary: '速度条、状态阈值、技艺和任督等基础规则。', meta: `${data.guide_notes?.length || 0} 条版本提示` },
     ];
@@ -319,7 +320,8 @@
   function renderPitfalls() {
     return `<div class="v03-guide-note-list">${(directoryData.pitfalls || []).map((item) => {
       const title = item.title.replace(/^第一项：|^第二项：|^第三项：|^第四项：|^第五项：|^第六项：|^第七项：|^第八项：|^第九项：|^第十项：|^第十一项：/, '');
-      return `<article class="v03-guide-note-card"><span class="v03-guide-note-index">${escapeHtml(item.title.split('：')[0])}</span><div><h3>${escapeHtml(title)}</h3><p>${escapeHtml(item.text)}</p></div></article>`;
+      const warning = item.warning ? `<strong class="v03-guide-warning">${escapeHtml(item.warning)}</strong>` : '';
+      return `<article class="v03-guide-note-card${item.warning ? ' is-warning' : ''}"><span class="v03-guide-note-index">${escapeHtml(item.title.split('：')[0])}</span><div><h3>${escapeHtml(title)}</h3>${warning}<p>${escapeHtml(item.text)}</p></div></article>`;
     }).join('')}</div>`;
   }
 
@@ -1132,6 +1134,7 @@
         const textSection = guideState.strategyText?.sections?.[section.id];
         return renderStrategyTextSection(section, textSection);
       }
+      if (section.type === 'text') return renderStrategyTextSection(section, section);
       if (guide.id === 'longgu-outer-points' && section.id === 'boss-points') return `<section class="v03-strategy-section"><h3>${escapeHtml(section.title)}</h3><div class="v03-longgu-points-grid">${(section.items || []).map((item) => `<article class="v03-longgu-point-card"><header><div><strong>${escapeHtml(item.boss || '未命名 Boss')}</strong><span>${escapeHtml(item.npc || '人物待补')}</span></div><b>${item.points?.length || 0} 个点位</b></header><div class="v03-longgu-point-list">${(item.points || []).map((point, index) => `<span class="v03-longgu-point-chip"><i>${index + 1}</i>${escapeHtml(`${point.value?.x ?? '-'}、${point.value?.y ?? '-'}`)}</span>`).join('')}</div>${item.flags?.length ? `<div class="v03-longgu-point-flags">${item.flags.map((flag) => `<span>${escapeHtml(flag)}</span>`).join('')}</div>` : ''}</article>`).join('')}</div></section>`;
       if (section.type === 'table') return `<section class="v03-strategy-section"><h3>${escapeHtml(section.title)}</h3><div class="v03-guide-table-wrap"><table class="v03-guide-table"><thead><tr>${section.columns.map((column) => `<th>${escapeHtml(column)}</th>`).join('')}</tr></thead><tbody>${(section.items || []).map((item) => `<tr>${strategyCell(item)}</tr>`).join('')}</tbody></table></div></section>`;
       return '';
