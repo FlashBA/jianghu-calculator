@@ -476,6 +476,10 @@
           <h2>攻略目录</h2>
           <p>按资料来源拆分，每项进入独立详情页。</p>
         </div>
+        <div id="guide-load-feedback" hidden>
+          <p id="guide-load-message" role="status" aria-live="polite"></p>
+          <button id="guide-load-retry" type="button" class="text-button" hidden>重试加载</button>
+        </div>
         <div id="guide-directory" class="v03-guide-directory"></div>
         <section id="guide-detail" class="v03-guide-detail" hidden aria-live="polite">
           <div class="v03-guide-detail-heading">
@@ -739,6 +743,6 @@
     <script src="new-ui-reference/wiki-data.js?v=20260930-04"></script>
     <script src="guide-directory-data.js?v=20261001-01"></script>
     <script src="app.js?v=20261002-web040"></script>
-    <script src="v03-ui.js?v=20261001-02"></script>
+    <script src="v03-ui.js?v=20261002-guide-fallback"></script>
   </body>
 </html>

@@ -252,11 +252,29 @@
     return strategyText;
   }
 
-  function fetchJson(path) {
-    return fetch(`${dataBase}${path}`, { cache: 'no-store' }).then((response) => {
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      return response.json();
-    });
+  async function fetchJson(path, valid) {
+    const local = `${dataBase}${path}`;
+    const mirror = `https://47.95.250.113/jianghu/${path}`;
+    const sources = location.hostname === 'appassets.androidplatform.net'
+      ? [local, mirror] : [mirror, local];
+    sources.push(`https://cdn.jsdelivr.net/gh/FlashBA/jianghu-calculator@main/web/${path}`,
+      `https://raw.githubusercontent.com/FlashBA/jianghu-calculator/main/web/${path}`);
+    for (const source of sources) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 8000);
+      try {
+        const response = await fetch(source, { cache: 'no-store', signal: controller.signal });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const result = await response.json();
+        if (!valid(result)) throw new Error('Invalid guide data');
+        return result;
+      } catch (error) {
+        console.warn('攻略数据源暂不可用', path, error.message);
+      } finally {
+        clearTimeout(timer);
+      }
+    }
+    throw new Error(`${path} 加载失败`);
   }
 
   function strategyById(id) {
@@ -1386,13 +1404,8 @@
     if (count) count.textContent = `${data.characters?.length || 0} 位角色 · ${data.martial_arts?.length || 0} 门武学`;
   }
 
-  function loadGuideSources() {
-    Promise.all([fetchJson('guide_search_index.json'), fetchJson('strategy_guides.json'), fetchJson('tencent_recipe_data.json'), fetchJson('strategy_ocr_data.json'), fetchJson('update_logs.json')]).then(([searchIndex, strategyGuides, recipeData, strategyText, updateLogs]) => {
-      guideState.searchIndex = { ...searchIndex, records: (searchIndex.records || []).filter((item) => item.source === 'original_guide') };
-      guideState.strategyGuides = strategyGuides;
-      guideState.recipeData = recipeData;
-      guideState.strategyText = correctStrategyText(strategyText);
-      guideState.updateLogs = updateLogs;
+  let guideLoadPending = false;
+  function refreshLoadedGuides() {
       renderGuideDirectory();
       renderFavorites();
       if (guideState.current) {
@@ -1406,13 +1419,43 @@
           renderOriginalResults();
         }
       }
-    }).catch((error) => console.warn('攻略索引加载失败', error));
+  }
+
+  async function loadGuideSources() {
+    if (guideLoadPending) return;
+    guideLoadPending = true;
+    const feedback = document.getElementById('guide-load-feedback');
+    const message = document.getElementById('guide-load-message');
+    const retry = document.getElementById('guide-load-retry');
+    if (feedback) feedback.hidden = false;
+    if (message) message.textContent = '正在加载攻略资料…';
+    if (retry) retry.hidden = true;
+    const sources = [
+      ['guide_search_index.json', 'searchIndex', (value) => Array.isArray(value?.records)],
+      ['strategy_guides.json', 'strategyGuides', (value) => Array.isArray(value?.guides)],
+      ['tencent_recipe_data.json', 'recipeData', (value) => Array.isArray(value?.recipes)],
+      ['strategy_ocr_data.json', 'strategyText', (value) => value?.sections && typeof value.sections === 'object'],
+      ['update_logs.json', 'updateLogs', (value) => Array.isArray(value?.logs)],
+    ];
+    const results = await Promise.allSettled(sources.map(async ([path, key, valid]) => {
+      const value = await fetchJson(path, valid);
+      guideState[key] = key === 'searchIndex'
+        ? { ...value, records: value.records.filter((item) => item.source === 'original_guide') }
+        : key === 'strategyText' ? correctStrategyText(value) : value;
+      refreshLoadedGuides();
+    }));
+    guideLoadPending = false;
+    const failed = results.some((result) => result.status === 'rejected');
+    if (feedback) feedback.hidden = !failed;
+    if (message && failed) message.textContent = '部分攻略资料加载失败，已加载的内容仍可查看。';
+    if (retry) retry.hidden = !failed;
   }
 
   renderGuideDirectory();
   renderFavorites();
   renderAchievements();
   bind();
+  document.getElementById('guide-load-retry')?.addEventListener('click', loadGuideSources);
   loadGuideSources();
   const initialRoute = routeFromHash();
   show(initialRoute.target, { guideId: initialRoute.guideId, encyclopediaType: initialRoute.encyclopediaType });
