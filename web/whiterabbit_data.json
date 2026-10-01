@@ -184,7 +184,7 @@
       "power_factor": 1.35,
       "style": "棍法",
       "access": "襄阳茶摊 → 吕文德旁 → 回答问题 → 青龙门上面 → 回去找她",
-      "talent": "每次出手给受击目标叠加一层破绽标记，每层标记使穆红缨对该目标的伤害提高12%，无上限，1-3层显示破1,4-6层显示破2,7以上显示破3"
+      "talent": "每次出手给受击目标叠加一层破绽标记，每层标记使穆云缨对该目标的伤害提高12%，无上限，1-3层显示破1,4-6层显示破2,7以上显示破3"
     },
     {
       "name": "顾言",
@@ -1271,8 +1271,8 @@
       "attack_percent": 48,
       "heal_percent": null,
       "mitigation_percent": 24,
-      "lifesteal_percent": null,
       "crit_percent": 20,
+      "lifesteal_percent": null,
       "crit_damage_percent": null,
       "reflect_percent": null,
       "speed": null,
@@ -1367,7 +1367,7 @@
       "reflect_percent": null,
       "speed": 28,
       "dodge_percent": 28,
-      "special": "免疫减速，增加曜日破云掌和倚天剑诀10%暴击",
+      "special": "24%免伤，免疫减速，增加曜日吞云掌和倚天剑诀10%暴击",
       "access": "带清月去金陵茕茕处领取，限1，武道感悟"
     },
     {
@@ -1493,7 +1493,7 @@
       "reflect_percent": null,
       "speed": null,
       "dodge_percent": null,
-      "special": "增强降龙十八掌，神龙摆尾：受击15%概率反击（打1不叠速度条）；亢龙有悔：每次出手后下次受击受到伤害减少10%（每回合限1）；飞龙在天：攻击目标血量高于50%时额我增伤12%",
+      "special": "增强降龙十八掌，神龙摆尾：受击20%概率反击（打1不叠速度条），增加暴击率，30%概率降低12%攻击、12%速度两回合；亢龙有悔：每次出手后下次受击受到伤害减少15%（每回合限1）；飞龙在天：攻击目标血量高于50%时额外增伤15%",
       "access": "囚龙谷外围狂龙掌 石猛概率掉落信物后找洛阳小乞丐开启支线获取，限1"
     },
     {
@@ -1587,7 +1587,7 @@
       "access": "丐帮苏州净衣派长老吕文舟处花费贡献学习"
     },
     {
-      "name": "喵王护御决",
+      "name": "喵王护御诀",
       "rank": "?",
       "scope": "修炼者",
       "ren_du": "",
@@ -1604,7 +1604,7 @@
       "damage_transfer_percent": 20,
       "conditional_mitigation_percent": 5,
       "conditional_mitigation_condition": "自己血量最低",
-      "special": "转移队友20%伤害到自己身上",
+      "special": "分担绝对血量最低的伙伴受到伤害的20%，自身血量最低则增加5%额外免伤",
       "access": "原版航海图：灵石岛任务奖励",
       "designer": "@喵喵大王"
     }
@@ -2493,14 +2493,14 @@
       "range": "邻2",
       "segments": 3,
       "multi_hit_probabilities": {
-        "2": 65,
+        "2": 75,
         "3": 50
       },
       "double_break": "双破",
       "crit_percent": 5,
-      "crit_damage": "2.4/2.5/2.6",
+      "crit_damage": "2.5/2.8/3",
       "buff": "15%概率一段7%流血\n二段降低速度15%，攻击15%\n三段降低速度15%，攻击15%，8%流血两回合",
-      "special": "出手后65%概率二连，50%概率三连",
+      "special": "出手后75%概率二连，50%概率三连",
       "access": "人生目标盖世武功选择绝世剑法，限1"
     },
     {

@@ -70,5 +70,5 @@ jobs:
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          body: 更新副本掉落与灭谷阵容。
+          body: 更新副本掉落、灭谷阵容。
           files: android-app/artifacts/jianghu-calculator-${{ env.VERSION_NAME }}.apk

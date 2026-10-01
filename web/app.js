@@ -55,6 +55,7 @@ const DEFAULT_CHARACTER_BASE_STATS = {
 const MAX_COMPARISON_SNAPSHOTS = 300;
 const MAX_CARD_NAME_LENGTH = 20;
 const MAX_TEAM_NAME_LENGTH = 20;
+const MAX_TEAMS = 100;
 const MAX_TEAM_SLOTS = 9;
 const INNER_MANUAL_FIELD_IDS = ['neigong-hp', 'neigong-attack', ...SECONDARY_KEYS.map((key) => (
   `neigong-${key.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}`
@@ -204,6 +205,9 @@ function readEncyclopediaFavorites() {
 
 function saveEncyclopediaFavorites() {
   localStorage.setItem(ENCYCLOPEDIA_FAVORITES_KEY, JSON.stringify([...encyclopediaFavorites]));
+  window.dispatchEvent(new CustomEvent('jianghu-encyclopedia-favorites-changed', {
+    detail: { favorites: [...encyclopediaFavorites] },
+  }));
 }
 
 function toggleEncyclopediaFavorite(id) {
@@ -2067,7 +2071,7 @@ function teamSlotRoleAllowed(roleName, slotIndex) {
 
 function normalizeTeams(value) {
   if (!Array.isArray(value)) return [];
-  return value.map((team, index) => ({
+  return value.slice(0, MAX_TEAMS).map((team, index) => ({
     id: String(team?.id || localId(`team${index}`)),
     name: normalizedName(team?.name || `配队${String(index + 1).padStart(3, '0')}`)
       || `配队${String(index + 1).padStart(3, '0')}`,
@@ -3089,6 +3093,10 @@ async function renameTeam(teamId) {
 }
 
 async function createTeam() {
+  if (teams.length >= MAX_TEAMS) {
+    setSaveStatus(`配队已达到 ${MAX_TEAMS} 个上限`);
+    return -1;
+  }
   const name = await openNameDialog({ title: '新建配队', label: '配队名称', defaultValue: defaultTeamName(), kind: 'team' });
   if (!name) return;
   teams.push({ id: localId('team'), name, slots: Array(MAX_TEAM_SLOTS).fill(null), createdAt: Date.now(), updatedAt: Date.now() });
@@ -3136,7 +3144,13 @@ function renderTeams() {
   if (!content) return;
   const query = ($('team-search')?.value || '').trim().toLocaleLowerCase();
   const visible = teams.filter((team) => !query || team.name.toLocaleLowerCase().includes(query));
-  $('team-count').textContent = `${teams.length} 个配队`;
+  $('team-count').textContent = `${teams.length} / ${MAX_TEAMS} 个配队`;
+  const createButton = $('create-team-button');
+  if (createButton) {
+    const atLimit = teams.length >= MAX_TEAMS;
+    createButton.disabled = atLimit;
+    createButton.title = atLimit ? `配队已达到 ${MAX_TEAMS} 个上限` : '新建配队';
+  }
   if (!visible.length) {
     content.innerHTML = `<div class="empty-collection"><strong>${teams.length ? '没有匹配的配队' : '配队还是空的'}</strong><span>${teams.length ? '更换搜索内容试试' : '点击右上角“新建配队”，再用加号填入数据卡片'}</span></div>`;
     return;
@@ -3189,8 +3203,6 @@ const ENCYCLOPEDIA_WEAPON_SLOTS = {
   3: 'weapon-blade',
   4: 'weapon-staff',
 };
-const ENCYCLOPEDIA_DUNGEON_PATTERN = /副本|虎啸林|八阵图|囚龙谷|无间地狱|冥离地宫|凤鸣山|五龙塔|玄武岛/;
-const ENCYCLOPEDIA_DROP_ACTION_PATTERN = /掉落|宝箱|击杀|概率|残页|获得/;
 const ENCYCLOPEDIA_DUNGEONS = [
   { id: 'huxiaolin', name: '虎啸林', aliases: ['虎啸林'] },
   { id: 'xuanwudao', name: '玄武岛', aliases: ['玄武岛'] },
@@ -3202,12 +3214,6 @@ const ENCYCLOPEDIA_DUNGEONS = [
   { id: 'baxiantu', name: '八阵图', aliases: ['八阵图'] },
   { id: 'shaolancangjingge', name: '少林藏经阁', aliases: ['少林寺藏经阁', '少林藏经阁'] },
 ];
-const ENCYCLOPEDIA_TYPE_LABELS = {
-  techniques: '技艺',
-  inner_skills: '内功',
-  martial_arts: '武学',
-  equipment: '装备',
-};
 function encyclopediaText(...values) {
   return values.flatMap((value) => Array.isArray(value) ? value : [value])
     .map((value) => String(value || '').replace(/\s+/g, ' ').trim())
@@ -3258,21 +3264,6 @@ function martialRuleSummary(item) {
   });
   return parts.join('；');
 }
-function dungeonAliasInText(text, dungeon) {
-  return dungeon.aliases.slice().sort((left, right) => right.length - left.length)
-    .find((alias) => String(text || '').includes(alias)) || '';
-}
-function dungeonBossFromSegment(segment, dungeon, alias) {
-  let remainder = String(segment || '').trim();
-  const aliasIndex = remainder.indexOf(alias);
-  if (aliasIndex >= 0) remainder = remainder.slice(aliasIndex + alias.length).trim();
-  remainder = remainder.replace(/^(外围|内围|一层|二层|入口|上方|下方)/, '').trim();
-  const stopIndex = remainder.search(/概率?掉落|掉落|获得|获取|祭拜|盗取|阅读|合订|开启|后/);
-  if (stopIndex >= 0) remainder = remainder.slice(0, stopIndex).trim();
-  remainder = remainder.replace(/^(击杀|击败|找|寻找|在|于|处|左侧|右侧)+/, '').trim();
-  remainder = remainder.replace(/处$/, '').trim();
-  return remainder || 'Boss 信息待补';
-}
 function encyclopediaDungeonGroups() {
   const groups = ENCYCLOPEDIA_DUNGEONS.map((dungeon) => ({
     ...dungeon,
@@ -3284,7 +3275,15 @@ function encyclopediaDungeonGroups() {
   const addDrop = (group, bossName, drop) => {
     if (!group) return;
     const normalizedBoss = String(bossName || '副本掉落').trim() || '副本掉落';
-    const seenKey = `${group.id}|${drop.name}`;
+    const seenKey = [
+      group.id,
+      normalizedBoss,
+      drop.name,
+      drop.typeLabel,
+      drop.meta,
+      drop.source,
+      drop.detail,
+    ].map((value) => String(value || '').trim()).join('|');
     if (seen.has(seenKey)) return;
     seen.add(seenKey);
     if (!group.bossMap.has(normalizedBoss)) {
@@ -3440,6 +3439,47 @@ function encyclopediaRecords(type) {
   return [];
 }
 
+function encyclopediaFavoriteEntries() {
+  return [...encyclopediaFavorites].map((value) => {
+    const key = String(value);
+    const separator = key.indexOf(':');
+    const type = separator > 0 ? key.slice(0, separator) : 'characters';
+    const id = separator > 0 ? key.slice(separator + 1) : key;
+    const record = encyclopediaRecords(type).find((item) => String(item.id) === id);
+    return record ? { key, type, id, record } : null;
+  }).filter(Boolean);
+}
+
+window.jianghuEncyclopedia = {
+  getFavoriteEntries: () => encyclopediaFavoriteEntries(),
+  toggleFavorite: (id) => toggleEncyclopediaFavorite(String(id || '')),
+  focusRecord(type, id) {
+    const normalizedType = String(type || '');
+    const normalizedId = String(id || '');
+    const selector = $('encyclopedia-type');
+    if (selector && selector.value !== normalizedType) selector.value = normalizedType;
+    const search = $('encyclopedia-search');
+    if (search) search.value = '';
+    ['encyclopedia-martial-filter', 'encyclopedia-martial-rank-filter', 'encyclopedia-inner-rank-filter', 'encyclopedia-equipment-filter']
+      .forEach((id) => { const field = $(id); if (field) field.value = ''; });
+    characterStyleFilter = '';
+    renderEncyclopedia();
+    const record = encyclopediaRecords(normalizedType).find((item) => String(item.id) === normalizedId);
+    if (!record) return;
+    if (normalizedType === 'martial_arts') {
+      openMartialDetail(record);
+      $('encyclopedia-detail-view')?.scrollIntoView({ block: 'start', behavior: 'auto' });
+      return;
+    }
+    const target = [...document.querySelectorAll('[data-encyclopedia-record-id]')]
+      .find((element) => element.dataset.encyclopediaRecordId === normalizedId);
+    if (!target) return;
+    if (target instanceof HTMLDetailsElement) target.open = true;
+    target.classList.add('is-target');
+    target.scrollIntoView({ block: 'center', behavior: 'auto' });
+  },
+};
+
 function characterStyleOptions() {
   return ['', '刀法', '剑法', '棍法', '拳法'];
 }
@@ -3515,7 +3555,7 @@ function renderCharacterCard(record) {
   const favoriteId = encyclopediaFavoriteId('characters', record);
   const isFavorite = isEncyclopediaFavorite('characters', record);
   return `
-    <details class="encyclopedia-character-card">
+    <details class="encyclopedia-character-card" data-encyclopedia-record-id="${escapeHtml(record.id)}">
       <summary class="character-card-summary">
         <div class="character-card-title">
           <h3>${escapeHtml(record.name || '未命名')}</h3>
@@ -3571,7 +3611,7 @@ function renderEncyclopediaCard(type, record) {
   const isFavorite = isEncyclopediaFavorite(type, record);
   if (type === 'martial_arts') {
     return `
-      <article class="encyclopedia-card encyclopedia-martial-card">
+      <article class="encyclopedia-card encyclopedia-martial-card" data-encyclopedia-record-id="${escapeHtml(record.id)}">
         <div class="encyclopedia-card-summary">
           <span class="encyclopedia-card-heading">
             <span class="encyclopedia-card-title-line">
@@ -3589,7 +3629,7 @@ function renderEncyclopediaCard(type, record) {
     `;
   }
   return `
-    <details class="encyclopedia-card">
+    <details class="encyclopedia-card" data-encyclopedia-record-id="${escapeHtml(record.id)}">
       <summary class="encyclopedia-card-summary">
         <span class="encyclopedia-card-heading">
           <span class="encyclopedia-card-title-line">
@@ -3778,12 +3818,12 @@ function renderEncyclopedia() {
     return;
   }
   if (type === 'dungeon_drops') {
-    const visibleKeys = new Set(visible.map((record) => `${record.dungeonId}|${record.bossName}|${record.name}|${record.source}`));
+    const visibleKeys = new Set(visible.map((record) => String(record.id)));
     const visibleGroups = dungeonGroups.map((group) => ({
       ...group,
       bosses: group.bosses.map((boss) => ({
         ...boss,
-        drops: boss.drops.filter((drop) => visibleKeys.has(`${group.id}|${boss.name}|${drop.name}|${drop.source}`)),
+        drops: boss.drops.filter((drop) => visibleKeys.has(String(drop.id))),
       })).filter((boss) => boss.drops.length),
     })).filter((group) => group.bosses.length);
     content.innerHTML = visibleGroups.map((group) => `

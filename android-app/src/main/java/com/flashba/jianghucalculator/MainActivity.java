@@ -9,6 +9,7 @@ import android.os.Environment;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.view.Window;
 import android.view.WindowManager;
 import android.view.View;
@@ -45,11 +46,17 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 public final class MainActivity extends Activity {
+    private static final String PACKAGE_NAME = "com.flashba.jianghucalculator";
     private static final String ASSET_HOST = "appassets.androidplatform.net";
     private static final String MIRROR_LATEST_URL =
         "http://47.95.250.113/jianghu/latest.json";
     private static final String RELEASES_API_URL =
         "https://api.github.com/repos/FlashBA/jianghu-calculator/releases/latest";
+    private static final int UPDATE_ATTEMPTS = 3;
+    private static final int UPDATE_CHECK_CONNECT_TIMEOUT_MS = 12000;
+    private static final int UPDATE_CHECK_READ_TIMEOUT_MS = 15000;
+    private static final int APK_CONNECT_TIMEOUT_MS = 15000;
+    private static final int APK_READ_TIMEOUT_MS = 60000;
     private static final byte[] VAULT_MAGIC = new byte[]{
         'J', 'H', 'C', 'V', 'A', 'U', 'L', 'T'
     };
@@ -112,16 +119,21 @@ public final class MainActivity extends Activity {
                 String apkUrl = release.optString("apk", "").trim();
                 if (apkUrl.isEmpty()) apkUrl = findApkUrl(release.optJSONArray("assets"));
                 if (latestVersion.isEmpty() || apkUrl.isEmpty()) return;
+                long latestVersionCode = resolveVersionCode(release, latestVersion);
                 String releaseNotes = release.optString("release_notes", "").trim();
                 if (releaseNotes.isEmpty()) releaseNotes = release.optString("notes", "").trim();
                 if (releaseNotes.isEmpty()) releaseNotes = release.optString("body", "").trim();
                 PackageInfo current = getPackageManager().getPackageInfo(getPackageName(), 0);
                 String currentVersion = normalizeVersion(current.versionName);
-                if (compareVersions(latestVersion, currentVersion) <= 0) return;
+                long currentVersionCode = packageVersionCode(current);
+                if (!isNewerVersion(latestVersion, latestVersionCode, currentVersion, currentVersionCode)) {
+                    return;
+                }
                 String finalApkUrl = apkUrl;
                 String finalReleaseNotes = releaseNotes;
+                long finalVersionCode = latestVersionCode;
                 runOnUiThread(() -> showUpdateDialog(
-                    latestVersion, finalApkUrl, finalReleaseNotes));
+                    latestVersion, finalVersionCode, finalApkUrl, finalReleaseNotes));
             } catch (Exception ignored) {
                 // Update checks are optional; the offline calculator must still open.
             }
@@ -131,6 +143,7 @@ public final class MainActivity extends Activity {
     private static JSONObject fetchLatestUpdate() throws IOException, JSONException {
         try {
             JSONObject mirror = fetchJson(MIRROR_LATEST_URL);
+            if (mirror == null) return fetchLatestRelease();
             String version = normalizeVersion(mirror.optString("version"));
             String apkUrl = mirror.optString("apk", "").trim();
             if (!version.isEmpty() && !apkUrl.isEmpty()) return mirror;
@@ -144,7 +157,10 @@ public final class MainActivity extends Activity {
         HttpURLConnection connection = (HttpURLConnection) new URL(endpoint).openConnection();
         connection.setConnectTimeout(4500);
         connection.setReadTimeout(4500);
+        connection.setUseCaches(false);
         connection.setRequestProperty("User-Agent", "jianghu-calculator");
+        connection.setRequestProperty("Cache-Control", "no-cache");
+        connection.setRequestProperty("Pragma", "no-cache");
         try {
             if (connection.getResponseCode() != HttpURLConnection.HTTP_OK) return null;
             return new JSONObject(new String(readAll(connection.getInputStream()), "UTF-8"));
@@ -154,9 +170,23 @@ public final class MainActivity extends Activity {
     }
 
     private static JSONObject fetchLatestRelease() throws IOException, JSONException {
+        IOException lastError = null;
+        for (int attempt = 1; attempt <= UPDATE_ATTEMPTS; attempt++) {
+            try {
+                return fetchLatestReleaseOnce();
+            } catch (IOException error) {
+                lastError = error;
+                if (attempt < UPDATE_ATTEMPTS) waitBeforeRetry(attempt);
+            }
+        }
+        throw lastError == null ? new IOException("无法检查更新") : lastError;
+    }
+
+    private static JSONObject fetchLatestReleaseOnce() throws IOException, JSONException {
         HttpURLConnection connection = (HttpURLConnection) new URL(RELEASES_API_URL).openConnection();
-        connection.setConnectTimeout(4500);
-        connection.setReadTimeout(4500);
+        connection.setConnectTimeout(UPDATE_CHECK_CONNECT_TIMEOUT_MS);
+        connection.setReadTimeout(UPDATE_CHECK_READ_TIMEOUT_MS);
+        connection.setInstanceFollowRedirects(true);
         connection.setRequestProperty("Accept", "application/vnd.github+json");
         connection.setRequestProperty("User-Agent", "jianghu-calculator");
         try {
@@ -164,6 +194,15 @@ public final class MainActivity extends Activity {
             return new JSONObject(new String(readAll(connection.getInputStream()), "UTF-8"));
         } finally {
             connection.disconnect();
+        }
+    }
+
+    private static void waitBeforeRetry(int attempt) throws IOException {
+        try {
+            Thread.sleep(1000L * attempt);
+        } catch (InterruptedException error) {
+            Thread.currentThread().interrupt();
+            throw new IOException("更新请求被中断", error);
         }
     }
 
@@ -179,7 +218,7 @@ public final class MainActivity extends Activity {
         return "";
     }
 
-    private void showUpdateDialog(String version, String apkUrl, String releaseNotes) {
+    private void showUpdateDialog(String version, long versionCode, String apkUrl, String releaseNotes) {
         if (isFinishing() || (Build.VERSION.SDK_INT >= 17 && isDestroyed())) return;
         View content = getLayoutInflater().inflate(R.layout.update_dialog, null);
         ((TextView) content.findViewById(R.id.update_version)).setText("v" + version);
@@ -190,7 +229,7 @@ public final class MainActivity extends Activity {
         content.findViewById(R.id.update_later).setOnClickListener(view -> dialog.dismiss());
         content.findViewById(R.id.update_action).setOnClickListener(view -> {
             dialog.dismiss();
-            downloadAndInstall(version, apkUrl);
+            downloadAndInstall(version, versionCode, apkUrl);
         });
         dialog.setCanceledOnTouchOutside(true);
         dialog.show();
@@ -202,7 +241,7 @@ public final class MainActivity extends Activity {
         return notes.substring(0, 1800).trim() + "\n\n（更新说明过长，已截断）";
     }
 
-    private void downloadAndInstall(String version, String apkUrl) {
+    private void downloadAndInstall(String version, long versionCode, String apkUrl) {
         if (downloadDialog != null && downloadDialog.isShowing()) return;
         cancelDownload = false;
         View content = getLayoutInflater().inflate(R.layout.update_progress_dialog, null);
@@ -233,30 +272,20 @@ public final class MainActivity extends Activity {
                     throw new IOException("无法清理旧更新文件");
                 }
 
-                HttpURLConnection connection = (HttpURLConnection) new URL(apkUrl).openConnection();
-                connection.setConnectTimeout(8000);
-                connection.setReadTimeout(15000);
-                connection.setRequestProperty("User-Agent", "jianghu-calculator");
-                try {
-                    if (connection.getResponseCode() != HttpURLConnection.HTTP_OK) {
-                        throw new IOException("下载失败（HTTP " + connection.getResponseCode() + "）");
+                IOException downloadError = null;
+                for (int attempt = 1; attempt <= UPDATE_ATTEMPTS; attempt++) {
+                    try {
+                        downloadApkOnce(apkUrl, temporaryFile);
+                        verifyDownloadedApk(temporaryFile, version, versionCode);
+                        downloadError = null;
+                        break;
+                    } catch (IOException error) {
+                        downloadError = error;
+                        if (cancelDownload) throw error;
+                        if (attempt < UPDATE_ATTEMPTS) waitBeforeRetry(attempt);
                     }
-                    long total = connection.getContentLengthLong();
-                    long downloaded = 0;
-                    byte[] buffer = new byte[8192];
-                    try (InputStream input = connection.getInputStream();
-                         FileOutputStream output = new FileOutputStream(temporaryFile)) {
-                        int count;
-                        while ((count = input.read(buffer)) != -1) {
-                            if (cancelDownload) throw new IOException("下载已取消");
-                            output.write(buffer, 0, count);
-                            downloaded += count;
-                            updateDownloadProgress(downloaded, total);
-                        }
-                    }
-                } finally {
-                    connection.disconnect();
                 }
+                if (downloadError != null) throw downloadError;
 
                 if (cancelDownload) throw new IOException("下载已取消");
                 if (apkFile.exists() && !apkFile.delete()) {
@@ -282,6 +311,65 @@ public final class MainActivity extends Activity {
                 });
             }
         }, "jianghu-apk-download").start();
+    }
+
+    private void downloadApkOnce(String apkUrl, File target) throws IOException {
+        HttpURLConnection connection = (HttpURLConnection) new URL(apkUrl).openConnection();
+        connection.setConnectTimeout(APK_CONNECT_TIMEOUT_MS);
+        connection.setReadTimeout(APK_READ_TIMEOUT_MS);
+        connection.setInstanceFollowRedirects(true);
+        connection.setRequestProperty("User-Agent", "jianghu-calculator");
+        try {
+            int responseCode = connection.getResponseCode();
+            if (responseCode != HttpURLConnection.HTTP_OK) {
+                throw new IOException("下载失败（HTTP " + responseCode + "）");
+            }
+            long total = connection.getContentLengthLong();
+            long downloaded = 0;
+            byte[] buffer = new byte[8192];
+            try (InputStream input = connection.getInputStream();
+                 FileOutputStream output = new FileOutputStream(target)) {
+                int count;
+                while ((count = input.read(buffer)) != -1) {
+                    if (cancelDownload) throw new IOException("下载已取消");
+                    output.write(buffer, 0, count);
+                    downloaded += count;
+                    updateDownloadProgress(downloaded, total);
+                }
+            }
+        } finally {
+            connection.disconnect();
+        }
+    }
+
+    private void verifyDownloadedApk(File apkFile, String expectedVersion, long expectedVersionCode)
+        throws IOException {
+        PackageInfo downloaded = getPackageManager().getPackageArchiveInfo(
+            apkFile.getAbsolutePath(), PackageManager.GET_META_DATA);
+        if (downloaded == null) {
+            throw new IOException("下载文件不是有效的 APK");
+        }
+        if (!PACKAGE_NAME.equals(downloaded.packageName)) {
+            throw new IOException("下载文件包名不匹配");
+        }
+
+        PackageInfo current;
+        try {
+            current = getPackageManager().getPackageInfo(PACKAGE_NAME, 0);
+        } catch (PackageManager.NameNotFoundException error) {
+            throw new IOException("无法读取当前应用版本", error);
+        }
+        long downloadedVersionCode = packageVersionCode(downloaded);
+        long currentVersionCode = packageVersionCode(current);
+        if (downloadedVersionCode <= currentVersionCode) {
+            throw new IOException("下载文件版本过低（" + normalizeVersion(downloaded.versionName)
+                + " / " + downloadedVersionCode + "）");
+        }
+        if (expectedVersionCode > 0 && downloadedVersionCode != expectedVersionCode) {
+            throw new IOException("更新文件与公告版本不一致（公告 " + expectedVersion
+                + " / " + expectedVersionCode + "，文件 "
+                + normalizeVersion(downloaded.versionName) + " / " + downloadedVersionCode + "）");
+        }
     }
 
     private void updateDownloadProgress(long downloaded, long total) {
@@ -398,6 +486,34 @@ public final class MainActivity extends Activity {
         int suffix = version.indexOf('-');
         if (suffix >= 0) version = version.substring(0, suffix);
         return version;
+    }
+
+    private static long resolveVersionCode(JSONObject release, String version) {
+        long declared = release.optLong("version_code", 0L);
+        return declared > 0 ? declared : versionCodeForVersion(version);
+    }
+
+    private static long versionCodeForVersion(String version) {
+        String[] parts = normalizeVersion(version).split("\\.");
+        long major = parts.length > 0 ? parseVersionPart(parts[0]) : 0;
+        long minor = parts.length > 1 ? parseVersionPart(parts[1]) : 0;
+        long patch = parts.length > 2 ? parseVersionPart(parts[2]) : 0;
+        return major * 10000L + minor * 100L + patch;
+    }
+
+    private static long packageVersionCode(PackageInfo packageInfo) {
+        if (Build.VERSION.SDK_INT >= 28) return packageInfo.getLongVersionCode();
+        return packageInfo.versionCode;
+    }
+
+    private static boolean isNewerVersion(String latestVersion, long latestVersionCode,
+                                          String currentVersion, long currentVersionCode) {
+        if (latestVersionCode > 0 && currentVersionCode > 0) {
+            if (latestVersionCode != currentVersionCode) {
+                return latestVersionCode > currentVersionCode;
+            }
+        }
+        return compareVersions(latestVersion, currentVersion) > 0;
     }
 
     private static int compareVersions(String left, String right) {
