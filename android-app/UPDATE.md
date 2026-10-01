@@ -1,5 +1,18 @@
 # APK 更新规则
 
+## 当前正式版 v0.5.0（2026-10-02）
+
+- 标签提交：`8fa7f50430584eaa4e17a2a17f57959f6be7dba0`；成功构建：Actions `36906415019`。
+- versionName `0.5.0`，versionCode `500`；正式 v0.4.0 为 `400`，同签名覆盖安装已在 Android 15 / WebView 124 验证通过。
+- APK SHA-256：`801363c9e21fd59f0a40c65977f1a1669f7444691f72f866b6d37845199948db`；阿里云与 GitHub Release 文件一致。
+- 名称“白兔江湖宝典”，图标沿用，网页资源加密。最低安装 API 23（Android 6.0）；不保证旧 WebView 能运行，WebView 74 已知不兼容。
+- 正式阿里云地址：`https://47.95.250.113/jianghu/v0.5.0/jianghu-calculator-0.5.0.apk`；GitHub Release 作为备用。
+- GitHub Release 已发布，阿里云 HTTP/HTTPS `latest.json` 都已切换至本版及三条指定公告，正式网页也已同步。
+- App 每次启动检查数据和 APK 更新，无 24 小时限制；只有服务器腾讯文档采集每天执行（北京时间 04:00 避坑、04:10 四类图鉴）。
+- 本地分包测试、重新打开检查更新测试通过；Android 覆盖安装、加密资源离线加载及脚本错误检测通过。
+- 之前的 0.5.0 测试包也是 code 500，不会自动提示同版本升级，需手动覆盖安装正式包。若用户持有其他签名或 code 大于 500 的非正式包，不能保证覆盖安装。
+- GitHub 数据保留与归档候选见 `docs/PUBLIC_DATA_RETENTION.md`；本次未删除公开数据或改动仓库可见性。
+
 覆盖安装必须同时满足：
 
 - `AndroidManifest.xml` 中的包名保持 `com.flashba.jianghucalculator`。
