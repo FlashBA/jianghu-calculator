@@ -11,6 +11,7 @@ from pathlib import Path
 
 import sync_tencent_dungeon_drops as tencent
 import sync_tencent_pitfalls as pitfalls
+import content_parts
 
 ROOT = Path('/opt/jianghu-content-sync')
 PUBLIC = Path('/opt/jianghu-calculator/releases')
@@ -71,10 +72,15 @@ def run():
             directory.update(replacement)
             bundle['revision'] = max(int(now.timestamp() * 1000), bundle['revision'] + 1)
             bundle['generatedAt'] = now.isoformat()
+            split_manifest = content_parts.prepare(PUBLIC, bundle)
             content = json_bytes(bundle)
             manifest.update(revision=bundle['revision'], sha256=hashlib.sha256(content).hexdigest())
             write_atomic(bundle_path, content)
             write_atomic(manifest_path, json_bytes(manifest))
+            content_parts.publish_manifest(PUBLIC, split_manifest)
+        else:
+            # Also repair a missing v2 manifest after a publication interruption.
+            content_parts.publish_manifest(PUBLIC, content_parts.prepare(PUBLIC, bundle))
         status = {'checked_at': now.isoformat(), 'source_revision': fresh['source']['revision'],
                   'items': len(source['items']), 'published': changed, 'content_revision': bundle['revision']}
         write_atomic(ROOT / 'status.json', json_bytes(status))

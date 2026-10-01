@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const { validBundle, validManifest } = window.JianghuContentSchema;
+  const { validBundle, validPartsManifest, partIds, splitPayload, joinParts } = window.JianghuContentSchema;
   const sources = [
     'https://47.95.250.113/jianghu/',
     'https://flashba.github.io/jianghu-calculator/',
@@ -47,16 +47,46 @@
   }
 
   const ready = (async () => {
-    const [local, saved] = await Promise.allSettled([
-      request(`${window.APP_DATA_BASE || './'}content_bundle.json`).then(JSON.parse),
-      cache(),
-    ]);
-    const candidates = [local, saved].filter((result) => result.status === 'fulfilled' && validBundle(result.value))
-      .map((result) => result.value).sort((a, b) => b.revision - a.revision);
-    if (!candidates.length) throw new Error('内容读取失败，请重新打开应用');
-    current = candidates[0];
+    // Reuse the saved snapshot without downloading the full web bundle on every visit.
+    const saved = await cache().catch(() => null);
+    if (validBundle(saved)) {
+      current = saved;
+      return current;
+    }
+    const local = await request(`${window.APP_DATA_BASE || './'}content_bundle.json`).then(JSON.parse);
+    if (!validBundle(local)) throw new Error('内容读取失败，请重新打开应用');
+    current = local;
+    await cache(current).catch(() => {});
     return current;
   })();
+
+  async function downloadParts(base, manifest, staged) {
+    const parts = splitPayload(current.data);
+    // Bounded parallelism avoids opening a request for every part at once.
+    const queue = partIds.filter((id) => current.partHashes?.[id] !== manifest.parts[id].sha256);
+    let cursor = 0;
+    async function worker() {
+      while (cursor < queue.length) {
+        const id = queue[cursor++];
+        const descriptor = manifest.parts[id];
+        if (!staged.has(descriptor.sha256)) {
+          const bytes = await request(`${base}${descriptor.file}`);
+          const hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(bytes));
+          const hex = [...new Uint8Array(hash)].map((byte) => byte.toString(16).padStart(2, '0')).join('');
+          if (hex !== descriptor.sha256) throw new Error('内容校验失败');
+          staged.set(descriptor.sha256, JSON.parse(bytes));
+        }
+        parts[id] = staged.get(descriptor.sha256);
+      }
+    }
+    const results = await Promise.allSettled(Array.from({ length: Math.min(3, queue.length) }, worker));
+    const failure = results.find((result) => result.status === 'rejected');
+    if (failure) throw failure.reason;
+    const next = { schemaVersion: 1, revision: manifest.revision, generatedAt: manifest.generatedAt,
+      partHashes: Object.fromEntries(partIds.map((id) => [id, manifest.parts[id].sha256])), data: joinParts(parts) };
+    if (!validBundle(next)) throw new Error('内容格式不兼容');
+    return next;
+  }
 
   function status(message, busy = false) {
     const output = document.getElementById('data-update-status');
@@ -73,11 +103,14 @@
     let reachable = false;
     let newerSeen = false;
     let equalSeen = false;
+    let newestRevision = current.revision;
+    const staged = new Map();
     for (const base of sources) {
       try {
-        const manifest = JSON.parse(await request(`${base}content_manifest.json?t=${Date.now()}`, 15000));
-        if (!validManifest(manifest)) throw new Error('内容格式不兼容');
+        const manifest = JSON.parse(await request(`${base}content_manifest_v2.json?t=${Date.now()}`, 15000));
+        if (!validPartsManifest(manifest)) throw new Error('内容格式不兼容');
         reachable = true;
+        if (manifest.revision < newestRevision) continue;
         if (manifest.revision < current.revision) continue;
         if (manifest.revision === current.revision) {
           equalSeen = true;
@@ -85,12 +118,8 @@
           continue;
         }
         newerSeen = true;
-        const bytes = await request(`${base}${manifest.file}?revision=${manifest.revision}`);
-        const hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(bytes));
-        const hex = [...new Uint8Array(hash)].map((byte) => byte.toString(16).padStart(2, '0')).join('');
-        if (hex !== manifest.sha256) throw new Error('内容校验失败');
-        const next = JSON.parse(bytes);
-        if (!validBundle(next) || next.revision !== manifest.revision) throw new Error('内容格式不兼容');
+        newestRevision = manifest.revision;
+        const next = await downloadParts(base, manifest, staged);
         // Commit the complete bundle before exposing any new data to the UI.
         await cache(next);
         current = next;

@@ -61,3 +61,5 @@ if (process.argv.includes('--check')) {
   fs.writeFileSync(path.join(web, 'content_manifest.json'), JSON.stringify(manifest, null, 2) + '\n');
   console.log(`Content revision ${revision}: ${Buffer.byteLength(bytes)} bytes`);
 }
+execFileSync('python3', [path.join(__dirname, 'content_parts.py'), '--public', web,
+  ...(process.argv.includes('--check') ? ['--check'] : [])], { stdio: 'inherit' });

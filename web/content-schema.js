@@ -43,7 +43,33 @@
       && /^[a-f0-9]{64}$/.test(manifest.sha256);
   }
 
-  const api = { validPayload, validBundle, validManifest };
+  const partIds = ['encyclopedia', 'dungeons', 'pitfalls', 'guides', 'search', 'recipes', 'strategy', 'logs'];
+  function splitPayload(data) {
+    const { encyclopedia, directory, searchIndex, recipeData, strategyText, updateLogs, ...guides } = data;
+    const { dungeon_drops, ...catalogue } = encyclopedia;
+    const { pitfalls, pitfallsSource, pitfallsNotice, ...otherDirectory } = directory;
+    return { encyclopedia: catalogue, dungeons: dungeon_drops,
+      pitfalls: { pitfalls, pitfallsSource, pitfallsNotice },
+      guides: { ...guides, directory: otherDirectory }, search: searchIndex,
+      recipes: recipeData, strategy: strategyText, logs: updateLogs };
+  }
+  function joinParts(parts) {
+    return { ...parts.guides, encyclopedia: { ...parts.encyclopedia, dungeon_drops: parts.dungeons },
+      directory: { ...parts.guides.directory, ...parts.pitfalls }, searchIndex: parts.search,
+      recipeData: parts.recipes, strategyText: parts.strategy, updateLogs: parts.logs };
+  }
+  function validPartsManifest(manifest) {
+    return object(manifest) && manifest.schemaVersion === 2 && Number.isSafeInteger(manifest.revision)
+      && manifest.revision > 0 && Number.isFinite(Date.parse(manifest.generatedAt))
+      && object(manifest.parts) && Object.keys(manifest.parts).length === partIds.length
+      && partIds.every((id) => {
+        const part = manifest.parts[id];
+        return object(part) && /^[a-f0-9]{64}$/.test(part.sha256)
+          && part.file === `content-parts/${id}-${part.sha256}.json`;
+      });
+  }
+
+  const api = { validPayload, validBundle, validManifest, validPartsManifest, partIds, splitPayload, joinParts };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.JianghuContentSchema = api;
 })(typeof window === 'undefined' ? globalThis : window);

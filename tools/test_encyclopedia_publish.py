@@ -9,6 +9,7 @@ from unittest.mock import patch
 import compare_tencent_encyclopedia as sync
 import publish_tencent_encyclopedia as publisher
 import technique_sync
+import content_parts
 
 
 class PublishTests(unittest.TestCase):
@@ -34,7 +35,7 @@ class PublishTests(unittest.TestCase):
         publisher.publish(self.root, self.public, self.cloud, self.sources, [], initialize=True)
 
     def snapshot(self):
-        return {p.name: p.read_bytes() for p in self.public.iterdir()}
+        return {str(p.relative_to(self.public)): p.read_bytes() for p in self.public.rglob('*') if p.is_file()}
 
     def test_noop_dry_run_then_linked_publish(self):
         before = self.snapshot()
@@ -65,12 +66,30 @@ class PublishTests(unittest.TestCase):
             if key != 'encyclopedia':
                 self.assertEqual(bundle['data'][key], self.bundle['data'][key])
         self.assertEqual(data, json.loads((self.public / 'whiterabbit_data.json').read_bytes()))
+        parts = json.loads((self.public / 'content_manifest_v2.json').read_bytes())
+        self.assertEqual(parts['revision'], bundle['revision'])
+        for part in parts['parts'].values():
+            self.assertEqual(hashlib.sha256((self.public / part['file']).read_bytes()).hexdigest(), part['sha256'])
 
     def test_unknown_effect_keeps_text_and_stats(self):
         self.cloud['techniques:音律']['values']['effect'] = '每次暴击随机提高攻击'
         status = publisher.publish(self.root, self.public, self.cloud, self.sources, [])
         self.assertFalse(status['published'])
         self.assertEqual(len(status['review']), 1)
+
+    def test_split_publication_and_manifest_recovery(self):
+        initial, _ = publisher.read_public(self.public)
+        old_manifest, _ = content_parts.describe(initial)
+        self.cloud['techniques:音律']['values']['effect'] = '7%闪避，8速度，9%攻击'
+        with patch.object(content_parts, 'publish_manifest', side_effect=OSError('interrupted v2 manifest')):
+            with self.assertRaises(OSError):
+                publisher.publish(self.root, self.public, self.cloud, self.sources, [])
+        self.assertTrue((self.root / 'encyclopedia-pending.json').exists())
+        publisher.recover(self.root, self.public)
+        latest = json.loads((self.public / 'content_manifest_v2.json').read_bytes())
+        changed = [key for key in latest['parts'] if latest['parts'][key] != old_manifest['parts'][key]]
+        self.assertEqual(changed, ['encyclopedia'])
+        self.assertFalse((self.root / 'encyclopedia-pending.json').exists())
 
     def test_failed_transaction_recovers(self):
         self.cloud['techniques:音律']['values']['effect'] = '7%闪避，8速度，9%攻击'

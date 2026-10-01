@@ -13,6 +13,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import compare_tencent_encyclopedia as sync
+import content_parts
 
 CATEGORIES = ('characters', 'techniques', 'inner_skills', 'martial_arts')
 
@@ -59,9 +60,14 @@ def recover(root, public):
         if current['data']['encyclopedia'] != transaction['encyclopedia']:
             raise ValueError('A newer manual publication conflicts with pending transaction')
     else:
+        split_manifest = content_parts.prepare(public, transaction['bundle'])
+        transaction['manifest']['sha256'] = hashlib.sha256(encoded(transaction['bundle'])).hexdigest()
         atomic(public / 'whiterabbit_data.json', transaction['encyclopedia'])
         atomic(public / 'content_bundle.json', transaction['bundle'])
         atomic(public / 'content_manifest.json', transaction['manifest'])
+        content_parts.publish_manifest(public, split_manifest)
+    if current_manifest['revision'] > target_revision:
+        content_parts.publish_manifest(public, content_parts.prepare(public, current))
     atomic(root / 'encyclopedia-baseline.json', transaction['baseline'])
     journal.unlink()
 

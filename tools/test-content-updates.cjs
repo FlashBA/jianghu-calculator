@@ -5,6 +5,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
 const { execFileSync } = require('node:child_process');
+const { splitPayload } = require('../web/content-schema.js');
 const web = path.resolve(__dirname, '../web');
 const bundle = JSON.parse(fs.readFileSync(path.join(web, 'content_bundle.json')));
 const initialGuideCount = bundle.data.strategyGuides.guides.length + 4;
@@ -12,6 +13,9 @@ const hash = (value) => crypto.createHash('sha256').update(value).digest('hex');
 const database = new IDBFactory();
 const errors = [];
 const requests = [];
+const downloads = [];
+let missingPart = null;
+let corruptPart = null;
 let remote = structuredClone(bundle);
 let mode = 'normal';
 let storageFails = false;
@@ -42,9 +46,25 @@ async function open(savedFavorites) {
     requests.push(url.hostname);
     if (mode === 'offline' || (mode === 'fallback' && url.hostname === '47.95.250.113')) throw new Error('Network unavailable');
     if (mode === 'timeout' && url.hostname === '47.95.250.113') return new Promise((resolve, reject) => options.signal.addEventListener('abort', () => reject(new Error('timeout'))));
-    const bytes = JSON.stringify(remote) + '\n';
-    const manifest = { schemaVersion: remote.schemaVersion, revision: remote.revision, file: 'content_bundle.json', sha256: mode === 'corrupt' ? '0'.repeat(64) : hash(bytes) };
-    return new Response(url.pathname.endsWith('content_manifest.json') ? JSON.stringify(manifest) : bytes);
+    const files = {};
+    const parts = {};
+    const original = splitPayload(bundle.data);
+    for (const [id, value] of Object.entries(splitPayload(remote.data))) {
+      const bytes = JSON.stringify(value) === JSON.stringify(original[id])
+        ? fs.readFileSync(path.join(web, `content-parts/${id}-${bundle.partHashes[id]}.json`), 'utf8')
+        : JSON.stringify(value) + '\n';
+      const sha256 = hash(bytes);
+      const file = `content-parts/${id}-${sha256}.json`;
+      files[file] = bytes;
+      parts[id] = { file, sha256 };
+    }
+    const manifest = { schemaVersion: 2, revision: remote.revision, generatedAt: remote.generatedAt, parts };
+    if (url.pathname.endsWith('content_manifest_v2.json')) return new Response(JSON.stringify(manifest));
+    const file = url.pathname.slice(url.pathname.indexOf('content-parts/'));
+    const id = Object.keys(parts).find((key) => parts[key].file === file);
+    downloads.push({ id, host: url.hostname });
+    if (!id || id === missingPart) return new Response('', { status: 404 });
+    return new Response(mode === 'corrupt' || id === corruptPart ? '{}' : files[file]);
   };
   w.indexedDB = { open(...args) {
     const request = database.open(...args);
@@ -71,6 +91,7 @@ async function open(savedFavorites) {
     let doc = w.document;
     assert.equal(doc.getElementById('data-update-status').textContent, '数据已是最新');
     assert.equal(requests[0], '47.95.250.113');
+    assert.equal(downloads.length, 0, 'Unchanged version only fetches manifest');
     assert.equal(w.displayMartialRank(' ？ '), '?');
     assert.equal(w.displayMartialRank('?'), '?');
     assert.equal(w.displayMartialRank('12S'), 'S');
@@ -121,6 +142,7 @@ async function open(savedFavorites) {
     assert.match(doc.querySelector('.v03-lineup-directory summary').textContent, /更新测试阵容/);
     doc.querySelector('[data-guide-id="test-new-guide"]').click();
     assert.match(doc.getElementById('guide-detail-content').textContent, /无需新包的攻略内容/);
+    assert.deepEqual(downloads.map((item) => item.id).sort(), ['encyclopedia', 'guides'], 'Only changed groups are downloaded');
     mode = 'offline';
     dom.window.close();
     dom = await open(favorites);
@@ -140,8 +162,28 @@ async function open(savedFavorites) {
       assert.equal(w.JianghuContent.current.revision, goodRevision, failure);
     }
     storageFails = false;
+    mode = 'normal';
+    remote.revision = goodRevision + 2;
+    remote.data.lineups = bundle.data.lineups;
+    remote.data.updateLogs.logs.push({ title: '分包日志测试', text: '新增日志' });
+    const beforePartial = w.JianghuContent.current.revision;
+    missingPart = 'logs';
+    downloads.length = 0;
+    assert.equal(await w.JianghuContent.checkForUpdates(), 'failed');
+    assert.equal(w.JianghuContent.current.revision, beforePartial, 'Missing part must not partially commit');
+    assert.equal(downloads.filter((item) => item.id === 'guides').length, 1, 'Verified parts reused across fallback sources');
+    missingPart = null;
+    corruptPart = 'logs';
+    assert.equal(await w.JianghuContent.checkForUpdates(), 'failed');
+    assert.equal(w.JianghuContent.current.revision, beforePartial);
+    corruptPart = null;
+    assert.equal(await w.JianghuContent.checkForUpdates(), 'updated');
+    remote.revision += 1;
+    remote.data.updateLogs.logs.push({ title: '仅改日志', text: '不下载其他包' });
+    downloads.length = 0;
+    assert.equal(await w.JianghuContent.checkForUpdates(), 'updated');
+    assert.deepEqual(downloads.map((item) => item.id), ['logs']);
     mode = 'timeout';
-    remote.revision = goodRevision;
     const started = Date.now();
     assert.equal(await w.JianghuContent.checkForUpdates(), 'current');
     assert(Date.now() - started >= 14900 && Date.now() - started < 19000);
@@ -151,6 +193,6 @@ async function open(savedFavorites) {
     assert.equal(first, second);
     await first;
     assert.deepEqual(errors, []);
-    console.log('PASS: startup/manual updates, priority/fallback/timeout, new guides, live calculator data, 31 lineups, offline reload, favorites, hash/schema rejection, storage failure, rollback prevention, duplicate clicks');
+    console.log('PASS: split updates, unchanged/changed-only downloads, partial failure rollback, fallback reuse, startup/manual updates, priority/fallback/timeout, new guides, live calculator data, 31 lineups, offline reload, favorites, hash/schema rejection, storage failure, rollback prevention, duplicate clicks');
   } finally { dom.window.close(); }
 })().catch((error) => { console.error(error); process.exitCode = 1; });

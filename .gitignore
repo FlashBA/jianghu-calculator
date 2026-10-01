@@ -47,6 +47,7 @@ FORMULAS*.md
 !/tools/jianghu-pitfalls-sync.timer
 !/tools/jianghu-check-updates
 !/tools/build-content-bundle.cjs
+!/tools/content_parts.py
 !/tools/test-content-updates.cjs
 !/tools/test-android-startup.sh
 !/tools/compare_tencent_encyclopedia.py

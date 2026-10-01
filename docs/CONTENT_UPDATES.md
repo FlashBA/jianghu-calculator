@@ -28,9 +28,24 @@
 - 数据版本和 APK 版本独立。纯数据更新不打包 APK，不修改 `latest.json`，
   不触发应用安装公告。v0.5 目前仍在开发，不能把数据发布说成 APK 已发布。
 
-The v0.5 client reads a single, versioned JSON content bundle. Android still
-ships an encrypted offline copy in `app.vault`. No remote JavaScript is loaded.
+The v0.5 client checks `content_manifest_v2.json` and downloads only changed,
+SHA-256-addressed files under `content-parts/`. Eight parts separate encyclopedia,
+dungeons, pitfalls, guide directory/lineups, original search, recipes, extracted
+strategy text, and update logs. Android still ships a complete encrypted offline
+copy in `app.vault`. No remote JavaScript is loaded.
 APK version codes and content revisions are independent.
+
+## 分包更新（2026-10-02）
+
+- 完整包继续作为首次启动/离线内置数据及旧客户端兼容文件；后续只下载哈希改变的分包。
+- 客户端每次最多并发下载 3 个分包。一次检查内，切换备用源会复用已校验的分包。
+- 所有需要的分包下载、校验及组装成功后，以同一个 IndexedDB 事务覆盖 `current`；失败不更新任何正在使用的数据。
+- 技艺文案和计算属性同属图鉴包。分包是传输优化，手机仍只保留一套最新数据缓存。
+- 网页有有效缓存后不再每次打开就下载完整包。首次访问仍需获取全部内容。
+- 清单约 1.6 KB 未压缩；当前 gzip 估算：图鉴 17 KB、副本 6.7 KB、避坑 3 KB、其他攻略 10.6 KB、原版检索 190 KB、菜谱 0.5 KB、攻略提取文本 5.9 KB、日志 19 KB。不含 HTTP/TLS 开销。
+- 定时发布器和手动构建共用 `tools/content_parts.py`。先写不可变分包，再写完整兼容包及 v1 清单，最后写 v2 清单。不能只上传清单，不上传它引用的文件。
+- 保留旧哈希文件，允许已取得旧清单的请求完成；服务器分包文件不属于手机缓存。GitHub 备用源也须同步分包文件与 v2 清单。
+- 数据地址仍为阿里云优先；以后迁往 OSS/CDN 可沿用相同格式，但当前并未迁移。
 
 ## Editable sources
 
@@ -121,14 +136,14 @@ server's `/opt/jianghu-content-sync/publish.lock` to avoid overwriting a timed u
 
 1. Edit and review the source JSON. Tencent extraction is a separate workflow;
    do not publish unverified extraction automatically.
-2. Run `node tools/build-content-bundle.cjs` from the repository root. It validates
-   the sources, generates `web/content_bundle.json` and `web/content_manifest.json`,
+2. Run `node tools/build-content-bundle.cjs` from the repository root (Node and Python 3 required). It validates
+   the sources, generates the complete bundle, both manifests and immutable parts,
    and advances the content revision only when source content changes.
 3. Run `node tools/build-content-bundle.cjs --check`. Both Pages and APK CI require
    this check, preventing forgotten bundle regeneration.
-4. After publication is authorized, upload the bundle to a temporary filename
+4. After publication is authorized, upload all referenced `content-parts/` files first, then the bundle to a temporary filename
    under `/opt/jianghu-calculator/releases/`, then atomically rename it to
-   `content_bundle.json`. Upload and atomically rename the manifest LAST.
+   `content_bundle.json`. Upload and atomically rename the v1 manifest, then `content_manifest_v2.json` LAST.
    Keep the previous pair in a backup directory outside the public download root.
 5. Publish the exact same generated files to GitHub `main` and wait for Pages
    deployment. Pushing only a development branch does not update fallback URLs.
@@ -143,12 +158,12 @@ revision; clients intentionally reject older content.
 
 ## Client behavior
 
-- Load the newest valid bundled/cached copy first; start a background check when
+- Load the valid cached copy, or the bundled copy on a first launch; start a background check when
   the app is ready. Recheck on returning to the foreground after an hour.
 - Home has a manual check button with checking, current, updated, and failure
   states. Simultaneous checks share one request sequence.
 - Sources: Aliyun HTTPS, GitHub Pages, jsDelivr `main`, raw GitHub `main`.
-- Manifest timeout: 15 seconds per source. Bundle timeout: 40 seconds per source.
+- Manifest timeout: 15 seconds per source. Each changed part timeout: 40 seconds per source.
   Abort timed-out fetches, including body reads, before trying the next source.
 - A reachable older manifest is not a network failure. If all reachable sources
   are older, show that local data is newer and retain it. If a newer bundle was
