@@ -11,6 +11,9 @@
   let pending = null;
   let initialized = false;
   let lastCheck = 0;
+  const CHECK_INTERVAL = 24 * 60 * 60 * 1000;
+  const CHECK_KEY = 'jianghu-content:last-check:v1';
+  try { lastCheck = Number(localStorage.getItem(CHECK_KEY)) || 0; } catch { /* Storage may be disabled. */ }
 
   async function request(url, timeoutMs = 40000) {
     const controller = new AbortController();
@@ -135,9 +138,10 @@
 
   function checkForUpdates() {
     if (pending) return pending;
+    lastCheck = Date.now();
+    try { localStorage.setItem(CHECK_KEY, String(lastCheck)); } catch { /* Keep the in-memory limit. */ }
     status('正在检查数据更新…', true);
     pending = check().then((result) => {
-      lastCheck = Date.now();
       status(result === 'updated' ? '数据更新成功' : result === 'ahead' ? '当前数据比线上版本更新，已保留' : '数据已是最新');
       return result;
     }).catch((error) => {
@@ -147,16 +151,22 @@
     return pending;
   }
 
+  function autoCheck() {
+    const elapsed = Date.now() - lastCheck;
+    if (!lastCheck || elapsed < 0 || elapsed >= CHECK_INTERVAL) return checkForUpdates();
+    if (!pending) status('已加载本地数据', false);
+  }
+
   window.JianghuContent = { ready, checkForUpdates, get current() { return current; } };
   document.getElementById('data-update-button')?.addEventListener('click', () => {
     if (initialized) checkForUpdates();
   });
   window.addEventListener('jianghu-app-ready', () => {
     initialized = true;
-    checkForUpdates();
+    autoCheck();
   }, { once: true });
   document.addEventListener('visibilitychange', () => {
-    if (initialized && document.visibilityState === 'visible' && Date.now() - lastCheck > 3600000) checkForUpdates();
+    if (initialized && document.visibilityState === 'visible') autoCheck();
   });
   ready.catch((error) => status(error.message));
 })();

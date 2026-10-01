@@ -28,7 +28,7 @@ async function wait(predicate) {
   throw new Error('Timed out waiting for app: ' + errors.join('; '));
 }
 
-async function open(savedFavorites) {
+async function open(savedFavorites, lastCheck) {
   const console = new VirtualConsole();
   console.on('jsdomError', (error) => errors.push(error.message));
   const html = fs.readFileSync(path.join(web, 'index.html'), 'utf8').replace(/<script src="[^"]+"><\/script>/g, '');
@@ -40,6 +40,7 @@ async function open(savedFavorites) {
   w.matchMedia = () => ({ matches: false, addEventListener() {}, removeEventListener() {} });
   Object.defineProperty(w.crypto, 'subtle', { value: crypto.webcrypto.subtle });
   if (savedFavorites) w.localStorage.setItem('jianghu-stat-simulator:guide:favorites:v1', savedFavorites);
+  if (lastCheck) w.localStorage.setItem('jianghu-content:last-check:v1', String(lastCheck));
   w.fetch = async (input, options) => {
     const url = new URL(input, w.location.href);
     if (url.hostname === 'appassets.androidplatform.net') return new Response(fs.readFileSync(path.join(web, path.basename(url.pathname)), 'utf8'));
@@ -192,6 +193,21 @@ async function open(savedFavorites) {
     const second = w.JianghuContent.checkForUpdates();
     assert.equal(first, second);
     await first;
+    const lastCheck = Number(w.localStorage.getItem('jianghu-content:last-check:v1'));
+    dom.window.close();
+    requests.length = 0;
+    dom = await open(favorites, lastCheck);
+    w = dom.window;
+    assert.equal(requests.length, 0, 'Reopening within 24 hours must not auto-check');
+    Object.defineProperty(w.document, 'visibilityState', { value: 'visible', configurable: true });
+    w.document.dispatchEvent(new w.Event('visibilitychange'));
+    assert.equal(requests.length, 0, 'Foreground within 24 hours must not auto-check');
+    assert.equal(await w.JianghuContent.checkForUpdates(), 'current', 'Manual check bypasses daily interval');
+    assert.equal(requests.length, 1);
+    dom.window.close();
+    requests.length = 0;
+    dom = await open(favorites, Date.now() - 86400001);
+    assert.equal(requests.length, 1, 'Auto-check resumes after 24 hours');
     assert.deepEqual(errors, []);
     console.log('PASS: split updates, unchanged/changed-only downloads, partial failure rollback, fallback reuse, startup/manual updates, priority/fallback/timeout, new guides, live calculator data, 31 lineups, offline reload, favorites, hash/schema rejection, storage failure, rollback prevention, duplicate clicks');
   } finally { dom.window.close(); }

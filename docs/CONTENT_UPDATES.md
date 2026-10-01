@@ -13,7 +13,7 @@
 - 每次手动发布数据，同步阿里云、GitHub main 和正式网页所需文件，并确认
   Pages 部署成功；不要只更新本地或开发分支。兼容 v0.4 期间还要同步独立
   JSON 文件（包括图鉴、更新日志及有改动的旧攻略文件）。
-- 腾讯文档定时任务绑定“游玩注意事项”及随从、技艺、内功、武学，每 10 分钟检查一次，
+- 腾讯文档定时任务绑定“游玩注意事项”及随从、技艺、内功、武学，每天检查一次，
   自动发布到阿里云；它不会自动推送 GitHub，也不会同步所有腾讯文档。
   手动发布完整包前须合并服务器最新内容并使用发布锁，避免覆盖定时更新。
 - “检查数据更新”必须显示检查结果：检查中、数据更新成功、数据已是最新，
@@ -26,7 +26,7 @@
 - 新页面交互、未支持的内容结构、计算规则或原生功能变更仍需要客户端更新；
   网页同步发布对应代码。v0.4 用户需要先升级一次 v0.5，才能获得完整内容包更新能力。
 - 数据版本和 APK 版本独立。纯数据更新不打包 APK，不修改 `latest.json`，
-  不触发应用安装公告。v0.5 目前仍在开发，不能把数据发布说成 APK 已发布。
+  不触发应用安装公告。APK 发布须另外核对签名、版本号和正式更新清单。
 
 The v0.5 client checks `content_manifest_v2.json` and downloads only changed,
 SHA-256-addressed files under `content-parts/`. Eight parts separate encyclopedia,
@@ -93,10 +93,10 @@ in. Favorites retain the existing `guide:pitfalls` ID.
 Clients check our published content bundle, not Tencent Docs directly. This
 command is the extraction step for manual publishing.
 
-### Aliyun ten-minute synchronization
+### Aliyun daily synchronization
 
-`jianghu-pitfalls-sync.timer` runs at minutes 00/10/20/30/40/50 on Aliyun.
-`jianghu-encyclopedia-sync.timer` runs at minutes 02/12/22/32/42/52. It uses the
+`jianghu-pitfalls-sync.timer` runs daily at 04:00 Asia/Shanghai on Aliyun.
+`jianghu-encyclopedia-sync.timer` runs daily at 04:10 Asia/Shanghai. It uses the
 same publication lock and preserves every category outside its four owned arrays.
 See `ENCYCLOPEDIA_SYNC.md` for baseline protection and technique calculation rules.
 The job and private status/backup files live under `/opt/jianghu-content-sync`.
@@ -125,8 +125,7 @@ fetches and compares without changing published data. From a local terminal use
 encyclopedia categories. `--encyclopedia` checks only those four categories.
 Dungeon drops remain manual. The command never builds an APK.
 
-The v0.5 bundle endpoint is live on Aliyun; the v0.5 client is still a local
-development version. Legacy v0.4 guide pages do not use this bundle. Publishing
+The v0.5 bundle endpoint is live on Aliyun. Legacy v0.4 guide pages do not use this bundle. Publishing
 v0.5 web/APK clients together is required to deliver this binding to all users.
 The server does not have GitHub write credentials: timed changes currently
 publish to Aliyun only. Both v0.5 clients use that same primary source, while
@@ -158,8 +157,10 @@ revision; clients intentionally reject older content.
 
 ## Client behavior
 
-- Load the valid cached copy, or the bundled copy on a first launch; start a background check when
-  the app is ready. Recheck on returning to the foreground after an hour.
+- Load the valid cached copy, or the bundled copy on a first launch. Automatic checks
+  on startup/foreground run at most once every 24 hours. The last attempt persists
+  across launches, including failures; manual checks remain available immediately.
+- Native APK checks also run at most once every 24 hours using persistent preferences.
 - Home has a manual check button with checking, current, updated, and failure
   states. Simultaneous checks share one request sequence.
 - Sources: Aliyun HTTPS, GitHub Pages, jsDelivr `main`, raw GitHub `main`.
@@ -185,4 +186,4 @@ new guides, calculator data, offline cache, favorites, invalid content, storage
 failure, old revisions, and duplicate clicks. Actual Android WebView and release
 signing/install verification remain required before the v0.5 APK release.
 
-This development change does not publish a v0.5 APK or release announcement.
+Content-only publishing does not publish an APK or release announcement.

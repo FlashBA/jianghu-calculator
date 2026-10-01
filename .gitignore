@@ -60,6 +60,7 @@ FORMULAS*.md
 !/docs/
 !/docs/DUNGEON_DROPS_SYNC.md
 !/docs/CONTENT_UPDATES.md
+!/docs/PUBLIC_DATA_RETENTION.md
 !/docs/ENCYCLOPEDIA_SYNC.md
 !/reports/
 !/reports/dungeon_drops_sync_latest.md

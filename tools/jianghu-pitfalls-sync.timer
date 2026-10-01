@@ -1,8 +1,8 @@
 [Unit]
-Description=Check Tencent pitfalls every ten minutes
+Description=Check Tencent pitfalls daily
 
 [Timer]
-OnCalendar=*-*-* *:00/10:00
+OnCalendar=*-*-* 04:00:00 Asia/Shanghai
 Persistent=true
 
 [Install]

@@ -1,8 +1,8 @@
 [Unit]
-Description=Check four encyclopedia categories every ten minutes
+Description=Check four encyclopedia categories daily
 
 [Timer]
-OnCalendar=*-*-* *:02/10:00
+OnCalendar=*-*-* 04:10:00 Asia/Shanghai
 Persistent=true
 
 [Install]

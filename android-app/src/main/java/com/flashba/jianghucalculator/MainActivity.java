@@ -51,7 +51,7 @@ public final class MainActivity extends Activity {
     private static final String PACKAGE_NAME = "com.flashba.jianghucalculator";
     private static final String ASSET_HOST = "appassets.androidplatform.net";
     private static final String MIRROR_LATEST_URL =
-        "http://47.95.250.113/jianghu/latest.json";
+        "https://47.95.250.113/jianghu/latest.json";
     private static final String RELEASES_API_URL =
         "https://api.github.com/repos/FlashBA/jianghu-calculator/releases/latest";
     private static final int UPDATE_ATTEMPTS = 2;
@@ -113,6 +113,12 @@ public final class MainActivity extends Activity {
     }
 
     private void checkForUpdate() {
+        android.content.SharedPreferences preferences = getSharedPreferences("update-check", MODE_PRIVATE);
+        long now = System.currentTimeMillis();
+        long previous = preferences.getLong("last-attempt", 0);
+        long elapsed = now - previous;
+        if (previous > 0 && elapsed >= 0 && elapsed < 24L * 60 * 60 * 1000) return;
+        preferences.edit().putLong("last-attempt", now).apply();
         new Thread(() -> {
             try {
                 JSONObject release = fetchLatestUpdate();
@@ -480,7 +486,8 @@ public final class MainActivity extends Activity {
     }
 
     private static boolean isMirrorApkUrl(String url) {
-        return url != null && url.startsWith("http://47.95.250.113/jianghu/");
+        return url != null && (url.startsWith("http://47.95.250.113/jianghu/")
+            || url.startsWith("https://47.95.250.113/jianghu/"));
     }
 
     private void updateDownloadSourceStatus(String message) {
