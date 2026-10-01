@@ -72,9 +72,14 @@ jobs:
           APK_PATH: android-app/artifacts/jianghu-calculator-${{ env.VERSION_NAME }}.apk
         run: |
           EXPECTED_CERT='82:BB:BD:AF:E8:0E:C0:9B:92:F0:7D:B1:27:8D:37:03:6D:4E:55:E4:C1:9E:29:48:B3:FA:5A:D5:FD:B5:2D:39'
-          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs "$APK_PATH" \
-            | tr '[:lower:]' '[:upper:]' \
-            | grep -F "SIGNER #1 CERTIFICATE SHA-256 DIGEST: $EXPECTED_CERT"
+          ACTUAL_CERT=$("$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs "$APK_PATH" \
+            | sed -n 's/.*SHA-256 digest: //p' \
+            | head -n 1 \
+            | tr -d ':[:space:]' \
+            | tr '[:lower:]' '[:upper:]')
+          EXPECTED_CERT=$(printf '%s' "$EXPECTED_CERT" | tr -d ':[:space:]' | tr '[:lower:]' '[:upper:]')
+          test -n "$ACTUAL_CERT"
+          test "$ACTUAL_CERT" = "$EXPECTED_CERT"
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
