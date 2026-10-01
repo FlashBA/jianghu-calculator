@@ -1,10 +1,10 @@
-# New UI Reference
+# 白兔江湖宝典
 
-这个目录只放 UI 复原参考，不接入线上页面。
+正式网页：https://flashba.github.io/jianghu-calculator/
 
-- `reference-preview.html`：当前复原稿，包含配色、字体、布局和图标使用方式。
-- `wiki-demo.html`：v0.3 Wiki 化首页、列表页、详情层级的静态交互 demo。
-- `assets/combat-swords-source.png`：用户提供的原始双剑图。
-- `assets/combat-swords-red.png`：透明背景、砖红线稿版双剑图，后续正式接入优先复用它。
+- `web/`：正式网页与处理后的内容数据，供网页、APK 内置内容及备用更新使用。
+- `docs/CONTENT_UPDATES.md`：分包更新和服务器同步约定。
+- `docs/PUBLIC_DATA_RETENTION.md`：公开数据保留范围及已移除的原始资料。
+- `android-app/UPDATE.md`：APK 签名、版本和发布记录。
 
-当前正式页面仍然是 `web/index.html`，计算逻辑和 APK 资源没有因为这个目录变化。
+原始攻略图片、旧演示、来源快照和解析报告已从当前分支移除；历史提交未重写。

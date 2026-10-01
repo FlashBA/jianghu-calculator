@@ -62,6 +62,8 @@ FORMULAS*.md
 !/docs/CONTENT_UPDATES.md
 !/docs/PUBLIC_DATA_RETENTION.md
 !/docs/ENCYCLOPEDIA_SYNC.md
-!/reports/
-!/reports/dungeon_drops_sync_latest.md
-!/reports/dungeon_drops_source_snapshot.json
+# Source materials and extraction reports stay local.
+/reports/
+/web/new-ui-reference/
+/web/strategy-assets/
+/web/guide-directory-data.js

@@ -67,8 +67,9 @@ and `text`. They appear in the directory automatically. Image section records
 remain legacy keys for existing text renderers; they do not download images.
 New layouts or calculation rules still require a client release.
 
-`guide-directory-data.js` and `new-ui-reference/wiki-data.js` are legacy reference
-files and are no longer v0.5 runtime sources.
+`guide-directory-data.js`, `new-ui-reference/` and original strategy images were
+removed from the current branch after local archival; v0.5 uses the processed
+bundle and does not load them. Generated reports remain local and ignored.
 
 ## Build and publish content
 
