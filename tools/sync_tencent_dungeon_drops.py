@@ -276,14 +276,71 @@ def normalize_cell(text: str) -> str:
     return text.strip()
 
 
+KNOWN_COMPOSITE_DROPS = {
+    "10邀月丹 30邪魔之血": ["10邀月丹", "30邪魔之血"],
+    "A百胜刀法残页 A残月刀": ["A百胜刀法残页", "A残月刀"],
+    "A太极剑谱残页 A乌缕衣": ["A太极剑谱残页", "A乌缕衣"],
+    "S神龙掌法残页 A青云戒": ["S神龙掌法残页", "A青云戒"],
+    "S真武残章 归元衫": ["S真武残章", "归元衫"],
+    "邪骨舍利 虎啸令兑换凭证 虎啸令": ["邪骨舍利", "虎啸令兑换凭证", "虎啸令"],
+    "A大嵩阳掌残页 A紫金护手": ["A大嵩阳掌残页", "A紫金护手"],
+    "A寒冰神掌残页 A青云护手": ["A寒冰神掌残页", "A青云护手"],
+    "S燃木刀决残页 A吹雪剑": ["S燃木刀决残页", "A吹雪剑"],
+    "八卦图解-柒 疾豹令兑换凭证 疾豹令": ["八卦图解-柒", "疾豹令兑换凭证", "疾豹令"],
+    "未知残页 A冰蚕手套": ["未知残页", "A冰蚕手套"],
+    "八卦图解-捌 S真·玄武宝甲": ["八卦图解-捌", "S真·玄武宝甲"],
+    "30邪魔之血 天鹰令兑换凭证 天鹰令": ["30邪魔之血", "天鹰令兑换凭证", "天鹰令"],
+    "S破锋八斩残页 A归元衫": ["S破锋八斩残页", "A归元衫"],
+    "凤翔令兑换凭证 凤翔令": ["凤翔令兑换凭证", "凤翔令"],
+    "A青云护手 A冰蚕手套": ["A青云护手", "A冰蚕手套"],
+    "S真武残章 A修罗刀": ["S真武残章", "A修罗刀"],
+    "S邀月残章 A紫金宝戒": ["S邀月残章", "A紫金宝戒"],
+    "S真武残章 A青冥剑": ["S真武残章", "A青冥剑"],
+    "1～2龙虎丹 ？三世涅槃功上篇": ["1～2龙虎丹", "？三世涅槃功上篇"],
+    "2疾豹令兑换凭证 疾豹令": ["2疾豹令兑换凭证", "疾豹令"],
+    "S狂龙功 丐帮信物": ["S狂龙功", "丐帮信物"],
+    "S大海刀诀 S破浪刀诀": ["S大海刀诀", "S破浪刀诀"],
+    "S神捕剑招 S追风十三式": ["S神捕剑招", "S追风十三式"],
+    "S 南疆拳掌 S蛊月剑掌": ["S 南疆拳掌", "S蛊月剑掌"],
+    "S神行功 S寂影玄幽诀": ["S神行功", "S寂影玄幽诀"],
+    "S百花功 S蔷薇心经": ["S百花功", "S蔷薇心经"],
+    "S鲜卑枪棍 S天狼破穹枪": ["S鲜卑枪棍", "S天狼破穹枪"],
+    "护卫令-读 天鹰令": ["护卫令-读", "天鹰令"],
+    "护卫令-耕 天鹰令": ["护卫令-耕", "天鹰令"],
+    "护卫令-樵 天鹰令": ["护卫令-樵", "天鹰令"],
+    "护卫令-渔 天鹰令": ["护卫令-渔", "天鹰令"],
+    "羊脂白玉佩 2垂钓注解 2砍伐注解 2耕植注解 2研读注解": [
+        "羊脂白玉佩",
+        "2垂钓注解",
+        "2砍伐注解",
+        "2耕植注解",
+        "2研读注解",
+    ],
+}
+
+
 def split_items(text: str) -> list[str]:
     text = normalize_cell(text)
     if not text:
         return []
+    if text in KNOWN_COMPOSITE_DROPS:
+        return KNOWN_COMPOSITE_DROPS[text][:]
     text = re.sub(r"\s*[，,、]\s*", "  ", text)
     text = re.sub(r"\s{2,}", "  ", text)
     parts = [part.strip() for part in text.split("  ") if part.strip()]
     return parts or [text]
+
+
+def split_probabilities(text: str, count: int) -> list[str]:
+    text = normalize_cell(text)
+    if not text or count <= 0:
+        return [""] * count
+    parts = [part.strip() for part in re.split(r"\s*[，,]\s*", text) if part.strip()]
+    if len(parts) == count:
+        return parts
+    if count == 1:
+        return parts[:1]
+    return [""] * count
 
 
 def guess_type(name: str, drop_kind: str) -> str:
@@ -414,14 +471,28 @@ def build_records(revision: int) -> list[dict[str, Any]]:
     records: list[dict[str, Any]] = []
     for row_index, (dungeon, section, boss, chest, floating, probability) in enumerate(RAW_ROWS, start=1):
         for kind, text in (("宝箱掉落", chest), ("飘字掉落", floating)):
-            for item in split_items(text):
+            items = split_items(text)
+            item_probabilities = split_probabilities(probability, len(items)) if kind == "飘字掉落" else [""] * len(items)
+            for item_index, item in enumerate(items):
+                item_probability = item_probabilities[item_index]
                 drop_parts = [kind]
-                if kind == "飘字掉落" and probability:
+                if kind == "飘字掉落" and item_probability:
+                    drop_parts.append(f"概率 {item_probability}")
+                elif kind == "宝箱掉落" and not floating and len(items) == 1 and probability:
                     drop_parts.append(f"概率 {probability}")
-                elif kind == "宝箱掉落" and not floating and probability:
-                    drop_parts.append(f"概率 {probability}")
+                elif kind == "宝箱掉落" and not floating and len(items) > 1:
+                    chest_probabilities = split_probabilities(probability, len(items))
+                    if chest_probabilities[item_index]:
+                        drop_parts.append(f"概率 {chest_probabilities[item_index]}")
                 record = {
-                    "id": make_id(dungeon, section, boss, item, kind, row_index),
+                    "id": make_id(
+                        dungeon,
+                        section,
+                        boss,
+                        item,
+                        kind,
+                        row_index if len(items) == 1 else row_index * 100 + item_index,
+                    ),
                     "dungeon": dungeon,
                     "section": section,
                     "boss": boss,
@@ -431,6 +502,7 @@ def build_records(revision: int) -> list[dict[str, Any]]:
                     "chest_drop": normalize_cell(chest),
                     "floating_drop": normalize_cell(floating),
                     "probability": normalize_cell(probability),
+                    "item_probability": item_probability,
                     "source": "tencent_docs",
                     "source_url": DOC_URL,
                     "source_sheet_id": SHEET_ID,

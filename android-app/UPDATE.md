@@ -57,10 +57,20 @@ git status --short
 APK 启动时会优先检查阿里云服务器的 `latest.json`。其中 `version`、`version_code`、
 `apk` 和 `release_notes`（或 `notes`）可用于显示版本和更新公告；缺少
 `version_code` 时会按版本号推导。应用会同时比较 Android `versionCode`，下载完成后
-还会校验 APK 包名、真实 `versionCode` 以及公告版本，低版本或错链文件不会交给系统
-安装器。服务器不可用或字段不完整时回退到 `FlashBA/jianghu-calculator` 的最新
-GitHub Release。点击“立即更新”后，APK 会在应用内下载并交给系统安装器。Android
-首次安装外部 APK 时仍需用户确认，不能静默安装。
+还会校验 APK 包名、真实 `versionCode`、公告版本、SHA-256 和当前应用签名，低版本、
+错链文件或不同签名的 APK 不会交给系统安装器。点击“立即更新”后，先从
+`latest.json` 中的阿里云地址下载；阿里云连接失败、超时或校验失败后切换 GitHub
+Release 下载，每个来源最多约 30 秒，避免更新等待过长。服务器不可用或字段不完整时，
+更新检查回退到 `FlashBA/jianghu-calculator` 的最新 GitHub Release。Android 首次
+安装外部 APK 时仍需用户确认，不能静默安装。
+
+当前正式发布 APK 的 SHA-256 签名证书指纹为：
+
+`82:BB:BD:AF:E8:0E:C0:9B:92:F0:7D:B1:27:8D:37:03:6D:4E:55:E4:C1:9E:29:48:B3:FA:5A:D5:FD:B5:2D:39`
+
+`v0.3.1` 至 `v0.3.5` 的公开 APK 已核对为同一指纹。若用户安装的是其他
+测试包、手工构建包或使用另一把 debug/release 密钥签名的包，即使包名相同，也不能
+覆盖安装；另外，已安装包的 `versionCode` 高于更新包时也不能覆盖。
 
 当前服务器地址仍使用 HTTP，因此清单暂时开启了明文流量。服务器切换到 HTTPS 后，
 应将 `AndroidManifest.xml` 的 `usesCleartextTraffic` 恢复为 `false`。

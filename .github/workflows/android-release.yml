@@ -67,8 +67,20 @@ jobs:
           APK_KEY_PASSWORD: ${{ secrets.APK_KEY_PASSWORD }}
         run: ./android-app/build-apk.sh
 
+      - name: Verify release signing certificate
+        env:
+          APK_PATH: android-app/artifacts/jianghu-calculator-${{ env.VERSION_NAME }}.apk
+        run: |
+          EXPECTED_CERT='82:BB:BD:AF:E8:0E:C0:9B:92:F0:7D:B1:27:8D:37:03:6D:4E:55:E4:C1:9E:29:48:B3:FA:5A:D5:FD:B5:2D:39'
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs "$APK_PATH" \
+            | tr '[:lower:]' '[:upper:]' \
+            | grep -F "SIGNER #1 CERTIFICATE SHA-256 DIGEST: $EXPECTED_CERT"
+
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          body: 更新副本掉落、灭谷阵容。
+          body: |
+            1. 优化收藏
+            2. 优化原本攻略 chunk 块可视化 UI
+            3. 优化下载方式
           files: android-app/artifacts/jianghu-calculator-${{ env.VERSION_NAME }}.apk

@@ -3578,20 +3578,17 @@ body {
 }
 
 #teams-view .collection-heading {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-  align-items: center;
-}
-
-#teams-view .collection-heading > div {
-  grid-column: 2;
+  display: block;
   text-align: center;
 }
 
+#teams-view .collection-heading > div {
+  display: grid;
+  justify-items: center;
+}
+
 #teams-view #create-team-button {
-  grid-column: 3;
-  justify-self: end;
-  align-self: center;
+  margin-top: 10px;
   white-space: nowrap;
 }
 
@@ -3865,6 +3862,23 @@ body {
   font-size: 0.78rem;
   line-height: 1.6;
   white-space: pre-line;
+}
+
+.v03-guide-note-card.is-warning {
+  border-color: #d2463b;
+  background: #fff7f5;
+}
+
+.v03-guide-note-card.is-warning .v03-guide-note-index,
+.v03-guide-warning {
+  color: #b42318;
+  font-weight: 900;
+}
+
+.v03-guide-warning {
+  display: block;
+  margin: 0 0 4px;
+  font-size: 0.78rem;
 }
 
 .v03-recipe-card {
@@ -4597,9 +4611,11 @@ body {
 .v03-lineup-directory-list {
   display: grid;
   gap: 7px;
-  max-height: none;
-  overflow: visible;
+  max-height: min(68vh, 720px);
+  overflow-y: auto;
   border-top: 0;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
 }
 
 .v03-lineup-directory {

@@ -248,6 +248,34 @@ function compareWhiteRabbitVersion(left, right) {
   return 0;
 }
 
+function whiteRabbitDataTimestamp(data) {
+  const candidates = [
+    data?.source?.dungeon_drops?.synced_at,
+    data?.source?.synced_at,
+    data?.updated_at,
+    data?.updatedAt,
+  ];
+  return candidates.reduce((latest, value) => {
+    const timestamp = Date.parse(String(value || ''));
+    return Number.isFinite(timestamp) ? Math.max(latest, timestamp) : latest;
+  }, 0);
+}
+
+function compareWhiteRabbitData(left, right) {
+  const versionDiff = compareWhiteRabbitVersion(left, right);
+  if (versionDiff) return versionDiff;
+  const leftTimestamp = whiteRabbitDataTimestamp(left);
+  const rightTimestamp = whiteRabbitDataTimestamp(right);
+  if (leftTimestamp !== rightTimestamp) {
+    if (!leftTimestamp) return -1;
+    if (!rightTimestamp) return 1;
+    return leftTimestamp - rightTimestamp;
+  }
+  const leftDropCount = Array.isArray(left?.dungeon_drops) ? left.dungeon_drops.length : 0;
+  const rightDropCount = Array.isArray(right?.dungeon_drops) ? right.dungeon_drops.length : 0;
+  return leftDropCount - rightDropCount;
+}
+
 function whiteRabbitSignature(data) {
   if (!whiteRabbitDataValid(data)) return '';
   return [
@@ -265,7 +293,7 @@ function whiteRabbitSignature(data) {
 function chooseWhiteRabbitData(primary, fallback) {
   if (!whiteRabbitDataValid(primary)) return whiteRabbitDataValid(fallback) ? fallback : null;
   if (!whiteRabbitDataValid(fallback)) return primary;
-  return compareWhiteRabbitVersion(primary, fallback) > 0 ? primary : fallback;
+  return compareWhiteRabbitData(primary, fallback) >= 0 ? primary : fallback;
 }
 
 function readCachedWhiteRabbitData() {
@@ -4491,7 +4519,7 @@ async function refreshWhiteRabbitDataInBackground() {
   const remoteData = await fetchFirstRemoteWhiteRabbitData();
   if (!whiteRabbitDataValid(remoteData)) return;
   const baseline = state.whiteRabbit;
-  if (baseline && compareWhiteRabbitVersion(remoteData, baseline) < 0) return;
+  if (baseline && compareWhiteRabbitData(remoteData, baseline) < 0) return;
   saveCachedWhiteRabbitData(remoteData);
   if (whiteRabbitSignature(remoteData) !== whiteRabbitSignature(baseline)) {
     applyWhiteRabbitDataUpdate(remoteData);

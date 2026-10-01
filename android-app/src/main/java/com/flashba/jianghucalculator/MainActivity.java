@@ -30,7 +30,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.security.MessageDigest;
 import java.security.GeneralSecurityException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -52,11 +54,12 @@ public final class MainActivity extends Activity {
         "http://47.95.250.113/jianghu/latest.json";
     private static final String RELEASES_API_URL =
         "https://api.github.com/repos/FlashBA/jianghu-calculator/releases/latest";
-    private static final int UPDATE_ATTEMPTS = 3;
-    private static final int UPDATE_CHECK_CONNECT_TIMEOUT_MS = 12000;
-    private static final int UPDATE_CHECK_READ_TIMEOUT_MS = 15000;
-    private static final int APK_CONNECT_TIMEOUT_MS = 15000;
-    private static final int APK_READ_TIMEOUT_MS = 60000;
+    private static final int UPDATE_ATTEMPTS = 2;
+    private static final int UPDATE_CHECK_CONNECT_TIMEOUT_MS = 8000;
+    private static final int UPDATE_CHECK_READ_TIMEOUT_MS = 12000;
+    private static final int APK_CONNECT_TIMEOUT_MS = 8000;
+    private static final int APK_READ_TIMEOUT_MS = 22000;
+    private static final int APK_SOURCE_TIMEOUT_MS = 30000;
     private static final byte[] VAULT_MAGIC = new byte[]{
         'J', 'H', 'C', 'V', 'A', 'U', 'L', 'T'
     };
@@ -132,8 +135,9 @@ public final class MainActivity extends Activity {
                 String finalApkUrl = apkUrl;
                 String finalReleaseNotes = releaseNotes;
                 long finalVersionCode = latestVersionCode;
+                String finalSha256 = release.optString("sha256", "").trim();
                 runOnUiThread(() -> showUpdateDialog(
-                    latestVersion, finalVersionCode, finalApkUrl, finalReleaseNotes));
+                    latestVersion, finalVersionCode, finalApkUrl, finalReleaseNotes, finalSha256));
             } catch (Exception ignored) {
                 // Update checks are optional; the offline calculator must still open.
             }
@@ -218,7 +222,8 @@ public final class MainActivity extends Activity {
         return "";
     }
 
-    private void showUpdateDialog(String version, long versionCode, String apkUrl, String releaseNotes) {
+    private void showUpdateDialog(String version, long versionCode, String apkUrl,
+                                  String releaseNotes, String sha256) {
         if (isFinishing() || (Build.VERSION.SDK_INT >= 17 && isDestroyed())) return;
         View content = getLayoutInflater().inflate(R.layout.update_dialog, null);
         ((TextView) content.findViewById(R.id.update_version)).setText("v" + version);
@@ -229,7 +234,7 @@ public final class MainActivity extends Activity {
         content.findViewById(R.id.update_later).setOnClickListener(view -> dialog.dismiss());
         content.findViewById(R.id.update_action).setOnClickListener(view -> {
             dialog.dismiss();
-            downloadAndInstall(version, versionCode, apkUrl);
+            downloadAndInstall(version, versionCode, apkUrl, sha256);
         });
         dialog.setCanceledOnTouchOutside(true);
         dialog.show();
@@ -241,7 +246,8 @@ public final class MainActivity extends Activity {
         return notes.substring(0, 1800).trim() + "\n\n（更新说明过长，已截断）";
     }
 
-    private void downloadAndInstall(String version, long versionCode, String apkUrl) {
+    private void downloadAndInstall(String version, long versionCode, String apkUrl,
+                                    String expectedSha256) {
         if (downloadDialog != null && downloadDialog.isShowing()) return;
         cancelDownload = false;
         View content = getLayoutInflater().inflate(R.layout.update_progress_dialog, null);
@@ -272,17 +278,37 @@ public final class MainActivity extends Activity {
                     throw new IOException("无法清理旧更新文件");
                 }
 
+                String githubApkUrl = githubApkUrlForVersion(version);
+                ArrayList<String> downloadSources = new ArrayList<>();
+                if (!apkUrl.isEmpty()) downloadSources.add(apkUrl);
+                if (!githubApkUrl.isEmpty() && !githubApkUrl.equals(apkUrl)) {
+                    downloadSources.add(githubApkUrl);
+                }
                 IOException downloadError = null;
-                for (int attempt = 1; attempt <= UPDATE_ATTEMPTS; attempt++) {
+                for (int sourceIndex = 0; sourceIndex < downloadSources.size(); sourceIndex++) {
+                    String sourceUrl = downloadSources.get(sourceIndex);
                     try {
-                        downloadApkOnce(apkUrl, temporaryFile);
-                        verifyDownloadedApk(temporaryFile, version, versionCode);
+                        updateDownloadSourceStatus(sourceIndex == 0 && isMirrorApkUrl(sourceUrl)
+                            ? "正在从阿里云下载更新"
+                            : sourceIndex == 0
+                                ? "正在从 GitHub 下载更新"
+                                : "阿里云连接超时，切换 GitHub 下载");
+                        downloadApkOnce(sourceUrl, temporaryFile);
+                        verifyDownloadedApk(
+                            temporaryFile,
+                            version,
+                            versionCode,
+                            sourceIndex == 0 ? expectedSha256 : "");
                         downloadError = null;
                         break;
                     } catch (IOException error) {
                         downloadError = error;
                         if (cancelDownload) throw error;
-                        if (attempt < UPDATE_ATTEMPTS) waitBeforeRetry(attempt);
+                        if (sourceIndex + 1 < downloadSources.size()) {
+                            if (temporaryFile.exists() && !temporaryFile.delete()) {
+                                throw new IOException("无法清理失败的更新文件", error);
+                            }
+                        }
                     }
                 }
                 if (downloadError != null) throw downloadError;
@@ -319,6 +345,8 @@ public final class MainActivity extends Activity {
         connection.setReadTimeout(APK_READ_TIMEOUT_MS);
         connection.setInstanceFollowRedirects(true);
         connection.setRequestProperty("User-Agent", "jianghu-calculator");
+        long deadline = System.nanoTime()
+            + APK_SOURCE_TIMEOUT_MS * 1_000_000L;
         try {
             int responseCode = connection.getResponseCode();
             if (responseCode != HttpURLConnection.HTTP_OK) {
@@ -332,6 +360,9 @@ public final class MainActivity extends Activity {
                 int count;
                 while ((count = input.read(buffer)) != -1) {
                     if (cancelDownload) throw new IOException("下载已取消");
+                    if (System.nanoTime() > deadline) {
+                        throw new IOException("下载超时");
+                    }
                     output.write(buffer, 0, count);
                     downloaded += count;
                     updateDownloadProgress(downloaded, total);
@@ -342,10 +373,12 @@ public final class MainActivity extends Activity {
         }
     }
 
-    private void verifyDownloadedApk(File apkFile, String expectedVersion, long expectedVersionCode)
+    private void verifyDownloadedApk(File apkFile, String expectedVersion, long expectedVersionCode,
+                                     String expectedSha256)
         throws IOException {
+        verifySha256(apkFile, expectedSha256);
         PackageInfo downloaded = getPackageManager().getPackageArchiveInfo(
-            apkFile.getAbsolutePath(), PackageManager.GET_META_DATA);
+            apkFile.getAbsolutePath(), packageInfoFlags());
         if (downloaded == null) {
             throw new IOException("下载文件不是有效的 APK");
         }
@@ -355,9 +388,12 @@ public final class MainActivity extends Activity {
 
         PackageInfo current;
         try {
-            current = getPackageManager().getPackageInfo(PACKAGE_NAME, 0);
+            current = getPackageManager().getPackageInfo(PACKAGE_NAME, packageInfoFlags());
         } catch (PackageManager.NameNotFoundException error) {
             throw new IOException("无法读取当前应用版本", error);
+        }
+        if (!sameSigningCertificates(current, downloaded)) {
+            throw new IOException("下载文件签名不一致，无法覆盖安装");
         }
         long downloadedVersionCode = packageVersionCode(downloaded);
         long currentVersionCode = packageVersionCode(current);
@@ -370,6 +406,87 @@ public final class MainActivity extends Activity {
                 + " / " + expectedVersionCode + "，文件 "
                 + normalizeVersion(downloaded.versionName) + " / " + downloadedVersionCode + "）");
         }
+    }
+
+    private static int packageInfoFlags() {
+        if (Build.VERSION.SDK_INT >= 28) {
+            return PackageManager.GET_META_DATA | PackageManager.GET_SIGNING_CERTIFICATES;
+        }
+        return PackageManager.GET_META_DATA | PackageManager.GET_SIGNATURES;
+    }
+
+    private static boolean sameSigningCertificates(PackageInfo left, PackageInfo right) {
+        if (Build.VERSION.SDK_INT >= 28
+            && left.signingInfo != null
+            && right.signingInfo != null) {
+            return sameSignatureSet(signaturesForSigningInfo(left.signingInfo),
+                signaturesForSigningInfo(right.signingInfo));
+        }
+        return sameSignatureSet(left.signatures, right.signatures);
+    }
+
+    private static android.content.pm.Signature[] signaturesForSigningInfo(
+        android.content.pm.SigningInfo signingInfo) {
+        return signingInfo.hasMultipleSigners()
+            ? signingInfo.getApkContentsSigners()
+            : signingInfo.getSigningCertificateHistory();
+    }
+
+    private static boolean sameSignatureSet(
+        android.content.pm.Signature[] left,
+        android.content.pm.Signature[] right) {
+        if (left == null || right == null || left.length != right.length) return false;
+        for (android.content.pm.Signature leftSignature : left) {
+            boolean found = false;
+            for (android.content.pm.Signature rightSignature : right) {
+                if (leftSignature.equals(rightSignature)) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) return false;
+        }
+        return true;
+    }
+
+    private static void verifySha256(File file, String expectedSha256) throws IOException {
+        String expected = expectedSha256 == null
+            ? "" : expectedSha256.replaceAll("[^0-9a-fA-F]", "").toLowerCase(Locale.ROOT);
+        if (expected.isEmpty()) return;
+        try (InputStream input = new java.io.FileInputStream(file)) {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] buffer = new byte[8192];
+            int count;
+            while ((count = input.read(buffer)) != -1) {
+                digest.update(buffer, 0, count);
+            }
+            StringBuilder actual = new StringBuilder();
+            for (byte value : digest.digest()) {
+                actual.append(String.format(Locale.ROOT, "%02x", value & 0xff));
+            }
+            if (!expected.equals(actual.toString())) {
+                throw new IOException("下载文件校验失败");
+            }
+        } catch (GeneralSecurityException error) {
+            throw new IOException("无法校验下载文件", error);
+        }
+    }
+
+    private static String githubApkUrlForVersion(String version) {
+        String normalized = normalizeVersion(version);
+        if (normalized.isEmpty()) return "";
+        return "https://github.com/FlashBA/jianghu-calculator/releases/download/v"
+            + normalized + "/jianghu-calculator-" + normalized + ".apk";
+    }
+
+    private static boolean isMirrorApkUrl(String url) {
+        return url != null && url.startsWith("http://47.95.250.113/jianghu/");
+    }
+
+    private void updateDownloadSourceStatus(String message) {
+        runOnUiThread(() -> {
+            if (downloadStatus != null) downloadStatus.setText(message);
+        });
     }
 
     private void updateDownloadProgress(long downloaded, long total) {
