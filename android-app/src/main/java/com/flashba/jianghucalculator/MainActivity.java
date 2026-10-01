@@ -46,6 +46,8 @@ import org.json.JSONObject;
 
 public final class MainActivity extends Activity {
     private static final String ASSET_HOST = "appassets.androidplatform.net";
+    private static final String MIRROR_LATEST_URL =
+        "http://47.95.250.113/jianghu/latest.json";
     private static final String RELEASES_API_URL =
         "https://api.github.com/repos/FlashBA/jianghu-calculator/releases/latest";
     private static final byte[] VAULT_MAGIC = new byte[]{
@@ -103,20 +105,52 @@ public final class MainActivity extends Activity {
     private void checkForUpdate() {
         new Thread(() -> {
             try {
-                JSONObject release = fetchLatestRelease();
+                JSONObject release = fetchLatestUpdate();
                 if (release == null) return;
-                String latestVersion = normalizeVersion(release.optString("tag_name"));
-                String apkUrl = findApkUrl(release.optJSONArray("assets"));
+                String latestVersion = normalizeVersion(release.optString(
+                    release.has("tag_name") ? "tag_name" : "version"));
+                String apkUrl = release.optString("apk", "").trim();
+                if (apkUrl.isEmpty()) apkUrl = findApkUrl(release.optJSONArray("assets"));
                 if (latestVersion.isEmpty() || apkUrl.isEmpty()) return;
-                String releaseNotes = release.optString("body", "").trim();
+                String releaseNotes = release.optString("release_notes", "").trim();
+                if (releaseNotes.isEmpty()) releaseNotes = release.optString("notes", "").trim();
+                if (releaseNotes.isEmpty()) releaseNotes = release.optString("body", "").trim();
                 PackageInfo current = getPackageManager().getPackageInfo(getPackageName(), 0);
                 String currentVersion = normalizeVersion(current.versionName);
                 if (compareVersions(latestVersion, currentVersion) <= 0) return;
-                runOnUiThread(() -> showUpdateDialog(latestVersion, apkUrl, releaseNotes));
+                String finalApkUrl = apkUrl;
+                String finalReleaseNotes = releaseNotes;
+                runOnUiThread(() -> showUpdateDialog(
+                    latestVersion, finalApkUrl, finalReleaseNotes));
             } catch (Exception ignored) {
                 // Update checks are optional; the offline calculator must still open.
             }
         }, "jianghu-update-check").start();
+    }
+
+    private static JSONObject fetchLatestUpdate() throws IOException, JSONException {
+        try {
+            JSONObject mirror = fetchJson(MIRROR_LATEST_URL);
+            String version = normalizeVersion(mirror.optString("version"));
+            String apkUrl = mirror.optString("apk", "").trim();
+            if (!version.isEmpty() && !apkUrl.isEmpty()) return mirror;
+        } catch (Exception ignored) {
+            // The mirror is optional. Fall back to GitHub below.
+        }
+        return fetchLatestRelease();
+    }
+
+    private static JSONObject fetchJson(String endpoint) throws IOException, JSONException {
+        HttpURLConnection connection = (HttpURLConnection) new URL(endpoint).openConnection();
+        connection.setConnectTimeout(4500);
+        connection.setReadTimeout(4500);
+        connection.setRequestProperty("User-Agent", "jianghu-calculator");
+        try {
+            if (connection.getResponseCode() != HttpURLConnection.HTTP_OK) return null;
+            return new JSONObject(new String(readAll(connection.getInputStream()), "UTF-8"));
+        } finally {
+            connection.disconnect();
+        }
     }
 
     private static JSONObject fetchLatestRelease() throws IOException, JSONException {

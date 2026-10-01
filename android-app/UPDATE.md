@@ -54,4 +54,14 @@ git status --short
 
 `jianghu-debug.keystore` 和 `.backup` 必须保留，且不能提交到仓库。更换签名密钥会导致用户无法覆盖安装更新。当前 `v0.1.13` 已在本地构建并完成签名校验，APK 的本地备份位于 `android-app/artifacts/jianghu-calculator-0.1.13.apk`。构建脚本会先生成资源和 `R.java`，再编译 Java，并显式使用 UTF-8 编码。
 
-APK 启动时会检查 `FlashBA/jianghu-calculator` 的最新 GitHub Release。发现更高版本且 Release 包含 APK 时，会显示更新公告；点击“立即更新”后，APK 会在应用内下载并交给系统安装器。Android 首次安装外部 APK 时仍需用户确认，不能静默安装。图鉴数据则会在 APK 启动时优先从 GitHub 最新 JSON 获取，网络不可用时继续使用内置数据。
+APK 启动时会优先检查阿里云服务器的 `latest.json`。其中 `version`、`apk` 和
+`release_notes`（或 `notes`）可用于显示版本和更新公告；服务器不可用、字段不完整
+或下载失败时回退到 `FlashBA/jianghu-calculator` 的最新 GitHub Release。点击“立即更新”
+后，APK 会在应用内下载并交给系统安装器。Android 首次安装外部 APK 时仍需用户确认，
+不能静默安装。
+
+当前服务器地址仍使用 HTTP，因此清单暂时开启了明文流量。服务器切换到 HTTPS 后，
+应将 `AndroidManifest.xml` 的 `usesCleartextTraffic` 恢复为 `false`。
+
+图鉴数据则会在 APK 或网页启动时优先从阿里云 `whiterabbit_data.json` 获取，失败后依次
+尝试 GitHub Pages、jsDelivr 和 GitHub Raw，网络不可用时继续使用本地缓存或 APK 内置数据。

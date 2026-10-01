@@ -38,3 +38,10 @@ FORMULAS*.md
 !/android-app/src/main/assets/.gitkeep
 !/.github/
 !/.github/**
+!/tools/
+!/tools/sync_tencent_dungeon_drops.py
+!/docs/
+!/docs/DUNGEON_DROPS_SYNC.md
+!/reports/
+!/reports/dungeon_drops_sync_latest.md
+!/reports/dungeon_drops_source_snapshot.json

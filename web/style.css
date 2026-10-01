@@ -4398,6 +4398,108 @@ body {
   white-space: nowrap;
 }
 
+.v03-lineup-section-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.v03-lineup-section-heading h3 {
+  margin-bottom: 4px;
+}
+
+.v03-lineup-section-heading .v03-guide-source-note {
+  margin: 0;
+}
+
+.v03-lineup-progress {
+  flex: 0 0 auto;
+  padding: 4px 7px;
+  color: var(--teal-dark);
+  border: 1px solid #b9d0c9;
+  background: #edf5f1;
+  font-size: 0.68rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.v03-lineup-directory-list {
+  display: grid;
+  gap: 7px;
+  max-height: none;
+  overflow: visible;
+  border-top: 0;
+}
+
+.v03-lineup-directory {
+  border: 1px solid var(--line);
+  border-radius: 5px;
+}
+
+.v03-lineup-directory summary {
+  min-height: 40px;
+  padding: 0 10px;
+  background: #fffdf8;
+}
+
+.v03-lineup-directory[open] summary {
+  border-bottom: 1px solid var(--line);
+}
+
+.v03-lineup-rows {
+  display: grid;
+  gap: 7px;
+  padding: 8px;
+  background: #f8f5ee;
+}
+
+.v03-lineup-row {
+  display: grid;
+  gap: 7px;
+  padding: 8px;
+  border: 1px solid #ded7cc;
+  background: #fffdf9;
+}
+
+.v03-lineup-row > strong {
+  color: var(--ink);
+  font-size: 0.77rem;
+}
+
+.v03-lineup-fields {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 5px 8px;
+}
+
+.v03-lineup-fields span {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+
+.v03-lineup-fields small {
+  color: var(--muted);
+  font-size: 0.61rem;
+}
+
+.v03-lineup-fields b {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: #3b3630;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.v03-lineup-pending {
+  margin: 0;
+  padding: 10px;
+  color: var(--muted);
+  background: #faf7f0;
+  font-size: 0.7rem;
+}
+
 @media (max-width: 560px) {
   .v03-strategy-data-table .v03-guide-table {
     font-size: 0.7rem;
@@ -4416,6 +4518,10 @@ body {
   .v03-strategy-text {
     padding: 10px;
     font-size: 0.71rem;
+  }
+
+  .v03-lineup-fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 

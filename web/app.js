@@ -2,6 +2,7 @@ const STORAGE_KEY = 'jianghu-stat-simulator:character:v6';
 const ENCYCLOPEDIA_FAVORITES_KEY = 'jianghu-stat-simulator:encyclopedia:favorites:v1';
 const WHITE_RABBIT_CACHE_KEY = 'jianghu-stat-simulator:whiterabbit-data:v1';
 const REMOTE_WHITE_RABBIT_URLS = [
+  'http://47.95.250.113/jianghu/whiterabbit_data.json',
   'https://flashba.github.io/jianghu-calculator/whiterabbit_data.json',
   'https://cdn.jsdelivr.net/gh/FlashBA/jianghu-calculator@main/web/whiterabbit_data.json',
   'https://raw.githubusercontent.com/FlashBA/jianghu-calculator/main/web/whiterabbit_data.json',
@@ -221,7 +222,8 @@ function whiteRabbitDataValid(data) {
     && Array.isArray(data.techniques)
     && Array.isArray(data.inner_skills)
     && Array.isArray(data.martial_arts)
-    && Array.isArray(data.equipment));
+    && Array.isArray(data.equipment)
+    && Array.isArray(data.dungeon_drops));
 }
 
 function whiteRabbitVersionParts(data) {
@@ -251,6 +253,7 @@ function whiteRabbitSignature(data) {
     data.inner_skills.length,
     data.martial_arts.length,
     data.equipment.length,
+    data.dungeon_drops.length,
     JSON.stringify(data.source || {}),
   ].join('|');
 }
@@ -3304,34 +3307,6 @@ function encyclopediaDungeonGroups() {
       summary: record.drop || '',
       detail: record.note || '',
       source: record.drop || '攻略记录',
-    });
-  });
-  const sourceRecords = Object.entries(ENCYCLOPEDIA_TYPE_LABELS).flatMap(([sourceType, typeLabel]) => (
-    encyclopediaRecords(sourceType).map((record) => ({ ...record, sourceType, typeLabel }))
-  ));
-  sourceRecords.forEach((record) => {
-    const sourceText = record.sourceText || encyclopediaText(record.access, record.detail);
-    const sourceHasDropAction = ENCYCLOPEDIA_DROP_ACTION_PATTERN.test(sourceText);
-    String(sourceText).split(/(?: · |[，,；;。])/).map((segment) => segment.trim()).filter(Boolean).forEach((segment) => {
-      ENCYCLOPEDIA_DUNGEONS.forEach((dungeon) => {
-        const alias = dungeonAliasInText(segment, dungeon);
-        if (!alias) return;
-        const isDirectSource = segment === alias;
-        if (/祭拜|祭祀/.test(segment) && !/掉落|击杀|击败|宝箱/.test(segment)) return;
-        if (!isDirectSource && !sourceHasDropAction && !ENCYCLOPEDIA_DROP_ACTION_PATTERN.test(segment)) return;
-        const bossName = dungeonBossFromSegment(segment, dungeon, alias);
-        const group = groupMap.get(dungeon.id);
-        if (!group) return;
-        addDrop(group, bossName, {
-          id: `${record.id}-${dungeon.id}-${group.bosses.length}`,
-          name: record.name,
-          typeLabel: record.typeLabel,
-          meta: record.meta,
-          summary: record.summary,
-          detail: record.detail,
-          source: segment,
-        });
-      });
     });
   });
   return groups.map(({ bossMap, aliases, ...group }) => group);
