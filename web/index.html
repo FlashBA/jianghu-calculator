@@ -4,8 +4,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#f4f1ea">
-    <title>白兔江湖宝典 · v0.4</title>
-    <link rel="stylesheet" href="style.css?v=20261001-02">
+    <title>白兔江湖宝典 · v0.5.0 开发版</title>
+    <link rel="stylesheet" href="style.css?v=050-02">
     <style>
       .full-demo-banner { display: none; }
     </style>
@@ -23,6 +23,10 @@
       </nav>
 
       <section id="home-view" class="v03-home-view" aria-label="主页">
+        <div class="content-update-bar">
+          <button id="data-update-button" type="button" title="检查图鉴和攻略数据更新" disabled>检查数据更新</button>
+          <span id="data-update-status" role="status" aria-live="polite">正在读取数据…</span>
+        </div>
         <div class="v03-home-title">
           <div>
             <h2>白兔江湖宝典</h2>
@@ -474,7 +478,6 @@
       <section class="collection-view" id="guide-view" hidden aria-label="攻略">
         <div class="v03-guide-heading">
           <h2>攻略目录</h2>
-          <p>按资料来源拆分，每项进入独立详情页。</p>
         </div>
         <div id="guide-directory" class="v03-guide-directory"></div>
         <section id="guide-detail" class="v03-guide-detail" hidden aria-live="polite">
@@ -736,9 +739,9 @@
       </nav>
     </main>
     <script>window.APP_DATA_BASE = './';</script>
-    <script src="new-ui-reference/wiki-data.js?v=20260930-04"></script>
-    <script src="guide-directory-data.js?v=20261001-01"></script>
-    <script src="app.js?v=20261001-03"></script>
-    <script src="v03-ui.js?v=20261001-02"></script>
+    <script src="content-schema.js?v=050-01"></script>
+    <script src="content-updates.js?v=050-03"></script>
+    <script src="app.js?v=050-02"></script>
+    <script src="v03-ui.js?v=050-05"></script>
   </body>
 </html>

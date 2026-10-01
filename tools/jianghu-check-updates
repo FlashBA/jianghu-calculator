@@ -1,0 +1,47 @@
+#!/bin/sh
+set -eu
+
+case "${1:-}" in
+  --check-only)
+    /usr/bin/python3 /opt/jianghu-content-sync/sync_tencent_pitfalls.py \
+      --check --output /opt/jianghu-content-sync/tencent_pitfalls.json
+    exec /usr/bin/python3 /opt/jianghu-content-sync/publish_tencent_encyclopedia.py --check-only
+    ;;
+  --encyclopedia)
+    systemctl start jianghu-encyclopedia-sync.service
+    exec /usr/bin/python3 -m json.tool /opt/jianghu-content-sync/encyclopedia-status.json
+    ;;
+  '') ;;
+  *)
+    echo 'Usage: jianghu-check-updates [--check-only|--encyclopedia]' >&2
+    exit 2
+    ;;
+esac
+
+# systemd serializes manual checks with the scheduled job.
+if ! systemctl start jianghu-pitfalls-sync.service; then
+  journalctl -u jianghu-pitfalls-sync.service -n 15 --no-pager >&2
+  exit 1
+fi
+/usr/bin/python3 -c '
+import json
+from pathlib import Path
+s = json.loads(Path("/opt/jianghu-content-sync/status.json").read_text())
+print("检查完成：" + ("已发布新数据" if s["published"] else "腾讯文档内容无变化"))
+print("检查时间：" + s["checked_at"])
+print("腾讯 revision：" + str(s["source_revision"]))
+print("避坑指南：" + str(s["items"]) + " 项")
+print("内容版本：" + str(s["content_revision"]))
+'
+if ! systemctl start jianghu-encyclopedia-sync.service; then
+  journalctl -u jianghu-encyclopedia-sync.service -n 15 --no-pager >&2
+  exit 1
+fi
+/usr/bin/python3 -c '
+import json
+from pathlib import Path
+s = json.loads(Path("/opt/jianghu-content-sync/encyclopedia-status.json").read_text())
+print("四类图鉴：" + ("已发布新数据" if s["published"] else "无可发布变更"))
+print("待核对效果：" + str(len(s.get("review", []))))
+print("内容版本：" + str(s["content_revision"]))
+'

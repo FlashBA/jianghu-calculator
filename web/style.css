@@ -3045,6 +3045,37 @@ body {
   display: block;
 }
 
+.content-update-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin-bottom: 14px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.content-update-bar button {
+  min-height: 40px;
+  padding: 8px 12px;
+  border: 1px solid #b84040;
+  border-radius: 4px;
+  background: #fff;
+  color: #942f2f;
+  font: inherit;
+  cursor: pointer;
+}
+
+.content-update-bar button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.content-update-bar span {
+  color: #666;
+  overflow-wrap: anywhere;
+}
+
 .v03-home-title {
   display: flex;
   align-items: start;
@@ -3679,7 +3710,7 @@ body {
   gap: 10px;
   align-items: center;
   width: 100%;
-  min-height: 76px;
+  min-height: 62px;
   padding: 11px 12px;
   color: var(--ink);
   border: 1px solid var(--line);
@@ -3730,18 +3761,25 @@ body {
   gap: 2px;
 }
 
-.v03-guide-directory-copy small,
-.v03-guide-directory-copy b {
+.v03-guide-directory-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 8px;
+  min-width: 0;
+}
+
+.v03-guide-directory-copy small {
   color: var(--muted);
   font-size: 0.64rem;
   font-weight: 600;
+  overflow-wrap: anywhere;
 }
 
 .v03-guide-directory-copy strong {
-  overflow: hidden;
   font-size: 0.91rem;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .v03-guide-directory-copy em {

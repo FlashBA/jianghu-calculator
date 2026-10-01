@@ -1,0 +1,10 @@
+[Unit]
+Description=Synchronize bound Tencent pitfalls guide
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /opt/jianghu-content-sync/publish_tencent_pitfalls.py
+TimeoutStartSec=120
+UMask=0022

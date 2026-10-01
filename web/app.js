@@ -2,7 +2,7 @@ const STORAGE_KEY = 'jianghu-stat-simulator:character:v6';
 const ENCYCLOPEDIA_FAVORITES_KEY = 'jianghu-stat-simulator:encyclopedia:favorites:v1';
 const WHITE_RABBIT_CACHE_KEY = 'jianghu-stat-simulator:whiterabbit-data:v1';
 const REMOTE_WHITE_RABBIT_URLS = [
-  'http://47.95.250.113/jianghu/whiterabbit_data.json',
+  'https://47.95.250.113/jianghu/whiterabbit_data.json',
   'https://flashba.github.io/jianghu-calculator/whiterabbit_data.json',
   'https://cdn.jsdelivr.net/gh/FlashBA/jianghu-calculator@main/web/whiterabbit_data.json',
   'https://raw.githubusercontent.com/FlashBA/jianghu-calculator/main/web/whiterabbit_data.json',
@@ -630,7 +630,7 @@ function isSOrUnknownRank(value) {
   return rank.endsWith('S') || rank === '?' || rank === '？';
 }
 function displayMartialRank(value) {
-  const rank = String(value || '').trim().toUpperCase();
+  const rank = String(value || '').trim().replaceAll('？', '?').toUpperCase();
   return /^\d+S$/.test(rank) ? 'S' : rank || '品级待补';
 }
 function martialCritDamageLabel(value) {
@@ -4431,6 +4431,7 @@ async function fetchFirstRemoteWhiteRabbitData() {
 }
 
 async function loadWhiteRabbitData() {
+  if (window.JianghuContent) return (await window.JianghuContent.ready).data.encyclopedia;
   const localUrl = `${APP_DATA_BASE}whiterabbit_data.json?updated=${Date.now()}`;
   let localData = null;
   try {
@@ -4459,7 +4460,7 @@ function restoreWhiteRabbitSelections(snapshot) {
     const item = findWhiteEquipmentByName(snapshot.weaponName);
     state.weaponId = item && isWeapon(item) ? String(item.id) : '';
   }
-  if (snapshot.techniqueSignatures?.length && techniqueSelectionCustomized) {
+  if (snapshot.techniqueSelectionCustomized) {
     const signatures = new Set(snapshot.techniqueSignatures);
     const ids = techniqueOptionEntries()
       .filter((item) => signatures.has(`${item.group || ''}|${item.parentName || ''}|${item.name || ''}`))
@@ -4474,7 +4475,7 @@ function applyWhiteRabbitDataUpdate(data) {
     .map((heading) => heading.textContent.trim())
     .filter(Boolean);
   const openMartialDetailName = !$('encyclopedia-detail-view')?.hidden
-    ? $('encyclopedia-detail-view h2')?.textContent.trim()
+    ? document.querySelector('#encyclopedia-detail-view h2')?.textContent.trim()
     : '';
   const snapshot = {
     characterName: $('person-name')?.value || '',
@@ -4482,6 +4483,7 @@ function applyWhiteRabbitDataUpdate(data) {
     innerName: getSelectedInner()?.source === 'white' ? getSelectedInner().item?.name : '',
     weaponName: state.weaponId ? equipmentName(getWhiteEquipment(state.weaponId)) : '',
     techniqueSelectionCustomized,
+    techniqueMode: techniqueStatsMode(),
     techniqueSignatures: selectedTechniques().map((item) => `${item.group || ''}|${item.parentName || ''}|${item.name || ''}`),
   };
   state.whiteRabbit = data;
@@ -4492,6 +4494,7 @@ function applyWhiteRabbitDataUpdate(data) {
   populateWeaponAffixes();
   techniqueSelectionCustomized = snapshot.techniqueSelectionCustomized;
   restoreWhiteRabbitSelections(snapshot);
+  setTechniqueStatsMode(snapshot.techniqueMode);
   if (innerStatsMode() === 'auto') syncAutoInnerStats();
   if (techniqueStatsMode() === 'auto') syncTechniqueStats();
   renderTechniqueScope();
@@ -4541,10 +4544,16 @@ async function init() {
     renderTechniqueScope();
     renderWeaponAffixes(); renderEquipmentSlots(); enhanceSelects(); refreshSelectProxies(); calculate();
     window.dispatchEvent(new CustomEvent('jianghu-app-ready'));
-    refreshWhiteRabbitDataInBackground().catch((error) => console.warn('图鉴数据自动更新失败', error));
+    if (!window.JianghuContent) {
+      refreshWhiteRabbitDataInBackground().catch((error) => console.warn('图鉴数据自动更新失败', error));
+    }
   } catch (error) {
     setError(`${error.message}。请通过本地 HTTP 服务打开页面，不要直接双击 HTML 文件。`);
   }
 }
+
+window.addEventListener('jianghu-content-updated', (event) => {
+  applyWhiteRabbitDataUpdate(event.detail.data.encyclopedia);
+});
 
 init();

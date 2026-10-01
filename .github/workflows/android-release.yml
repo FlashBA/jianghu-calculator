@@ -7,9 +7,9 @@ on:
   workflow_dispatch:
     inputs:
       version_name:
-        description: 'APK version, for example 0.2.0'
+        description: 'APK version, for example 0.5.0'
         required: true
-        default: '0.2.0'
+        default: '0.5.0'
         type: string
 
 permissions:
@@ -21,6 +21,9 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Validate content bundle
+        run: node tools/build-content-bundle.cjs --check
 
       - name: Set up Java
         uses: actions/setup-java@v4
@@ -53,7 +56,7 @@ jobs:
           case "$VERSION_NAME" in
             ''|*[!0-9.]*) echo "Invalid version: $VERSION_NAME" >&2; exit 1 ;;
           esac
-          VERSION_CODE=$(printf '%s' "$VERSION_NAME" | awk -F. '{ printf "%d%02d%02d", $1, $2, $3 }')
+          VERSION_CODE=$(printf '%s' "$VERSION_NAME" | awk -F. '{ printf "%d", $1 * 10000 + $2 * 100 + $3 }')
           echo "VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
           echo "VERSION_CODE=$VERSION_CODE" >> "$GITHUB_ENV"
 
@@ -81,11 +84,51 @@ jobs:
           test -n "$ACTUAL_CERT"
           test "$ACTUAL_CERT" = "$EXPECTED_CERT"
 
+      - name: Verify APK metadata and encrypted assets
+        run: |
+          APK="android-app/artifacts/jianghu-calculator-$VERSION_NAME.apk"
+          "$ANDROID_HOME/build-tools/35.0.0/aapt2" dump badging "$APK" > android-app/artifacts/apk-metadata.txt
+          grep "package: name='com.flashba.jianghucalculator' versionCode='$VERSION_CODE' versionName='$VERSION_NAME'" android-app/artifacts/apk-metadata.txt
+          grep "application-label:'白兔江湖宝典'" android-app/artifacts/apk-metadata.txt
+          test "$(unzip -Z1 "$APK" | grep '^assets/')" = 'assets/app.vault'
+          sha256sum "$APK" > android-app/artifacts/apk-sha256.txt
+
+      - name: Upload signed test package
+        uses: actions/upload-artifact@v4
+        with:
+          name: jianghu-${{ env.VERSION_NAME }}
+          path: android-app/artifacts/
+
+      - name: Enable KVM
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Test upgrade and encrypted WebView startup
+        if: github.event_name == 'workflow_dispatch'
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 29
+          arch: x86_64
+          profile: pixel_2
+          disable-animations: true
+          script: bash tools/test-android-startup.sh
+
+      - name: Upload Android test evidence
+        if: always() && github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-startup-evidence
+          path: android-app/test-evidence/
+
       - name: Publish GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
           body: |
-            1. 优化收藏
-            2. 优化原本攻略 chunk 块可视化 UI
-            3. 优化下载方式
+            1. 图鉴与攻略数据自动更新，增加手动检查入口
+            2. 优化攻略目录、数值说明和武学等级筛选
+            3. 优化数据更新提示与下载超时处理
           files: android-app/artifacts/jianghu-calculator-${{ env.VERSION_NAME }}.apk

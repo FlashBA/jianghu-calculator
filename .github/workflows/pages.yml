@@ -23,6 +23,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+      - name: Validate content bundle
+        run: node tools/build-content-bundle.cjs --check
       - name: Upload static site
         uses: actions/upload-pages-artifact@v3
         with:

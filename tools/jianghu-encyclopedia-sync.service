@@ -1,0 +1,10 @@
+[Unit]
+Description=Synchronize protected Tencent encyclopedia fields
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /opt/jianghu-content-sync/publish_tencent_encyclopedia.py
+TimeoutStartSec=420
+UMask=0022
