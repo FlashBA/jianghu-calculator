@@ -1608,6 +1608,24 @@
       "access": "丐帮苏州净衣派长老吕文舟处花费贡献学习"
     },
     {
+      "name": "嗜心炼体诀",
+      "rank": "?",
+      "scope": "修炼者",
+      "ren_du": "",
+      "hp_percent": 60,
+      "attack_percent": 60,
+      "heal_percent": -36,
+      "mitigation_percent": 30,
+      "lifesteal_percent": 30,
+      "crit_percent": null,
+      "crit_damage_percent": null,
+      "reflect_percent": null,
+      "speed": null,
+      "dodge_percent": null,
+      "special": "增加拳掌武功15%暴击；每次出手损失33%血量",
+      "access": "张祁连专属"
+    },
+    {
       "name": "喵王护御诀",
       "rank": "?",
       "scope": "修炼者",
@@ -2514,14 +2532,14 @@
       "range": "邻2",
       "segments": 3,
       "multi_hit_probabilities": {
-        "2": 75,
+        "2": 65,
         "3": 50
       },
       "double_break": "双破",
       "crit_percent": 5,
       "crit_damage": "2.4/2.5/2.6",
       "buff": "15%概率一段7%流血\n二段降低速度15%，攻击15%\n三段降低速度15%，攻击15%，8%流血两回合",
-      "special": "出手后75%概率二连，50%概率三连",
+      "special": "出手后65%概率二连，50%概率三连",
       "access": "人生目标盖世武功选择绝世剑法，限1"
     },
     {
