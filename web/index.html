@@ -4,8 +4,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#f4f1ea">
-    <title>白兔江湖宝典 · v0.5.0</title>
-    <link rel="stylesheet" href="style.css?v=050-limited-copy">
+    <title>白兔江湖宝典 · v0.5.1</title>
+    <link rel="stylesheet" href="style.css?v=050-achievements-filters">
     <style>
       .full-demo-banner { display: none; }
     </style>
@@ -70,7 +70,7 @@
           </button>
           <button class="v03-entry-card" type="button" data-v03-target="achievements">
             <span class="v03-entry-icon v03-entry-icon-gold"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 4h8v5a4 4 0 0 1-8 0V4Z"></path><path d="M8 6H5v2a3 3 0 0 0 3 3M16 6h3v2a3 3 0 0 1-3 3M12 13v4M8 20h8M9 17h6"></path></svg></span>
-            <span><strong>成就记录</strong><small>手动记录成就完成情况</small></span>
+            <span><strong>成就记录</strong><small id="home-achievements-count">武学 · 内功 · 技艺</small></span>
             <b>›</b>
           </button>
         </section>
@@ -95,9 +95,8 @@
       <section class="collection-view v03-achievements-view" id="achievements-view" hidden aria-label="成就记录">
         <div class="section-heading collection-heading">
           <div>
-            <p class="section-kicker">ACHIEVEMENTS</p>
             <h2>成就记录</h2>
-            <p class="v03-achievements-subtitle">手动记录已完成的成就</p>
+            <p class="v03-achievements-subtitle">感谢 @闲道人 整理数据 · 游戏版本 3.13</p>
           </div>
           <span class="collection-count" id="achievements-count">0 项</span>
         </div>
@@ -105,7 +104,21 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"></path></svg>
           <span>返回主页</span>
         </button>
+        <div class="v03-achievements-summary">
+          <progress id="achievements-progress" max="1" value="0" aria-label="收集进度"></progress>
+          <span id="achievements-progress-text">0%</span>
+        </div>
+        <div class="v03-achievements-tools">
+          <input id="achievements-search" type="search" placeholder="搜索名称、获取途径" aria-label="搜索成就" autocomplete="off">
+          <select id="achievements-categories" aria-label="成就分类"></select>
+          <select id="achievements-status" aria-label="收集状态">
+            <option value="all">全部状态</option><option value="unavailable">暂未开放</option>
+            <option value="remaining">未收集</option><option value="complete">已收集</option>
+          </select>
+        </div>
+        <p id="achievements-feedback" class="v03-achievements-feedback" role="status" aria-live="polite"></p>
         <div id="achievements-list" class="v03-achievements-list"></div>
+        <button id="achievements-more" class="v03-achievements-more" type="button" hidden>加载更多</button>
       </section>
 
       <div id="calculator-view" class="app-view" hidden>
@@ -739,9 +752,9 @@
       </nav>
     </main>
     <script>window.APP_DATA_BASE = './';</script>
-    <script src="content-schema.js?v=050-01"></script>
-    <script src="content-updates.js?v=050-release-2"></script>
-    <script src="app.js?v=050-limited-copy"></script>
-    <script src="v03-ui.js?v=050-05"></script>
+    <script src="content-schema.js?v=050-achievements"></script>
+    <script src="content-updates.js?v=050-oss-source"></script>
+    <script src="app.js?v=050-oss-source"></script>
+    <script src="v03-ui.js?v=050-achievements-filters"></script>
   </body>
 </html>

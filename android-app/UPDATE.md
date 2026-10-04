@@ -1,5 +1,18 @@
 # APK 更新规则
 
+## 待发布：系统安全区域适配
+
+- 原生 FrameLayout 根据 WindowInsets 为 WebView 预留四边安全区域，网页原有
+  13px/26px 页面留白不变，不通过固定状态栏高度或网页额外 padding 补偿。
+- API 30+ 显式使用边到边窗口，取系统栏与刘海区域的安全边距，并与输入法
+  inset 取最大值；API 23–29 使用系统窗口 inset，API 28+ 同时处理 DisplayCutout。
+- 边距直接覆盖而非累加，并消费已处理的 inset，防止 WebView 二次避让。
+  横竖屏、手势/三键导航及输入法变化由系统重新分发 inset。
+- 验收需覆盖 Android 15/API 35 与旧系统、刘海/挖孔屏、横屏、键盘打开/收起。
+  检查页面顶部、底部固定导航、搜索输入框及弹窗，不仅检查首页。
+- 当前环境没有 Android SDK/JDK，尚未编译或执行设备测试；待构建新 APK 验证。
+  此修复不修改包名、签名、版本号或 CDN 配置，也不能通过纯数据更新下发。
+
 ## 当前正式版 v0.5.0（2026-10-02）
 
 - 标签提交：`8fa7f50430584eaa4e17a2a17f57959f6be7dba0`；成功构建：Actions `36906415019`。
@@ -67,7 +80,7 @@ git status --short
 
 `jianghu-debug.keystore` 和 `.backup` 必须保留，且不能提交到仓库。更换签名密钥会导致用户无法覆盖安装更新。当前 `v0.1.13` 已在本地构建并完成签名校验，APK 的本地备份位于 `android-app/artifacts/jianghu-calculator-0.1.13.apk`。构建脚本会先生成资源和 `R.java`，再编译 Java，并显式使用 UTF-8 编码。
 
-APK 启动时会优先检查阿里云服务器的 `latest.json`。其中 `version`、`version_code`、
+待发布客户端启动时依次检查 OSS、ECS 的 `latest.json`，再回退 GitHub；已发布 APK 仍以 ECS 为先。其中 `version`、`version_code`、
 `apk` 和 `release_notes`（或 `notes`）可用于显示版本和更新公告；缺少
 `version_code` 时会按版本号推导。应用会同时比较 Android `versionCode`，下载完成后
 还会校验 APK 包名、真实 `versionCode`、公告版本、SHA-256 和当前应用签名，低版本、
@@ -88,8 +101,13 @@ Release 下载，每个来源最多约 30 秒，避免更新等待过长。服�
 当前服务器地址仍使用 HTTP，因此清单暂时开启了明文流量。服务器切换到 HTTPS 后，
 应将 `AndroidManifest.xml` 的 `usesCleartextTraffic` 恢复为 `false`。
 
-图鉴数据则会在 APK 或网页启动时优先从阿里云 `whiterabbit_data.json` 获取，失败后依次
-尝试 GitHub Pages、jsDelivr 和 GitHub Raw，网络不可用时继续使用本地缓存或 APK 内置数据。
+待发布客户端图鉴及攻略分包按 OSS、ECS、GitHub Pages、jsDelivr、GitHub Raw 顺序获取，
+网络不可用时继续使用本地缓存或 APK 内置数据。旧版独立图鉴文件也保留兼容镜像。
+
+OSS 默认域名实测禁止公开下载 APK（`ApkDownloadForbidden`），目前没有自定义域名，
+所以 APK 下载仍为 ECS 优先、GitHub 备用。OSS 只提供数据及指向 ECS APK 的版本清单。
+服务器已配置每日来源发布后同步 OSS，维护命令为 `jianghu-sync-oss`。
+本次原生代码尚未编译或真机验证，不代表已发布 APK 获得 OSS 优先策略。
 
 ## v0.5.0 测试包记录（2026-10-02）
 

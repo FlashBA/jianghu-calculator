@@ -34,6 +34,7 @@ const data = {
   encyclopedia: read('whiterabbit_data.json'),
   searchIndex: read('guide_search_index.json'),
   strategyGuides: read('strategy_guides.json'),
+  achievements: read('achievements.json'),
   recipeData: read('tencent_recipe_data.json'),
   strategyText: read('strategy_ocr_data.json'),
   updateLogs: read('update_logs.json'),

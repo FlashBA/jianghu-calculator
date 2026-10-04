@@ -5,7 +5,12 @@
   const guideState = { searchIndex: null, strategyGuides: null, recipeData: null, strategyText: null, updateLogs: null, current: null, searchQuery: '', updateLogQuery: '', updateLogVersion: '' };
   const GUIDE_FAVORITES_KEY = 'jianghu-stat-simulator:guide:favorites:v1';
   const ACHIEVEMENT_PROGRESS_KEY = 'jianghu-stat-simulator:achievements:v1';
-  const ACHIEVEMENT_RECORDS = [];
+  let ACHIEVEMENT_RECORDS = [];
+  let achievementCategories = [];
+  let achievementsLoaded = false;
+  let achievementCategory = '';
+  let achievementLimit = 40;
+  let achievementSaveFailed = false;
   let guideFavorites = readGuideFavorites();
   let achievementProgress = readAchievementProgress();
   let pendingFavoriteChunkId = '';
@@ -48,7 +53,7 @@
   function readAchievementProgress() {
     try {
       const value = JSON.parse(localStorage.getItem(ACHIEVEMENT_PROGRESS_KEY) || '{}');
-      return value && typeof value === 'object' ? value : {};
+      return value && typeof value === 'object' && !Array.isArray(value) ? value : {};
     } catch {
       return {};
     }
@@ -57,14 +62,15 @@
   function saveAchievementProgress() {
     try {
       localStorage.setItem(ACHIEVEMENT_PROGRESS_KEY, JSON.stringify(achievementProgress));
+      achievementSaveFailed = false;
     } catch {
-      // Achievement tracking remains usable for the current session if storage is unavailable.
+      achievementSaveFailed = true;
     }
   }
 
   function toggleAchievement(id) {
     const key = String(id || '');
-    if (!key) return;
+    if (!ACHIEVEMENT_RECORDS.some((item) => item.id === key && item.available)) return;
     achievementProgress[key] = !achievementProgress[key];
     saveAchievementProgress();
     renderAchievements();
@@ -74,18 +80,55 @@
     const list = document.getElementById('achievements-list');
     const count = document.getElementById('achievements-count');
     if (!list || !count) return;
-    const completed = ACHIEVEMENT_RECORDS.filter((item) => achievementProgress[item.id]).length;
-    count.textContent = `${completed} / ${ACHIEVEMENT_RECORDS.length} 项`;
+    const eligible = ACHIEVEMENT_RECORDS.filter((item) => item.available);
+    const completed = eligible.filter((item) => achievementProgress[item.id] === true).length;
+    count.textContent = `${completed} / ${eligible.length} 已收集`;
+    document.getElementById('home-achievements-count').textContent = `${completed} / ${eligible.length} 已收集`;
+    const progress = document.getElementById('achievements-progress');
+    progress.max = eligible.length || 1;
+    progress.value = completed;
+    document.getElementById('achievements-progress-text').textContent = `${eligible.length ? Math.round(completed / eligible.length * 1000) / 10 : 0}%`;
+    const categories = [{ id: '', title: '全部分类' }, ...achievementCategories];
+    document.getElementById('achievements-categories').innerHTML = categories.map((category) => {
+      const items = eligible.filter((item) => !category.id || item.category === category.id);
+      const done = items.filter((item) => achievementProgress[item.id] === true).length;
+      return `<option value="${escapeHtml(category.id)}"${category.id === achievementCategory ? ' selected' : ''}>${escapeHtml(category.title)} · ${done}/${items.length}</option>`;
+    }).join('');
+    const query = document.getElementById('achievements-search').value.trim().toLocaleLowerCase();
+    const status = document.getElementById('achievements-status').value;
+    const priority = (item) => !item.available ? 0 : achievementProgress[item.id] === true ? 2 : 1;
+    const filtered = ACHIEVEMENT_RECORDS.filter((item) => (!achievementCategory || item.category === achievementCategory)
+      && (!query || `${item.title} ${item.access} ${item.rank || ''}`.toLocaleLowerCase().includes(query))
+      && (status === 'all' || (status === 'unavailable' ? !item.available : item.available
+        && (status === 'complete' ? achievementProgress[item.id] === true : achievementProgress[item.id] !== true))))
+      .sort((left, right) => priority(left) - priority(right));
+    document.getElementById('achievements-feedback').textContent = achievementSaveFailed
+      ? '本次勾选未能保存到设备，请稍后重试。'
+      : `${filtered.length} 项${status === 'all' && filtered.some((item) => !item.available) ? ' · 暂未开放不计入进度' : ''}`;
+    const more = document.getElementById('achievements-more');
+    more.hidden = filtered.length <= achievementLimit;
+    more.textContent = `加载更多（剩余 ${Math.max(0, filtered.length - achievementLimit)} 项）`;
     if (!ACHIEVEMENT_RECORDS.length) {
-      list.innerHTML = '<div class="v03-achievements-empty"><strong>静待更新</strong></div>';
+      list.innerHTML = `<p class="v03-achievements-empty">${achievementsLoaded ? '暂无成就清单' : guideState.loadError ? '成就数据加载失败' : '正在读取成就清单…'}</p>`;
       return;
     }
-    list.innerHTML = ACHIEVEMENT_RECORDS.map((item) => `
-      <label class="v03-achievement-item${achievementProgress[item.id] ? ' is-complete' : ''}">
-        <input type="checkbox" data-achievement-id="${escapeHtml(item.id)}"${achievementProgress[item.id] ? ' checked' : ''}>
-        <span><strong>${escapeHtml(item.title)}</strong><small>${escapeHtml(item.description || '')}</small></span>
-      </label>
-    `).join('');
+    const focused = document.activeElement?.dataset.achievementId;
+    const categoryTitle = (id) => achievementCategories.find((item) => item.id === id)?.title || '';
+    list.innerHTML = filtered.slice(0, achievementLimit).map((item) => {
+      const subtitle = [categoryTitle(item.category), item.access,
+        !item.available && !item.access.includes('暂未开放') && '暂未开放'].filter(Boolean).join(' · ');
+      return `
+      <div class="v03-achievement-item${achievementProgress[item.id] === true ? ' is-complete' : ''}${item.available ? '' : ' is-unavailable'}">
+        <input type="checkbox" data-achievement-id="${escapeHtml(item.id)}" aria-label="${escapeHtml(item.title)}${item.rank ? ` ${escapeHtml(item.rank)}级` : ''} 已收集"${achievementProgress[item.id] === true ? ' checked' : ''}${item.available ? '' : ' disabled'}>
+        <div class="v03-achievement-copy">
+          <span class="v03-achievement-heading"><strong>${escapeHtml(item.title)}</strong><span class="v03-achievement-rank">${escapeHtml(item.rank || `上限 ${item.maxLevel} 级`)}</span></span>
+          <small>${escapeHtml(subtitle)}</small>
+        </div>
+      </div>
+    `;
+    }).join('');
+    if (!filtered.length) list.innerHTML = '<p class="v03-achievements-empty">没有匹配的条目</p>';
+    if (focused) [...list.querySelectorAll('[data-achievement-id]')].find((input) => input.dataset.achievementId === focused)?.focus({ preventScroll: true });
   }
 
   function toggleGuideFavorite(id) {
@@ -103,7 +146,8 @@
   }
 
   function encyclopediaFavoriteButton(id, label) {
-    const active = Boolean(window.jianghuEncyclopedia?.getFavoriteEntries?.().some((item) => item.key === id));
+    // This button is rendered only for entries already in the favorites list.
+    const active = true;
     return `<button type="button" class="v03-favorite-button${active ? ' is-favorite' : ''}" data-encyclopedia-favorite="${escapeHtml(id)}" aria-label="${active ? '取消收藏' : '收藏'}${escapeHtml(label)}" aria-pressed="${active ? 'true' : 'false'}"><span aria-hidden="true">${active ? '♥' : '♡'}</span></button>`;
   }
 
@@ -157,7 +201,7 @@
 
   function strategyCount(id) {
     const guide = strategyById(id);
-    if (!guide) return '加载中';
+    if (!guide) return guideState.loadError ? '加载失败' : '加载中';
     return `${guide.sections.reduce((total, section) => total + (section.items?.length || 1), 0)} 项内容`;
   }
 
@@ -347,7 +391,7 @@
     if (!result || !count) return;
     const { records, filtered } = originalRecords(guideState.searchQuery);
     if (!records.length) {
-      count.textContent = '索引加载中';
+      count.textContent = guideState.loadError ? '加载失败，请重新打开或刷新重试' : '索引加载中';
       result.innerHTML = '<p class="v03-guide-empty">正在读取离线索引…</p>';
       return;
     }
@@ -370,13 +414,15 @@
     if (!list || !count) return;
     const catalog = getGuideCatalog();
     const chunks = guideState.searchIndex?.records || [];
+    const catalogById = new Map(catalog.map((item) => [`guide:${item.id}`, item]));
+    const chunksById = new Map(chunks.map((item) => [`chunk:${item.id}`, item]));
     const guideItems = [...guideFavorites].map((key) => {
       if (key.startsWith('guide:')) {
-        const item = catalog.find((entry) => `guide:${entry.id}` === key);
+        const item = catalogById.get(key);
         return item ? { key, type: 'guide', title: item.title, meta: item.author ? `作者：${item.author}` : '攻略', guideId: item.id } : null;
       }
       if (key.startsWith('chunk:')) {
-        const item = chunks.find((entry) => `chunk:${entry.id}` === key);
+        const item = chunksById.get(key);
         return item ? { key, type: 'chunk', title: item.title || '未命名条目', meta: item.section || '原版攻略', record: item } : null;
       }
       return null;
@@ -528,7 +574,7 @@
   }
 
   function renderStrategy(guide) {
-    if (!guide) return '<p class="v03-guide-empty">专题攻略数据加载中…</p>';
+    if (!guide) return `<p class="v03-guide-empty">${guideState.loadError ? '攻略数据加载失败，请重新打开或刷新重试' : '专题攻略数据加载中…'}</p>`;
     const visibleSections = guide.sections;
     return `<div class="v03-strategy-detail">${visibleSections.map((section) => {
       if (section.type === 'image') {
@@ -568,7 +614,7 @@
     });
     const options = logs.map((item) => `<option value="${escapeHtml(item.version)}"${item.version === guideState.updateLogVersion ? ' selected' : ''}>${escapeHtml(item.version)}</option>`).join('');
     const listMarkup = isLoading
-      ? '<p class="v03-guide-empty">更新日志加载中…</p>'
+      ? `<p class="v03-guide-empty">${guideState.loadError ? '更新日志加载失败，请重新打开或刷新重试' : '更新日志加载中…'}</p>`
       : visible.length
         ? visible.map((item) => `<article class="v03-update-log-card" id="update-log-${escapeHtml(item.id || item.version)}"><header><div><span>版本 ${escapeHtml(item.version || '-')}</span><h3>${escapeHtml(item.title || `版本 ${item.version || '-'}`)}</h3></div><small>${escapeHtml(item.meta || '')}</small></header><div class="v03-update-log-body">${escapeHtml(item.body || '').split(/\n\n+/).map((paragraph) => `<p>${paragraph.replaceAll('\n', '<br>')}</p>`).join('')}</div></article>`).join('')
         : '<p class="v03-guide-empty">没有匹配的更新日志。</p>';
@@ -744,7 +790,6 @@
         event.preventDefault();
         event.stopPropagation();
         window.jianghuEncyclopedia?.toggleFavorite?.(encyclopediaFavorite.dataset.encyclopediaFavorite);
-        renderFavorites();
         return;
       }
       const favoriteButton = event.target.closest('[data-guide-favorite]');
@@ -776,6 +821,17 @@
       const input = event.target.closest('[data-achievement-id]');
       if (input) toggleAchievement(input.dataset.achievementId);
     });
+    document.getElementById('achievements-categories').addEventListener('change', (event) => {
+      achievementCategory = event.target.value;
+      achievementLimit = 40;
+      renderAchievements();
+    });
+    document.getElementById('achievements-search').addEventListener('input', () => { achievementLimit = 40; renderAchievements(); });
+    document.getElementById('achievements-status').addEventListener('change', () => { achievementLimit = 40; renderAchievements(); });
+    document.getElementById('achievements-more').addEventListener('click', () => { achievementLimit += 40; renderAchievements(); });
+    window.addEventListener('storage', (event) => {
+      if (event.key === ACHIEVEMENT_PROGRESS_KEY || event.key === null) { achievementProgress = readAchievementProgress(); renderAchievements(); }
+    });
 
     document.querySelectorAll('[data-copy-group]').forEach((button) => button.addEventListener('click', () => copyGroupNumber(button)));
 
@@ -784,6 +840,12 @@
   }
 
   function applyGuideContent(bundle) {
+      guideState.loadError = false;
+      achievementsLoaded = true;
+      ACHIEVEMENT_RECORDS = bundle.data.achievements?.records || [];
+      achievementCategories = bundle.data.achievements?.categories || [];
+      if (!achievementCategories.some((item) => item.id === achievementCategory)) achievementCategory = '';
+      renderAchievements();
       const { searchIndex, strategyGuides, recipeData, strategyText, updateLogs } = bundle.data;
       directoryData = bundle.data.directory;
       data = { ...bundle.data.encyclopedia, guide_notes: bundle.data.guideNotes };
@@ -816,8 +878,18 @@
   renderFavorites();
   renderAchievements();
   bind();
-  window.JianghuContent.ready.then(applyGuideContent).catch((error) => console.warn('攻略索引加载失败', error));
+  window.JianghuContent.ready.then(applyGuideContent).catch((error) => {
+    guideState.loadError = true;
+    renderAchievements();
+    console.warn('攻略索引加载失败', error);
+    const count = document.getElementById('guide-search-count');
+    if (count) count.textContent = '加载失败，请重新打开或刷新重试';
+    const detail = document.getElementById('guide-detail-content');
+    if (detail) detail.textContent = '攻略数据加载失败，请重新打开或刷新重试';
+  });
   window.addEventListener('jianghu-content-updated', (event) => applyGuideContent(event.detail));
+  window.addEventListener('jianghu-content-ready', (event) => applyGuideContent(event.detail));
+  window.addEventListener('jianghu-encyclopedia-ready', () => renderFavorites());
   const initialRoute = routeFromHash();
   show(initialRoute.target, { guideId: initialRoute.guideId, encyclopediaType: initialRoute.encyclopediaType });
     window.addEventListener('jianghu-app-ready', () => {

@@ -7,6 +7,19 @@
   function validPayload(data) {
     if (!object(data) || !object(data.encyclopedia)) return false;
     const encyclopedia = data.encyclopedia;
+    if (data.achievements !== undefined) {
+      const achievements = data.achievements;
+      if (!object(achievements)
+        || !records(achievements.categories, (item) => text(item.id) && text(item.title))
+        || !records(achievements.records, (item) => text(item.id) && text(item.title)
+          && text(item.category) && text(item.access) && typeof item.available === 'boolean'
+          && (item.rank === undefined || text(item.rank))
+          && (item.maxLevel === undefined || (Number.isInteger(item.maxLevel) && item.maxLevel > 0)))) return false;
+      const categories = achievements.categories.map((item) => item.id);
+      const ids = achievements.records.map((item) => item.id);
+      if (new Set(categories).size !== categories.length || new Set(ids).size !== ids.length
+        || achievements.records.some((item) => !categories.includes(item.category))) return false;
+    }
     if (!['characters', 'techniques', 'inner_skills', 'martial_arts', 'equipment', 'dungeon_drops']
       .every((key) => records(encyclopedia[key], () => true))) return false;
     if (!encyclopedia.characters.length || !encyclopedia.martial_arts.length) return false;

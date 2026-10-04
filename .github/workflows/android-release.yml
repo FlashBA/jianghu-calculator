@@ -9,7 +9,7 @@ on:
       version_name:
         description: 'APK version, for example 0.5.0'
         required: true
-        default: '0.5.0'
+        default: '0.5.1'
         type: string
 
 permissions:
@@ -127,7 +127,9 @@ jobs:
         with:
           draft: true
           body: |
-            1. 优化避坑指南
-            2. 优化攻略 UI
-            3. 优化更新策略：无大框架变动时，通过联网检测更新数据
+            1. 新增成就记录，支持筛选和收集进度保存。感谢 @闲道人 数据整理。
+            2. 优化收藏性能，武学新增「限一」标记。
+            3. 修复阵法计算，固定属性加成计入最终乘算。
+            4. 优化数据更新，接入 OSS，改善加载失败与缓存恢复。
+            5. 修复部分手机状态栏、刘海区域遮挡。
           files: android-app/artifacts/jianghu-calculator-${{ env.VERSION_NAME }}.apk

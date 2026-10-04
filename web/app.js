@@ -2,6 +2,7 @@ const STORAGE_KEY = 'jianghu-stat-simulator:character:v6';
 const ENCYCLOPEDIA_FAVORITES_KEY = 'jianghu-stat-simulator:encyclopedia:favorites:v1';
 const WHITE_RABBIT_CACHE_KEY = 'jianghu-stat-simulator:whiterabbit-data:v1';
 const REMOTE_WHITE_RABBIT_URLS = [
+  'https://jianghu-baitu.oss-cn-beijing.aliyuncs.com/jianghu/whiterabbit_data.json',
   'https://47.95.250.113/jianghu/whiterabbit_data.json',
   'https://flashba.github.io/jianghu-calculator/whiterabbit_data.json',
   'https://cdn.jsdelivr.net/gh/FlashBA/jianghu-calculator@main/web/whiterabbit_data.json',
@@ -91,7 +92,7 @@ const CALCULATION_DOCUMENT = [
       '血丹后生命 = 血丹后基础生命 × (1 + 内功生命% + 技艺生命% + 装备生命% + 武器生命% + 小任督生命%)',
       '阵法生命乘区 = 1 + 阵法生命加成%（八枢 1 号位为 ×1.24，其他位置为 ×0.93）',
       '内功大任督生命 = 基础生命 × (110% + 补充生命%)',
-      '最终生命 = round((血丹后生命 + 内功大任督生命) × 阵法生命乘区) + 成就固定生命 + 装备/武器白值生命',
+      '最终生命 = round((round(血丹后生命 + 内功大任督生命) + 成就固定生命 + 装备/武器白值生命) × 阵法生命乘区)',
     ],
     notes: ['血丹最多按 30 颗计算。内功大任督按血丹前基础生命计算，不吃装备白值和成就固定值。'],
   },
@@ -114,7 +115,8 @@ const CALCULATION_DOCUMENT = [
       '阵法攻击乘区 = 1 + 阵法攻击加成%（八枢 1 号位为 ×1.24，其他位置为 ×0.93）',
       '内功大任督攻击项 = B × (10% × 大任督数量 + 补充攻击%)',
       '装备百分比项 = (B × 攻击丹乘区 + P) × (装备攻击% + 武器铸造攻击%)',
-      '最终攻击 = trunc((基础攻击项 + 武学项 + 大任督攻击项 + 装备百分比项 + 固定攻击) × 阵法攻击乘区 × 武学大任督乘区) + 成就固定攻击',
+      '阵法前攻击 = trunc((基础攻击项 + 武学项 + 大任督攻击项 + 装备百分比项 + 固定攻击) × 武学大任督乘区) + 成就固定攻击',
+      '最终攻击 = trunc(trunc(阵法前攻击 × 后宫乘区) × 阵法攻击乘区)',
     ],
     notes: ['B 为基础攻击原值，P 为当前武学原始威力。朱雀之力等生效技艺攻击%同时进入基础攻击项和武学项；小任督攻击%只进入武学项。'],
   },
@@ -167,6 +169,11 @@ const state = {
   weaponName: '',
   weaponAffixes: [EMPTY_WEAPON_AFFIX(), EMPTY_WEAPON_AFFIX(), EMPTY_WEAPON_AFFIX()],
 };
+let calculatorInitialized = false;
+let calculatorEventsBound = false;
+let startupPending = null;
+let startupBaseData = null;
+let startupError = '';
 let resultGenerated = false;
 let currentResult = null;
 let comparisonSnapshots = [];
@@ -1935,6 +1942,7 @@ function currentConfig() {
 }
 
 function saveConfig() {
+  if (!calculatorInitialized) return;
   const config = {
     ...currentConfig(),
     savedCards: comparisonSnapshots,
@@ -2675,7 +2683,8 @@ function calculate({ commit = false } = {}) {
   const formationHpMultiplier = 1 + activeFormation.hp / 100;
   const finalHpRaw = hpBeforeFormation * formationHpMultiplier;
   const hpPercent = baseHpRaw ? (finalHpRaw / baseHpRaw - 1) * 100 : 0;
-  const finalHp = Math.round(finalHpRaw) + trunc(achievementHp) + trunc(weaponTotals.hpFlat) + trunc(equipmentHpFlat);
+  const hpWithFixedBonuses = Math.round(hpBeforeFormation) + trunc(achievementHp) + trunc(weaponTotals.hpFlat) + trunc(equipmentHpFlat);
+  const finalHp = Math.round(hpWithFixedBonuses * formationHpMultiplier);
   const attackPillsEnabled = $('attack-pills-enabled').checked;
   const attackPillCount = attackPillsEnabled ? Math.max(0, Math.min(30, numberValue('attack-pill-count', 30))) : 0;
   const attackPillMultiplier = 1 + attackPillCount / 100;
@@ -2706,9 +2715,9 @@ function calculate({ commit = false } = {}) {
   const learnedSMartialCount = Math.max(0, numberValue('learned-s-martial-count', 5));
   const sMartialMultiplier = 1 + learnedSMartialCount * 0.05;
   const formationAttackMultiplier = 1 + activeFormation.attack / 100;
-  const finalAttackBeforeHarem = trunc(attackBeforeSMultiplier * formationAttackMultiplier * sMartialMultiplier) + trunc(achievementAttack);
+  const finalAttackBeforeHarem = trunc(attackBeforeSMultiplier * sMartialMultiplier) + trunc(achievementAttack);
   const haremAttackMultiplier = haremBonusActive ? 1.25 : 1;
-  const finalAttack = trunc(finalAttackBeforeHarem * haremAttackMultiplier);
+  const finalAttack = trunc(trunc(finalAttackBeforeHarem * haremAttackMultiplier) * formationAttackMultiplier);
   if (!damageFactorCustomized) $('damage-factor').value = martialDamageFactor(selectedMartial?.item);
   const weaponWhiteAttack = weaponTotals.attackFlat;
   const damagePreview = calculateDamagePreview({
@@ -3449,12 +3458,16 @@ function encyclopediaRecords(type) {
 }
 
 function encyclopediaFavoriteEntries() {
+  const recordsByType = new Map();
   return [...encyclopediaFavorites].map((value) => {
     const key = String(value);
     const separator = key.indexOf(':');
     const type = separator > 0 ? key.slice(0, separator) : 'characters';
     const id = separator > 0 ? key.slice(separator + 1) : key;
-    const record = encyclopediaRecords(type).find((item) => String(item.id) === id);
+    if (!recordsByType.has(type)) {
+      recordsByType.set(type, new Map(encyclopediaRecords(type).map((item) => [String(item.id), item])));
+    }
+    const record = recordsByType.get(type).get(id);
     return record ? { key, type, id, record } : null;
   }).filter(Boolean);
 }
@@ -4243,7 +4256,6 @@ function bindEvents() {
     renderWeaponAffixes(); renderEquipmentSlots(); renderComparison(); calculate();
   });
 
-  document.querySelectorAll('[data-view]').forEach((button) => button.addEventListener('click', () => switchView(button.dataset.view)));
   $('doc-button').addEventListener('click', openCalculationDocument);
   $('doc-modal').addEventListener('click', (event) => {
     if (event.target === $('doc-modal')) closeCalculationDocument();
@@ -4260,6 +4272,9 @@ function bindEvents() {
   $('team-search').addEventListener('input', renderTeams);
   $('card-search').addEventListener('input', renderSavedCards);
   $('card-role-filter').addEventListener('change', renderSavedCards);
+}
+
+function bindEncyclopediaEvents() {
   $('encyclopedia-type').addEventListener('change', renderEncyclopedia);
   $('encyclopedia-martial-filter').addEventListener('change', renderEncyclopedia);
   $('encyclopedia-martial-rank-filter').addEventListener('change', renderEncyclopedia);
@@ -4342,6 +4357,9 @@ function bindEvents() {
     openMartialDetail(record);
   });
 
+}
+
+function bindDialogEvents() {
   $('name-modal-confirm').addEventListener('click', () => {
     const value = validateNameDialog();
     if (value) closeNameDialog(value);
@@ -4458,6 +4476,12 @@ function restoreWhiteRabbitSelections(snapshot) {
 
 function applyWhiteRabbitDataUpdate(data) {
   if (!whiteRabbitDataValid(data)) return;
+  if (!calculatorInitialized) {
+    state.whiteRabbit = data;
+    renderEncyclopedia();
+    window.dispatchEvent(new CustomEvent('jianghu-white-rabbit-data-updated'));
+    return;
+  }
   const expandedCharacterNames = [...document.querySelectorAll('#encyclopedia-list .encyclopedia-character-card[open] h3')]
     .map((heading) => heading.textContent.trim())
     .filter(Boolean);
@@ -4516,31 +4540,86 @@ async function refreshWhiteRabbitDataInBackground() {
   }
 }
 
-async function init() {
+async function initializeApp(retry) {
+  startupError = '';
+  window.JianghuContent?.showStartupStatus(retry ? '正在重新加载数据…' : '正在读取数据…', true);
   try {
-    const [baseResponse, whiteData] = await Promise.all([
-      fetch(`${APP_DATA_BASE}uc540_doc.json`, { cache: 'no-store' }),
-      loadWhiteRabbitData(),
+    const baseRequest = startupBaseData ? Promise.resolve(startupBaseData) : (window.JianghuContent
+        ? window.JianghuContent.readJsonAsset(`${APP_DATA_BASE}uc540_doc.json`)
+        : fetch(`${APP_DATA_BASE}uc540_doc.json`, { cache: 'no-store' }).then((response) => {
+          if (!response.ok) throw new Error(`数据读取失败（HTTP ${response.status}）`);
+          return response.json();
+        })).then((data) => {
+          if (!data?.personHp || !data?.personPower || !data?.skill || !data?.neiGong || !data?.equip) {
+            throw new Error('计算器基础数据不完整');
+          }
+          startupBaseData = data;
+          return data;
+        });
+    const contentRequest = (retry && window.JianghuContent
+      ? window.JianghuContent.retryLoad().then((bundle) => bundle.data.encyclopedia)
+      : loadWhiteRabbitData()).then((data) => {
+        if (!whiteRabbitDataValid(data)) throw new Error('图鉴数据不完整');
+        state.whiteRabbit = data;
+        renderEncyclopedia();
+        window.dispatchEvent(new CustomEvent('jianghu-encyclopedia-ready'));
+        return data;
+      });
+    // The encyclopedia becomes usable immediately, independently of calculator assets.
+    const [baseResult, contentResult] = await Promise.allSettled([
+      baseRequest, contentRequest,
     ]);
-    if (!baseResponse.ok) throw new Error(`数据读取失败（HTTP ${baseResponse.status}）`);
-    state.data = await baseResponse.json();
-    if (whiteData) state.whiteRabbit = whiteData;
-    populate(); bindEvents(); restoreConfig();
+    if (contentResult.status === 'rejected') throw contentResult.reason;
+    if (baseResult.status === 'rejected') throw baseResult.reason;
+    state.data = baseResult.value;
+    startupDisabledControls.forEach((disabled, control) => { control.disabled = disabled; });
+    populate();
+    if (!calculatorEventsBound) {
+      bindEvents(); bindDialogEvents();
+      calculatorEventsBound = true;
+    }
+    restoreConfig();
     if (innerStatsMode() === 'auto') syncAutoInnerStats();
     if (techniqueStatsMode() === 'auto') syncTechniqueStats();
     renderTechniqueScope();
-    renderWeaponAffixes(); renderEquipmentSlots(); enhanceSelects(); refreshSelectProxies(); calculate();
+    renderWeaponAffixes(); renderEquipmentSlots(); enhanceSelects(); refreshSelectProxies();
+    calculatorInitialized = true;
+    calculate();
+    setError('');
     window.dispatchEvent(new CustomEvent('jianghu-app-ready'));
     if (!window.JianghuContent) {
       refreshWhiteRabbitDataInBackground().catch((error) => console.warn('图鉴数据自动更新失败', error));
     }
+    return true;
   } catch (error) {
-    setError(`${error.message}。请通过本地 HTTP 服务打开页面，不要直接双击 HTML 文件。`);
+    calculatorInitialized = false;
+    state.data = null;
+    const message = state.whiteRabbit
+      ? `计算器加载失败：${error.message}。图鉴和攻略仍可使用，点击检查数据更新重试。`
+      : `数据加载失败：${error.message}。点击检查数据更新重试。`;
+    setError(message);
+    startupError = message;
+    window.JianghuContent?.showStartupStatus('');
+    document.querySelectorAll('#calculator-view input, #calculator-view select, #calculator-view button').forEach((control) => { control.disabled = true; });
+    return false;
   }
+}
+
+function init(retry = false) {
+  if (startupPending) return startupPending;
+  if (calculatorInitialized) return Promise.resolve(true);
+  startupPending = initializeApp(retry).finally(() => { startupPending = null; });
+  return startupPending;
 }
 
 window.addEventListener('jianghu-content-updated', (event) => {
   applyWhiteRabbitDataUpdate(event.detail.data.encyclopedia);
 });
 
+const startupDisabledControls = new Map([...document.querySelectorAll('#calculator-view input, #calculator-view select, #calculator-view button')]
+  .map((control) => [control, control.disabled]));
+startupDisabledControls.forEach((disabled, control) => { control.disabled = true; });
+bindEncyclopediaEvents();
+document.querySelectorAll('[data-view]').forEach((button) => button.addEventListener('click', () => switchView(button.dataset.view)));
+window.jianghuApp = { retryStartup: () => init(true), get initialized() { return calculatorInitialized; }, get startupError() { return startupError; } };
 init();

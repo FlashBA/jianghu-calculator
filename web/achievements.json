@@ -1,0 +1,2470 @@
+{
+  "categories": [
+    {
+      "id": "fist",
+      "title": "拳法"
+    },
+    {
+      "id": "sword",
+      "title": "剑法"
+    },
+    {
+      "id": "blade",
+      "title": "刀法"
+    },
+    {
+      "id": "staff",
+      "title": "棍法"
+    },
+    {
+      "id": "inner",
+      "title": "内功"
+    },
+    {
+      "id": "technique",
+      "title": "技艺"
+    }
+  ],
+  "records": [
+    {
+      "id": "collect-c2d699c789f080ec",
+      "category": "fist",
+      "title": "白兔追命拳",
+      "access": "人生目标-绝世武功-拳",
+      "available": true,
+      "rank": "?"
+    },
+    {
+      "id": "collect-21bc979351e8a0b2",
+      "category": "fist",
+      "title": "流云太极拳",
+      "access": "暂未开放",
+      "available": false,
+      "rank": "?"
+    },
+    {
+      "id": "collect-a953175a1f18aebe",
+      "category": "fist",
+      "title": "擒龙功",
+      "access": "玄武岛盗圣左边箱子",
+      "available": true,
+      "rank": "S"
+    },
+    {
+      "id": "collect-8c770407b25a0bb7",
+      "category": "fist",
+      "title": "光明拳",
+      "access": "少林四选一",
+      "available": true,
+      "rank": "S"
+    },
+    {
+      "id": "collect-c9044d35269155c8",
+      "category": "fist",
+      "title": "十二擒拿手",
+      "access": "少林四选一",
+      "available": true,
+      "rank": "S"
+    },
+    {
+      "id": "collect-f07349287ff082d9",
+      "category": "fist",
+      "title": "般若禅掌",
+      "access": "少林四选一",
+      "available": true,
+      "rank": "S"
+    },
+    {
+      "id": "collect-acba135169e060c6",
+      "category": "fist",
+      "title": "一指禅",
+      "access": "少林四选一",
+      "available": true,
+      "rank": "S"
+    },
+    {
+      "id": "collect-32be240be7cf51e6",
+      "category": "fist",
+      "title": "定珠降魔神功",
+      "access": "凤牌",
+      "available": true,
+      "rank": "S"
+    },
+    {
+      "id": "collect-ec2c6935a35924b3",
+      "category": "fist",
+      "title": "金顶邀月掌",
+      "access": "无间地狱第二层师太掉落残页合成",
+      "available": true,
+      "rank": "S"
+    },
+    {
+      "id": "collect-f117ed0a1a9ccf1c",
+      "category": "fist",
+      "title": "无极玄功拳",
+      "access": "武当张三丰处学习",
+      "available": true,
+      "rank": "S"
+    },
+    {
+      "id": "collect-29965341bec400e2",
+      "category": "fist",
+      "title": "醉梦神拳",
+      "access": "五龙塔酒仙掉落1，凤牌",
+      "available": true,
+      "rank": "S"
+    },
+    {
+      "id": "collect-b36140be17d1bf1f",
+      "category": "fist",
+      "title": "六脉剑指",
+      "access": "凤牌",
+      "available": true,
+      "rank": "S"
+    },
+    {
+      "id": "collect-80b2c9659be678ab",
+      "category": "fist",
+      "title": "蛊月剑掌",
+      "access": "龙本蛊月娘掉落",
+      "available": true,
+      "rank": "S"
+    },
+    {
+      "id": "collect-85987fe3d9cc3491",
+      "category": "fist",
+      "title": "大日如来掌",
+      "access": "苏州游方和尚支线",
+      "available": true,
+      "rank": "S"
+    },
+    {
+      "id": "collect-9c9728e74c571c33",
+      "category": "fist",
+      "title": "曜日破云掌",
+      "access": "峨眉拜师学习",
+      "available": true,
+      "rank": "S"
+    },
+    {
+      "id": "collect-62a92ec293bdaa88",
+      "category": "fist",
+      "title": "神龙掌法",
+      "access": "凤牌，部分boss(懒得写)",
+      "available": true,
+      "rank": "S"
+    },
+    {
+      "id": "collect-ff9b54318b259846",
+      "category": "fist",
+      "title": "降龙十八掌",
+      "access": "龙本石猛掉落信物，完成丐帮信物支线获取",
+      "available": true,
+      "rank": "S"
+    },
+    {
+      "id": "collect-3a4723633aa02ca0",
+      "category": "fist",
+      "title": "南疆拳掌",
+      "access": "龙本蛊月娘掉落",
+      "available": true,
+      "rank": "S"
+    },
+    {
+      "id": "collect-da2af26e7da091ad",
+      "category": "fist",
+      "title": "万躯撼岳拳",
+      "access": "原版吸血大法支线",
+      "available": true,
+      "rank": "S"
+    },
+    {
+      "id": "collect-f7abcef66f4da729",
+      "category": "fist",
+      "title": "混元掌",
+      "access": "华山",
+      "available": true,
+      "rank": "S"
+    },
+    {
+      "id": "collect-dd0ed6db17773f90",
+      "category": "fist",
+      "title": "偏花七星拳",
+      "access": "少林拜师学习",
+      "available": true,
+      "rank": "A"
+    },
+    {
+      "id": "collect-6ac2a32fd65fe1e5",
+      "category": "fist",
+      "title": "神掌八打",
+      "access": "少林拜师学习",
+      "available": true,
+      "rank": "A"
+    },
+    {
+      "id": "collect-900885e5813002ca",
+      "category": "fist",
+      "title": "无相劫指",
+      "access": "少林拜师学习",
+      "available": true,
+      "rank": "A"
+    },
+    {
+      "id": "collect-919a94f1f373ed63",
+      "category": "fist",
+      "title": "龙爪擒拿手",
+      "access": "少林拜师学习",
+      "available": true,
+      "rank": "A"
+    },
+    {
+      "id": "collect-16de54c7bb158f5b",
+      "category": "fist",
+      "title": "大嵩阳掌",
+      "access": "嵩山，地宫掉落残页",
+      "available": true,
+      "rank": "A"
+    },
+    {
+      "id": "collect-855bec206ef935a6",
+      "category": "fist",
+      "title": "寒冰神掌",
+      "access": "凤山，嵩山掉落残页",
+      "available": true,
+      "rank": "A"
+    },
+    {
+      "id": "collect-bd7a819ee36be5f7",
+      "category": "fist",
+      "title": "玄门天罡指",
+      "access": "峨眉拜师学习",
+      "available": true,
+      "rank": "A"
+    },
+    {
+      "id": "collect-b1474622e792c182",
+      "category": "fist",
+      "title": "吸心大法",
+      "access": "豹牌",
+      "available": true,
+      "rank": "A"
+    },
+    {
+      "id": "collect-001076494726994d",
+      "category": "fist",
+      "title": "太极拳",
+      "access": "武当拜师学习",
+      "available": true,
+      "rank": "A"
+    },
+    {
+      "id": "collect-9f134aa4d32ec351",
+      "category": "fist",
+      "title": "虎爪绝户手",
+      "access": "武当拜师学习，有前提支线，自己去搜原版攻略",
+      "available": true,
+      "rank": "A"
+    },
+    {
+      "id": "collect-c750d1746e3940a3",
+      "category": "fist",
+      "title": "五毒神掌",
+      "access": "临安郊野支线",
+      "available": true,
+      "rank": "A"
+    },
+    {
+      "id": "collect-b418d09e77eaac3b",
+      "category": "fist",
+      "title": "七绝拳",
+      "access": "圣教拜师学习",
+      "available": true,
+      "rank": "A"
+    },
+    {
+      "id": "collect-7be5f0a31916b007",
+      "category": "fist",
+      "title": "鹰爪功",
+      "access": "圣教拜师学习",
+      "available": true,
+      "rank": "A"
+    },
+    {
+      "id": "collect-484a14e19104912a",
+      "category": "fist",
+      "title": "一阳指",
+      "access": "豹牌，大理支线选武功",
+      "available": true,
+      "rank": "A"
+    },
+    {
+      "id": "collect-c8979952cc212bfa",
+      "category": "fist",
+      "title": "劈石破玉拳",
+      "access": "华山拜师学习",
+      "available": true,
+      "rank": "B"
+    },
+    {
+      "id": "collect-f705df5c3b086b5d",
+      "category": "fist",
+      "title": "铁掌功",
+      "access": "拳主铁砂掌进化，临安残页怪",
+      "available": true,
+      "rank": "B"
+    },
+    {
+      "id": "collect-765f71b650940dd8",
+      "category": "fist",
+      "title": "大力金刚拳",
+      "access": "少林拜师学习",
+      "available": true,
+      "rank": "B"
+    },
+    {
+      "id": "collect-d697795c7dba7d51",
+      "category": "fist",
+      "title": "千手如来掌",
+      "access": "少林拜师学习",
+      "available": true,
+      "rank": "B"
+    },
+    {
+      "id": "collect-c6f144efeed90062",
+      "category": "fist",
+      "title": "澄净指",
+      "access": "少林拜师学习",
+      "available": true,
+      "rank": "B"
+    },
+    {
+      "id": "collect-05b736220806cce4",
+      "category": "fist",
+      "title": "少林擒拿手",
+      "access": "少林拜师学习",
+      "available": true,
+      "rank": "B"
+    },
+    {
+      "id": "collect-7abdcc18adc98713",
+      "category": "fist",
+      "title": "大阴阳手",
+      "access": "嵩山",
+      "available": true,
+      "rank": "B"
+    },
+    {
+      "id": "collect-1ae8296827acbdda",
+      "category": "fist",
+      "title": "碧波掌法",
+      "access": "苏州残页怪",
+      "available": true,
+      "rank": "B"
+    },
+    {
+      "id": "collect-7657f42796a4da5c",
+      "category": "fist",
+      "title": "千龙掌",
+      "access": "沧州支线，需主线到襄阳搬救兵的少林失窃",
+      "available": true,
+      "rank": "B"
+    },
+    {
+      "id": "collect-08f4a47bb8d0b3bc",
+      "category": "fist",
+      "title": "穿云飘雪掌",
+      "access": "峨眉拜师学习",
+      "available": true,
+      "rank": "B"
+    },
+    {
+      "id": "collect-895b0c3eda422e0a",
+      "category": "fist",
+      "title": "太极绵掌",
+      "access": "武当拜师学习",
+      "available": true,
+      "rank": "B"
+    },
+    {
+      "id": "collect-e500e2674c98dc0b",
+      "category": "fist",
+      "title": "大风云掌",
+      "access": "圣教拜师学习",
+      "available": true,
+      "rank": "B"
+    },
+    {
+      "id": "collect-b0ffd4499c455dd9",
+      "category": "fist",
+      "title": "罗汉拳",
+      "access": "少林拜师学习",
+      "available": true,
+      "rank": "C"
+    },
+    {
+      "id": "collect-07e60854e54827d1",
+      "category": "fist",
+      "title": "游身八卦掌",
+      "access": "洛阳商店",
+      "available": true,
+      "rank": "C"
+    },
+    {
+      "id": "collect-e46e3f68dfe12196",
+      "category": "fist",
+      "title": "韦陀掌",
+      "access": "少林拜师学习",
+      "available": true,
+      "rank": "C"
+    },
+    {
+      "id": "collect-ed8a849e8004ea06",
+      "category": "fist",
+      "title": "毒龙掌",
+      "access": "汉阳裘掉落",
+      "available": true,
+      "rank": "C"
+    },
+    {
+      "id": "collect-ab9b55e419a14424",
+      "category": "fist",
+      "title": "铁砂掌",
+      "access": "拳主洛阳武馆打听学习",
+      "available": true,
+      "rank": "C"
+    },
+    {
+      "id": "collect-9cb972e4532dea3a",
+      "category": "fist",
+      "title": "四象掌法",
+      "access": "峨眉拜师学习",
+      "available": true,
+      "rank": "C"
+    },
+    {
+      "id": "collect-1b2a92aa4834c00a",
+      "category": "fist",
+      "title": "开碑裂石掌",
+      "access": "洛阳郊野残页怪",
+      "available": true,
+      "rank": "C"
+    },
+    {
+      "id": "collect-378dc8b9042ca527",
+      "category": "fist",
+      "title": "武当长拳",
+      "access": "武当拜师学习",
+      "available": true,
+      "rank": "C"
+    },
+    {
+      "id": "collect-88c52af1b310d8de",
+      "category": "fist",
+      "title": "霹雳拳",
+      "access": "圣教拜师学习",
+      "available": true,
+      "rank": "C"
+    },
+    {
+      "id": "collect-3a9cd162f78ce6c7",
+      "category": "fist",
+      "title": "太祖长拳",
+      "access": "汉阳武馆",
+      "available": true,
+      "rank": "D"
+    },
+    {
+      "id": "collect-c1e9d7f587b7afc7",
+      "category": "fist",
+      "title": "开山掌",
+      "access": "汉阳武馆",
+      "available": true,
+      "rank": "D"
+    },
+    {
+      "id": "collect-5f605a0221367a67",
+      "category": "fist",
+      "title": "张氏莲花掌法",
+      "access": "牢张自带",
+      "available": true,
+      "rank": "E"
+    },
+    {
+      "id": "collect-e4c489d5400cb05e",
+      "category": "fist",
+      "title": "莲花掌法",
+      "access": "竹心等随从自带",
+      "available": true,
+      "rank": "E"
+    },
+    {
+      "id": "collect-145cc7f87427571a",
+      "category": "fist",
+      "title": "太平拳",
+      "access": "胡修等随从自带",
+      "available": true,
+      "rank": "E"
+    },
+    {
+      "id": "collect-c61f19f30966e308",
+      "category": "sword",
+      "title": "白兔三仙剑",
+      "access": "人生目标-绝世武功-剑法",
+      "available": true,
+      "rank": "?"
+    },
+    {
+      "id": "collect-b8c2c7f7539958f2",
+      "category": "sword",
+      "title": "流云太极剑",
+      "access": "暂未开放",
+      "available": false,
+      "rank": "?"
+    },
+    {
+      "id": "collect-ff23df91aae6de4e",
+      "category": "sword",
+      "title": "独孤剑诀",
+      "access": "带上太岳，十八盘，游龙，太极找华山风清扬学习",
+      "available": true,
+      "rank": "S"
+    },
+    {
+      "id": "collect-aad6f68d7dfd03c5",
+      "category": "sword",
+      "title": "真武七截剑",
+      "access": "地宫，五龙，凤山残页合成，凤牌",
+      "available": true,
+      "rank": "S"
+    },
+    {
+      "id": "collect-70e163b622eeed44",
+      "category": "sword",
+      "title": "万花剑法",
+      "access": "无间地狱第一层",
+      "available": true,
+      "rank": "S"
+    },
+    {
+      "id": "collect-dee09f8cdeac50f7",
+      "category": "sword",
+      "title": "辟魔剑法",
+      "access": "支线任务做完割掉jj",
+      "available": true,
+      "rank": "S"
+    },
+    {
+      "id": "collect-9880ee47b12f83a5",
+      "category": "sword",
+      "title": "狂风剑法",
+      "access": "带上太岳拜师封不平学习",
+      "available": true,
+      "rank": "S"
+    },
+    {
+      "id": "collect-02b18b16c050a3d2",
+      "category": "sword",
+      "title": "倚天剑诀",
+      "access": "峨眉拜师学习",
+      "available": true,
+      "rank": "S"
+    },
+    {
+      "id": "collect-541bb6093cbaadcc",
+      "category": "sword",
+      "title": "千霜碎岳剑法",
+      "access": "凤牌",
+      "available": true,
+      "rank": "S"
+    },
+    {
+      "id": "collect-37f9586a3f802a41",
+      "category": "sword",
+      "title": "玄天绝剑",
+      "access": "凤山玄天绝剑",
+      "available": true,
+      "rank": "S"
+    },
+    {
+      "id": "collect-76e635e0f6969abd",
+      "category": "sword",
+      "title": "追风十三式",
+      "access": "龙本-追风神捕-柳追风",
+      "available": true,
+      "rank": "S"
+    },
+    {
+      "id": "collect-e61d88a9ede505b6",
+      "category": "sword",
+      "title": "大同天演剑",
+      "access": "顾同60级找风清扬领取",
+      "available": true,
+      "rank": "S"
+    },
+    {
+      "id": "collect-0a579e39e0273763",
+      "category": "sword",
+      "title": "无极化生剑",
+      "access": "武当拜师学习",
+      "available": true,
+      "rank": "S"
+    },
+    {
+      "id": "collect-a397f1ea1b760b3f",
+      "category": "sword",
+      "title": "清商谪仙剑",
+      "access": "音律300找金陵苏清徵打听概率掉落",
+      "available": true,
+      "rank": "S"
+    },
+    {
+      "id": "collect-e3020f1bb0582b3f",
+      "category": "sword",
+      "title": "达摩剑法",
+      "access": "藏经阁概率掉落",
+      "available": true,
+      "rank": "S"
+    },
+    {
+      "id": "collect-4e4c542514d84336",
+      "category": "sword",
+      "title": "转魄剑诀",
+      "access": "无间地狱第二层徐湘妃",
+      "available": true,
+      "rank": "S"
+    },
+    {
+      "id": "collect-c33285f49ac46cf3",
+      "category": "sword",
+      "title": "云崖千堆雪",
+      "access": "开局选苏念雪自带",
+      "available": true,
+      "rank": "S"
+    },
+    {
+      "id": "collect-405e2ee5ba2fe8c0",
+      "category": "sword",
+      "title": "神捕剑招",
+      "access": "龙本-追风神捕-柳追风",
+      "available": true,
+      "rank": "S"
+    },
+    {
+      "id": "collect-d8780f6159d24ee4",
+      "category": "sword",
+      "title": "辟邪剑法",
+      "access": "男主学完S避魔后去幽州拜老太监为义父学习",
+      "available": true,
+      "rank": "S"
+    },
+    {
+      "id": "collect-df3b43bf9c83f8ce",
+      "category": "sword",
+      "title": "太岳三清风",
+      "access": "华山拜师学习",
+      "available": true,
+      "rank": "A"
+    },
+    {
+      "id": "collect-1707727edbaa21c1",
+      "category": "sword",
+      "title": "太极剑法",
+      "access": "地宫，凤山残页合成，豹牌",
+      "available": true,
+      "rank": "A"
+    },
+    {
+      "id": "collect-5ad5bae40bf55ac3",
+      "category": "sword",
+      "title": "五狱剑法",
+      "access": "豹牌，五狱剑法支线",
+      "available": true,
+      "rank": "A"
+    },
+    {
+      "id": "collect-b1de917b7e2c3322",
+      "category": "sword",
+      "title": "泰山十八盘",
+      "access": "泰山",
+      "available": true,
+      "rank": "A"
+    },
+    {
+      "id": "collect-bbb8c7727aa7d64a",
+      "category": "sword",
+      "title": "回风拂柳剑",
+      "access": "峨眉拜师学习",
+      "available": true,
+      "rank": "A"
+    },
+    {
+      "id": "collect-f21a8c8d5e0919b7",
+      "category": "sword",
+      "title": "宁氏一剑",
+      "access": "华山拜师学习",
+      "available": true,
+      "rank": "A"
+    },
+    {
+      "id": "collect-15dad67c790fdf61",
+      "category": "sword",
+      "title": "游龙剑法",
+      "access": "武当拜师学习",
+      "available": true,
+      "rank": "A"
+    },
+    {
+      "id": "collect-ccf4f63fac63c04e",
+      "category": "sword",
+      "title": "至诚无息剑",
+      "access": "顾同50级找风清扬领取",
+      "available": true,
+      "rank": "A"
+    },
+    {
+      "id": "collect-266f5d1a165d8adb",
+      "category": "sword",
+      "title": "剑掌五连环",
+      "access": "华山拜师学习",
+      "available": true,
+      "rank": "B"
+    },
+    {
+      "id": "collect-6f5825a4efc5add4",
+      "category": "sword",
+      "title": "七星剑法",
+      "access": "苏州残页怪",
+      "available": true,
+      "rank": "B"
+    },
+    {
+      "id": "collect-40ffb23dbf625785",
+      "category": "sword",
+      "title": "一字电剑",
+      "access": "泰山残页怪",
+      "available": true,
+      "rank": "B"
+    },
+    {
+      "id": "collect-a6a60c47006b6ce6",
+      "category": "sword",
+      "title": "八仙剑法",
+      "access": "襄阳残页怪",
+      "available": true,
+      "rank": "B"
+    },
+    {
+      "id": "collect-f461ade522df0fd2",
+      "category": "sword",
+      "title": "五大夫剑",
+      "access": "剑主将泰山剑法学到九重，去五大夫树小息领悟",
+      "available": true,
+      "rank": "B"
+    },
+    {
+      "id": "collect-98bb0cb851e2a81a",
+      "category": "sword",
+      "title": "越女剑法",
+      "access": "峨眉拜师学习",
+      "available": true,
+      "rank": "B"
+    },
+    {
+      "id": "collect-b976362545961d15",
+      "category": "sword",
+      "title": "玉女十三针",
+      "access": "华山拜师学习",
+      "available": true,
+      "rank": "B"
+    },
+    {
+      "id": "collect-24d74967d87dd6fc",
+      "category": "sword",
+      "title": "两仪剑法",
+      "access": "武当拜师学习",
+      "available": true,
+      "rank": "B"
+    },
+    {
+      "id": "collect-5f208a1c4c025697",
+      "category": "sword",
+      "title": "神门十三剑",
+      "access": "武当拜师学习，有前置条件，自己去搜原版攻略",
+      "available": true,
+      "rank": "B"
+    },
+    {
+      "id": "collect-8b78eb17bfa22836",
+      "category": "sword",
+      "title": "知止慎独剑",
+      "access": "顾同40级找风清扬学习",
+      "available": true,
+      "rank": "B"
+    },
+    {
+      "id": "collect-433baba179265fdf",
+      "category": "sword",
+      "title": "霸王剑法",
+      "access": "华山残页怪",
+      "available": true,
+      "rank": "C"
+    },
+    {
+      "id": "collect-e025db7e7ac6227b",
+      "category": "sword",
+      "title": "迅雷剑法",
+      "access": "洛阳武馆",
+      "available": true,
+      "rank": "C"
+    },
+    {
+      "id": "collect-dacf357f4063eaa4",
+      "category": "sword",
+      "title": "三分剑术",
+      "access": "洛阳武馆",
+      "available": true,
+      "rank": "C"
+    },
+    {
+      "id": "collect-fbc2748eb893c781",
+      "category": "sword",
+      "title": "恒山剑法",
+      "access": "华山山洞支线，洛阳郊野支线",
+      "available": true,
+      "rank": "C"
+    },
+    {
+      "id": "collect-67a2c3c5d8f67e46",
+      "category": "sword",
+      "title": "华山剑法",
+      "access": "华山拜师学习，五狱剑法支线",
+      "available": true,
+      "rank": "C"
+    },
+    {
+      "id": "collect-7348b20746f8e057",
+      "category": "sword",
+      "title": "嵩山剑法",
+      "access": "嵩山商店，五狱剑法支线",
+      "available": true,
+      "rank": "C"
+    },
+    {
+      "id": "collect-ac7d9f0b06224789",
+      "category": "sword",
+      "title": "衡山剑法",
+      "access": "五狱剑法支线",
+      "available": true,
+      "rank": "C"
+    },
+    {
+      "id": "collect-e82f21110956e6c2",
+      "category": "sword",
+      "title": "泰山剑法",
+      "access": "五狱剑法支线，泰山商店",
+      "available": true,
+      "rank": "C"
+    },
+    {
+      "id": "collect-cc8b55dc5007828c",
+      "category": "sword",
+      "title": "峨眉剑法",
+      "access": "峨眉拜师学习",
+      "available": true,
+      "rank": "C"
+    },
+    {
+      "id": "collect-8ee023019c3cfcd3",
+      "category": "sword",
+      "title": "柔云剑法",
+      "access": "武当拜师学习",
+      "available": true,
+      "rank": "C"
+    },
+    {
+      "id": "collect-59f9c7f97d1f4436",
+      "category": "sword",
+      "title": "辟魔剑法",
+      "access": "刷华山林平之",
+      "available": true,
+      "rank": "C"
+    },
+    {
+      "id": "collect-43630dc91c319467",
+      "category": "sword",
+      "title": "正心诚意剑",
+      "access": "顾30级找风清扬学习",
+      "available": true,
+      "rank": "C"
+    },
+    {
+      "id": "collect-49999f558bb470e2",
+      "category": "sword",
+      "title": "书生之剑",
+      "access": "顾自带",
+      "available": true,
+      "rank": "D"
+    },
+    {
+      "id": "collect-05686579e7d91b1f",
+      "category": "sword",
+      "title": "青莲剑法",
+      "access": "汉阳武馆",
+      "available": true,
+      "rank": "D"
+    },
+    {
+      "id": "collect-d3108914ecbedfa8",
+      "category": "sword",
+      "title": "三才剑法",
+      "access": "汉阳武馆",
+      "available": true,
+      "rank": "D"
+    },
+    {
+      "id": "collect-74bf776ceacb192c",
+      "category": "sword",
+      "title": "苏家剑法",
+      "access": "苏念雪自带",
+      "available": true,
+      "rank": "E"
+    },
+    {
+      "id": "collect-fbbe3036ef6cecfc",
+      "category": "sword",
+      "title": "中平剑法",
+      "access": "部分随从自带",
+      "available": true,
+      "rank": "E"
+    },
+    {
+      "id": "collect-da0438bfd9e1ebe4",
+      "category": "blade",
+      "title": "白兔斩天刀",
+      "access": "人生目标-绝世武功-刀法",
+      "available": true,
+      "rank": "?"
+    },
+    {
+      "id": "collect-9ac1422ffe34a700",
+      "category": "blade",
+      "title": "燃木刀法",
+      "access": "凤牌",
+      "available": true,
+      "rank": "S"
+    },
+    {
+      "id": "collect-4bbaa6e8ab2b164e",
+      "category": "blade",
+      "title": "太虚神悟刀",
+      "access": "凤牌，太乙拜师学习",
+      "available": true,
+      "rank": "S"
+    },
+    {
+      "id": "collect-ca6a5d60b5264b7b",
+      "category": "blade",
+      "title": "拂妄降魔刀",
+      "access": "少林学习",
+      "available": true,
+      "rank": "S"
+    },
+    {
+      "id": "collect-4269a0dcb3cb2f67",
+      "category": "blade",
+      "title": "九霄惊雷刀法",
+      "access": "凤牌",
+      "available": true,
+      "rank": "S"
+    },
+    {
+      "id": "collect-47de31a7cb79e898",
+      "category": "blade",
+      "title": "血煞刀法",
+      "access": "凤牌",
+      "available": true,
+      "rank": "S"
+    },
+    {
+      "id": "collect-65c8c57741f6ac0d",
+      "category": "blade",
+      "title": "破锋八斩",
+      "access": "凤山残页合成",
+      "available": true,
+      "rank": "S"
+    },
+    {
+      "id": "collect-2e961cce3f5c0295",
+      "category": "blade",
+      "title": "獬豸吞邪斩",
+      "access": "六扇门支线",
+      "available": true,
+      "rank": "S"
+    },
+    {
+      "id": "collect-77ad1aad1223f315",
+      "category": "blade",
+      "title": "关山月·破阵",
+      "access": "虎本最终boss掉落",
+      "available": true,
+      "rank": "S"
+    },
+    {
+      "id": "collect-a25652e8773a04f4",
+      "category": "blade",
+      "title": "大海刀诀",
+      "access": "龙本胡大海",
+      "available": true,
+      "rank": "S"
+    },
+    {
+      "id": "collect-ce9927322d5531c7",
+      "category": "blade",
+      "title": "千山寂雪",
+      "access": "潭州支线",
+      "available": true,
+      "rank": "S"
+    },
+    {
+      "id": "collect-ae4ff9576b7b30b1",
+      "category": "blade",
+      "title": "破浪刀诀",
+      "access": "龙本胡大海",
+      "available": true,
+      "rank": "S"
+    },
+    {
+      "id": "collect-c923903bb744b596",
+      "category": "blade",
+      "title": "血饮刀法",
+      "access": "圣教拜师学习",
+      "available": true,
+      "rank": "A"
+    },
+    {
+      "id": "collect-c4db511a5fd73b0c",
+      "category": "blade",
+      "title": "疯魔刀法",
+      "access": "圣教拜师学习",
+      "available": true,
+      "rank": "A"
+    },
+    {
+      "id": "collect-a71f26279b142664",
+      "category": "blade",
+      "title": "百胜刀法",
+      "access": "地宫，大理等残页，豹牌",
+      "available": true,
+      "rank": "A"
+    },
+    {
+      "id": "collect-2df010f51c3c2f0a",
+      "category": "blade",
+      "title": "无相刀法",
+      "access": "太乙拜师学习",
+      "available": true,
+      "rank": "A"
+    },
+    {
+      "id": "collect-02697751d41a6a9f",
+      "category": "blade",
+      "title": "伏羲刀法",
+      "access": "襄阳八卦门支线",
+      "available": true,
+      "rank": "A"
+    },
+    {
+      "id": "collect-4c4214a0fb19f878",
+      "category": "blade",
+      "title": "法刀三斩刑",
+      "access": "六扇门学习",
+      "available": true,
+      "rank": "A"
+    },
+    {
+      "id": "collect-a1379b7d2a3c13e8",
+      "category": "blade",
+      "title": "慈悲刀法",
+      "access": "少林学习",
+      "available": true,
+      "rank": "B"
+    },
+    {
+      "id": "collect-a183babe6bbd070f",
+      "category": "blade",
+      "title": "金刀刀法",
+      "access": "洛阳王老爷子掉落残页",
+      "available": true,
+      "rank": "B"
+    },
+    {
+      "id": "collect-167a2efeab8aecb2",
+      "category": "blade",
+      "title": "太乙刀法",
+      "access": "太乙拜师学习",
+      "available": true,
+      "rank": "B"
+    },
+    {
+      "id": "collect-c4d97d3bec8c968e",
+      "category": "blade",
+      "title": "破戒刀法",
+      "access": "少林学习",
+      "available": true,
+      "rank": "B"
+    },
+    {
+      "id": "collect-3d9d5f61eff0d7c0",
+      "category": "blade",
+      "title": "反两仪刀法",
+      "access": "华山封不平拜师学习",
+      "available": true,
+      "rank": "B"
+    },
+    {
+      "id": "collect-e10c010d71ec98a0",
+      "category": "blade",
+      "title": "羽衣刀法",
+      "access": "太乙拜师学习，有前置，自己搜原版支线",
+      "available": true,
+      "rank": "B"
+    },
+    {
+      "id": "collect-08defd13125687c3",
+      "category": "blade",
+      "title": "奇门三才刀",
+      "access": "洛阳小乞丐花费50w购买秘籍",
+      "available": true,
+      "rank": "B"
+    },
+    {
+      "id": "collect-def181e511819b08",
+      "category": "blade",
+      "title": "锁江刀网阵",
+      "access": "六扇门学习",
+      "available": true,
+      "rank": "B"
+    },
+    {
+      "id": "collect-4856c6c2d7825f1d",
+      "category": "blade",
+      "title": "流云刀法",
+      "access": "洛阳武馆",
+      "available": true,
+      "rank": "C"
+    },
+    {
+      "id": "collect-ed0c2627c777b0fd",
+      "category": "blade",
+      "title": "玄虚刀法",
+      "access": "洛阳残页怪",
+      "available": true,
+      "rank": "C"
+    },
+    {
+      "id": "collect-bce7084c8bc4bf15",
+      "category": "blade",
+      "title": "菩提刀法",
+      "access": "少林学习",
+      "available": true,
+      "rank": "C"
+    },
+    {
+      "id": "collect-b31a0ebb709e6b10",
+      "category": "blade",
+      "title": "狂风刀法",
+      "access": "不要老田，洛阳武馆学习",
+      "available": true,
+      "rank": "C"
+    },
+    {
+      "id": "collect-e94e5524a2a1e23e",
+      "category": "blade",
+      "title": "烽火刀法",
+      "access": "圣教拜师学习",
+      "available": true,
+      "rank": "C"
+    },
+    {
+      "id": "collect-d4f00279d8e475ac",
+      "category": "blade",
+      "title": "铁尺缠刀术",
+      "access": "六扇门学习",
+      "available": true,
+      "rank": "C"
+    },
+    {
+      "id": "collect-58f0245151b34d92",
+      "category": "blade",
+      "title": "五虎断门刀",
+      "access": "汉阳武馆学习",
+      "available": true,
+      "rank": "D"
+    },
+    {
+      "id": "collect-376841689bd752ec",
+      "category": "blade",
+      "title": "六合刀法",
+      "access": "汉阳武馆学习",
+      "available": true,
+      "rank": "D"
+    },
+    {
+      "id": "collect-a67b7913e5cd0ab2",
+      "category": "blade",
+      "title": "断刀刀法",
+      "access": "随从自带",
+      "available": true,
+      "rank": "E"
+    },
+    {
+      "id": "collect-bfe6d7d3e046ccd0",
+      "category": "blade",
+      "title": "八卦刀法",
+      "access": "随从自带",
+      "available": true,
+      "rank": "E"
+    },
+    {
+      "id": "collect-f39af0b82e2d4a39",
+      "category": "staff",
+      "title": "白兔千钧棍",
+      "access": "人生目标-绝世武功-棍法",
+      "available": true,
+      "rank": "?"
+    },
+    {
+      "id": "collect-d1646579618f6cf3",
+      "category": "staff",
+      "title": "霸王枪",
+      "access": "凤牌",
+      "available": true,
+      "rank": "S"
+    },
+    {
+      "id": "collect-21e2c4b3ef28787a",
+      "category": "staff",
+      "title": "青竹点雨枪",
+      "access": "凤牌",
+      "available": true,
+      "rank": "S"
+    },
+    {
+      "id": "collect-b8743175a5b8a544",
+      "category": "staff",
+      "title": "打狗棒法",
+      "access": "龙本石猛掉落信物，完成丐帮信物支线获取",
+      "available": true,
+      "rank": "S"
+    },
+    {
+      "id": "collect-308c94529a48e58a",
+      "category": "staff",
+      "title": "天狼破穹枪",
+      "access": "龙本慕容",
+      "available": true,
+      "rank": "S"
+    },
+    {
+      "id": "collect-a2f2ba34de5a46b2",
+      "category": "staff",
+      "title": "霜潮镇岳棍",
+      "access": "凤牌",
+      "available": true,
+      "rank": "S"
+    },
+    {
+      "id": "collect-477c38a75aadee55",
+      "category": "staff",
+      "title": "沧澜连环枪",
+      "access": "无间地狱第二层血衣神捕",
+      "available": true,
+      "rank": "S"
+    },
+    {
+      "id": "collect-8d53607eba10a1ca",
+      "category": "staff",
+      "title": "达摩杖法",
+      "access": "藏经阁盗窃",
+      "available": true,
+      "rank": "S"
+    },
+    {
+      "id": "collect-044c5a2c8cf7404f",
+      "category": "staff",
+      "title": "如意随心",
+      "access": "路人甲专属支线",
+      "available": true,
+      "rank": "S"
+    },
+    {
+      "id": "collect-e90e339a9d7f9e28",
+      "category": "staff",
+      "title": "鲜卑枪棍",
+      "access": "龙本慕容",
+      "available": true,
+      "rank": "S"
+    },
+    {
+      "id": "collect-638e25378090bee4",
+      "category": "staff",
+      "title": "狂龙狮子枪",
+      "access": "潭州残页怪",
+      "available": true,
+      "rank": "A"
+    },
+    {
+      "id": "collect-7dad3b61edf989f6",
+      "category": "staff",
+      "title": "大日如来棍",
+      "access": "少林",
+      "available": true,
+      "rank": "A"
+    },
+    {
+      "id": "collect-198620dd7171c891",
+      "category": "staff",
+      "title": "慈航普度杖",
+      "access": "少林",
+      "available": true,
+      "rank": "A"
+    },
+    {
+      "id": "collect-daa7bb107b93efa3",
+      "category": "staff",
+      "title": "睡梦罗汉棍",
+      "access": "少林",
+      "available": true,
+      "rank": "A"
+    },
+    {
+      "id": "collect-e6a50a055081da25",
+      "category": "staff",
+      "title": "逍遥游",
+      "access": "丐帮拜师学习",
+      "available": true,
+      "rank": "A"
+    },
+    {
+      "id": "collect-a3533c3ebfb47539",
+      "category": "staff",
+      "title": "陷阵枪",
+      "access": "金陵军营",
+      "available": true,
+      "rank": "A"
+    },
+    {
+      "id": "collect-5160cd9cbb315b8b",
+      "category": "staff",
+      "title": "镇狱棍",
+      "access": "六扇门学习",
+      "available": true,
+      "rank": "A"
+    },
+    {
+      "id": "collect-1642cd10d1378ead",
+      "category": "staff",
+      "title": "百花枪诀",
+      "access": "襄阳残页怪",
+      "available": true,
+      "rank": "A"
+    },
+    {
+      "id": "collect-f95a71fd1c0095a3",
+      "category": "staff",
+      "title": "百兽震岳枪",
+      "access": "潭州残页怪",
+      "available": true,
+      "rank": "B"
+    },
+    {
+      "id": "collect-2a1abc7b782670a4",
+      "category": "staff",
+      "title": "五虎群羊棍",
+      "access": "少林",
+      "available": true,
+      "rank": "B"
+    },
+    {
+      "id": "collect-6333ed7a4d4cf405",
+      "category": "staff",
+      "title": "大小夜叉棍",
+      "access": "少林",
+      "available": true,
+      "rank": "B"
+    },
+    {
+      "id": "collect-e2c34ef2d6756eef",
+      "category": "staff",
+      "title": "缠龙棍",
+      "access": "丐帮拜师学习",
+      "available": true,
+      "rank": "B"
+    },
+    {
+      "id": "collect-c6cdb7f4b05a9542",
+      "category": "staff",
+      "title": "醉仙棍",
+      "access": "丐帮拜师学习",
+      "available": true,
+      "rank": "B"
+    },
+    {
+      "id": "collect-733aef3ceb568fb0",
+      "category": "staff",
+      "title": "连环枪",
+      "access": "金陵军营",
+      "available": true,
+      "rank": "B"
+    },
+    {
+      "id": "collect-e7ecd1e3b9ea0029",
+      "category": "staff",
+      "title": "缉凶棍",
+      "access": "六扇门学习",
+      "available": true,
+      "rank": "B"
+    },
+    {
+      "id": "collect-c270b66e9661af46",
+      "category": "staff",
+      "title": "松风棍",
+      "access": "武当残页怪",
+      "available": true,
+      "rank": "B"
+    },
+    {
+      "id": "collect-399458d312c4f067",
+      "category": "staff",
+      "title": "灵猴棍",
+      "access": "丐帮拜师学习",
+      "available": true,
+      "rank": "C"
+    },
+    {
+      "id": "collect-f4dfbfbcbc1d9c93",
+      "category": "staff",
+      "title": "少林阴阳棍",
+      "access": "少林",
+      "available": true,
+      "rank": "C"
+    },
+    {
+      "id": "collect-1ef03467fb8e8bdb",
+      "category": "staff",
+      "title": "少林六合棍",
+      "access": "少林",
+      "available": true,
+      "rank": "C"
+    },
+    {
+      "id": "collect-33af7555102a51b3",
+      "category": "staff",
+      "title": "驱蛇棍",
+      "access": "丐帮拜师学习",
+      "available": true,
+      "rank": "C"
+    },
+    {
+      "id": "collect-43fa878dc0d3820c",
+      "category": "staff",
+      "title": "破军枪法",
+      "access": "金陵军营",
+      "available": true,
+      "rank": "C"
+    },
+    {
+      "id": "collect-79723fa6929a2b33",
+      "category": "staff",
+      "title": "巡街棍",
+      "access": "六扇门学习",
+      "available": true,
+      "rank": "C"
+    },
+    {
+      "id": "collect-77d0fb8cbd12ea2f",
+      "category": "staff",
+      "title": "乾坤棍法",
+      "access": "洛阳武馆",
+      "available": true,
+      "rank": "C"
+    },
+    {
+      "id": "collect-a40916e65c6a401e",
+      "category": "staff",
+      "title": "杀威棒法",
+      "access": "洛阳郊野残页怪",
+      "available": true,
+      "rank": "C"
+    },
+    {
+      "id": "collect-9e935be38235849a",
+      "category": "staff",
+      "title": "伏虎棍法",
+      "access": "汉阳武馆",
+      "available": true,
+      "rank": "D"
+    },
+    {
+      "id": "collect-2ac25731f9b1659d",
+      "category": "staff",
+      "title": "恶煞枪法",
+      "access": "汉阳武馆",
+      "available": true,
+      "rank": "D"
+    },
+    {
+      "id": "collect-2831667df32a3096",
+      "category": "staff",
+      "title": "扫地",
+      "access": "路人甲自带",
+      "available": true,
+      "rank": "E"
+    },
+    {
+      "id": "collect-bfa2943cb114d512",
+      "category": "staff",
+      "title": "江湖棍法",
+      "access": "随从",
+      "available": true,
+      "rank": "E"
+    },
+    {
+      "id": "collect-76b5eb996edfc305",
+      "category": "inner",
+      "title": "白兔心诀",
+      "access": "人生目标-绝世内功",
+      "available": true,
+      "rank": "?"
+    },
+    {
+      "id": "collect-6226f22fec21c2ab",
+      "category": "inner",
+      "title": "嗜心炼体诀",
+      "access": "开局牢张自带",
+      "available": true,
+      "rank": "?"
+    },
+    {
+      "id": "collect-bc035e4e1c4667ba",
+      "category": "inner",
+      "title": "三世涅槃功",
+      "access": "虎牌",
+      "available": true,
+      "rank": "?"
+    },
+    {
+      "id": "collect-08e7f03c6598b114",
+      "category": "inner",
+      "title": "太玄神功",
+      "access": "虎牌，3000元宝袋",
+      "available": true,
+      "rank": "?"
+    },
+    {
+      "id": "collect-6d575e84016ebd96",
+      "category": "inner",
+      "title": "云相1",
+      "access": "暂未开放",
+      "available": false,
+      "rank": "未知"
+    },
+    {
+      "id": "collect-8c641517e6fc369a",
+      "category": "inner",
+      "title": "云相2",
+      "access": "暂未开放",
+      "available": false,
+      "rank": "未知"
+    },
+    {
+      "id": "collect-85b7a34773c33551",
+      "category": "inner",
+      "title": "紫霞真气",
+      "access": "华山拜师学习，虎牌",
+      "available": true,
+      "rank": "S"
+    },
+    {
+      "id": "collect-8782f5a980fc7ec3",
+      "category": "inner",
+      "title": "易筋经神功",
+      "access": "武道内功，群文件",
+      "available": true,
+      "rank": "S"
+    },
+    {
+      "id": "collect-67565f3ab014338f",
+      "category": "inner",
+      "title": "九阳护体神功",
+      "access": "虎牌，男主升佛法",
+      "available": true,
+      "rank": "S"
+    },
+    {
+      "id": "collect-5f100ca7e69fd5d5",
+      "category": "inner",
+      "title": "神照心经",
+      "access": "大理支线，虎牌",
+      "available": true,
+      "rank": "S"
+    },
+    {
+      "id": "collect-04a8c1c96f6c20da",
+      "category": "inner",
+      "title": "两仪玄元功",
+      "access": "骗门主，太乙拜师学习，虎牌",
+      "available": true,
+      "rank": "S"
+    },
+    {
+      "id": "collect-1a70ce497c546f57",
+      "category": "inner",
+      "title": "临济神功",
+      "access": "峨眉拜师学习，虎牌",
+      "available": true,
+      "rank": "S"
+    },
+    {
+      "id": "collect-3e8ed9072c01616b",
+      "category": "inner",
+      "title": "纯阳无极功",
+      "access": "武当拜师学习",
+      "available": true,
+      "rank": "S"
+    },
+    {
+      "id": "collect-4afff5cb3bddccb8",
+      "category": "inner",
+      "title": "莽牯神功",
+      "access": "虎牌",
+      "available": true,
+      "rank": "S"
+    },
+    {
+      "id": "collect-22bb4c612e67df7f",
+      "category": "inner",
+      "title": "天魔神功",
+      "access": "虎牌",
+      "available": true,
+      "rank": "S"
+    },
+    {
+      "id": "collect-fb5bbb187d453a0c",
+      "category": "inner",
+      "title": "北冥神功",
+      "access": "虎牌",
+      "available": true,
+      "rank": "S"
+    },
+    {
+      "id": "collect-c10e2ac0702d1b0a",
+      "category": "inner",
+      "title": "枯木神功",
+      "access": "虎本",
+      "available": true,
+      "rank": "S"
+    },
+    {
+      "id": "collect-70170436cd438030",
+      "category": "inner",
+      "title": "飞燕功",
+      "access": "虎本",
+      "available": true,
+      "rank": "S"
+    },
+    {
+      "id": "collect-45186c16caa686bf",
+      "category": "inner",
+      "title": "渊海气功",
+      "access": "虎本",
+      "available": true,
+      "rank": "S"
+    },
+    {
+      "id": "collect-790b92cf8e5b319f",
+      "category": "inner",
+      "title": "离合神功",
+      "access": "虎牌",
+      "available": true,
+      "rank": "S"
+    },
+    {
+      "id": "collect-8d0f4331bdd29398",
+      "category": "inner",
+      "title": "神行功",
+      "access": "龙本",
+      "available": true,
+      "rank": "S"
+    },
+    {
+      "id": "collect-5b98c26efb7e231e",
+      "category": "inner",
+      "title": "百花功",
+      "access": "龙本",
+      "available": true,
+      "rank": "S"
+    },
+    {
+      "id": "collect-9b7a7b083f529b72",
+      "category": "inner",
+      "title": "狂龙功",
+      "access": "龙本",
+      "available": true,
+      "rank": "S"
+    },
+    {
+      "id": "collect-7b96fd56c2098e0a",
+      "category": "inner",
+      "title": "喵王护御诀",
+      "access": "灵石岛支线",
+      "available": true,
+      "rank": "S"
+    },
+    {
+      "id": "collect-abd452a0db5b5307",
+      "category": "inner",
+      "title": "葵花宝典",
+      "access": "幽州老太监拜义父",
+      "available": true,
+      "rank": "S"
+    },
+    {
+      "id": "collect-411e514ee93dfafe",
+      "category": "inner",
+      "title": "玄阳离火功",
+      "access": "原版天魔神功支线",
+      "available": true,
+      "rank": "S"
+    },
+    {
+      "id": "collect-21bd27e7c1f597fc",
+      "category": "inner",
+      "title": "寂影玄幽诀",
+      "access": "龙本",
+      "available": true,
+      "rank": "S"
+    },
+    {
+      "id": "collect-c9a5093c9d6df024",
+      "category": "inner",
+      "title": "蔷薇心经",
+      "access": "龙本",
+      "available": true,
+      "rank": "S"
+    },
+    {
+      "id": "collect-0bba65c08b1625a4",
+      "category": "inner",
+      "title": "金顶莲华经",
+      "access": "武道内功，群文件",
+      "available": true,
+      "rank": "S"
+    },
+    {
+      "id": "collect-30047554efdec637",
+      "category": "inner",
+      "title": "乘云御龙真诀",
+      "access": "龙本石猛掉落信物，完成丐帮信物支线获取",
+      "available": true,
+      "rank": "S"
+    },
+    {
+      "id": "collect-294028f302df3b93",
+      "category": "inner",
+      "title": "玄同归藏诀",
+      "access": "顾等级到了75找张三丰领取",
+      "available": true,
+      "rank": "S"
+    },
+    {
+      "id": "collect-4794755340245dcc",
+      "category": "inner",
+      "title": "达摩武经",
+      "access": "武道内功，群文件",
+      "available": true,
+      "rank": "S"
+    },
+    {
+      "id": "collect-f7d9439e085160c8",
+      "category": "inner",
+      "title": "太和引",
+      "access": "虎本",
+      "available": true,
+      "rank": "S"
+    },
+    {
+      "id": "collect-01cf11ddebc882bf",
+      "category": "inner",
+      "title": "斗转星移",
+      "access": "燕子坞支线，群文件自己找",
+      "available": true,
+      "rank": "S"
+    },
+    {
+      "id": "collect-22ac7117cda070d5",
+      "category": "inner",
+      "title": "镇狱明镜诀",
+      "access": "六扇门S刀支线",
+      "available": true,
+      "rank": "S"
+    },
+    {
+      "id": "collect-32c97263fbdc3779",
+      "category": "inner",
+      "title": "先天一气功",
+      "access": "武道内功，群文件",
+      "available": true,
+      "rank": "S"
+    },
+    {
+      "id": "collect-c84875b2aa49fcc6",
+      "category": "inner",
+      "title": "混元功",
+      "access": "华山拜师学习",
+      "available": true,
+      "rank": "A"
+    },
+    {
+      "id": "collect-168db5ceb4616ddb",
+      "category": "inner",
+      "title": "神元功",
+      "access": "签到",
+      "available": true,
+      "rank": "A"
+    },
+    {
+      "id": "collect-daa230897bcf5958",
+      "category": "inner",
+      "title": "菩提心经",
+      "access": "少林",
+      "available": true,
+      "rank": "A"
+    },
+    {
+      "id": "collect-ef4e7551de06975a",
+      "category": "inner",
+      "title": "少阳神功",
+      "access": "少林拜师学习",
+      "available": true,
+      "rank": "A"
+    },
+    {
+      "id": "collect-2cb0a351325ca453",
+      "category": "inner",
+      "title": "寒冰真气",
+      "access": "嵩山支线",
+      "available": true,
+      "rank": "A"
+    },
+    {
+      "id": "collect-9fe49a8d5598c9bf",
+      "category": "inner",
+      "title": "达摩心经",
+      "access": "少林拜师学习",
+      "available": true,
+      "rank": "A"
+    },
+    {
+      "id": "collect-0a736441bcc8797e",
+      "category": "inner",
+      "title": "降龙伏象功",
+      "access": "少林拜师学习",
+      "available": true,
+      "rank": "A"
+    },
+    {
+      "id": "collect-89d825aabd25a72b",
+      "category": "inner",
+      "title": "阿罗汉神功",
+      "access": "少林拜师学习",
+      "available": true,
+      "rank": "A"
+    },
+    {
+      "id": "collect-b959a37ae7e1be3d",
+      "category": "inner",
+      "title": "太上感应诀",
+      "access": "泰山商店",
+      "available": true,
+      "rank": "A"
+    },
+    {
+      "id": "collect-16f1e86c40858c90",
+      "category": "inner",
+      "title": "纯阳诀",
+      "access": "太乙拜师学习",
+      "available": true,
+      "rank": "A"
+    },
+    {
+      "id": "collect-4a64fc82faaefeb0",
+      "category": "inner",
+      "title": "峨眉九阳功",
+      "access": "峨眉拜师学习",
+      "available": true,
+      "rank": "A"
+    },
+    {
+      "id": "collect-404c3f794fff62b4",
+      "category": "inner",
+      "title": "五毒神经",
+      "access": "临安郊野支线",
+      "available": true,
+      "rank": "A"
+    },
+    {
+      "id": "collect-61bf13e63fedb2b7",
+      "category": "inner",
+      "title": "九转玄功",
+      "access": "武当拜师学习",
+      "available": true,
+      "rank": "A"
+    },
+    {
+      "id": "collect-afd85ad5a9506af1",
+      "category": "inner",
+      "title": "先天无上罡气",
+      "access": "武当拜师学习",
+      "available": true,
+      "rank": "A"
+    },
+    {
+      "id": "collect-6c2f896f8b8ae4df",
+      "category": "inner",
+      "title": "养元功",
+      "access": "成都主线",
+      "available": true,
+      "rank": "A"
+    },
+    {
+      "id": "collect-46249b8f99fb384b",
+      "category": "inner",
+      "title": "密宗六法",
+      "access": "福州支线",
+      "available": true,
+      "rank": "A"
+    },
+    {
+      "id": "collect-8c86d35caa9b4df6",
+      "category": "inner",
+      "title": "辉月神功",
+      "access": "福州主线，昆仑山主线",
+      "available": true,
+      "rank": "A"
+    },
+    {
+      "id": "collect-60c511a73284985c",
+      "category": "inner",
+      "title": "天鹰诀",
+      "access": "圣教拜师学习",
+      "available": true,
+      "rank": "A"
+    },
+    {
+      "id": "collect-a2668baa8858aa8c",
+      "category": "inner",
+      "title": "金狮啸天功",
+      "access": "圣教拜师学习",
+      "available": true,
+      "rank": "A"
+    },
+    {
+      "id": "collect-9fe61c9f37d33518",
+      "category": "inner",
+      "title": "百战诀",
+      "access": "长白山支线",
+      "available": true,
+      "rank": "A"
+    },
+    {
+      "id": "collect-1d3841acffd26f5e",
+      "category": "inner",
+      "title": "四海鲸吞诀",
+      "access": "丐帮拜师学习",
+      "available": true,
+      "rank": "A"
+    },
+    {
+      "id": "collect-fd9eac8512840f50",
+      "category": "inner",
+      "title": "百衲无相功",
+      "access": "丐帮拜师学习",
+      "available": true,
+      "rank": "A"
+    },
+    {
+      "id": "collect-466f8fa0997ba51c",
+      "category": "inner",
+      "title": "素女周天功",
+      "access": "峨眉拜师学习",
+      "available": true,
+      "rank": "A"
+    },
+    {
+      "id": "collect-24d95278054645ab",
+      "category": "inner",
+      "title": "坐忘功",
+      "access": "少林拜师学习",
+      "available": true,
+      "rank": "B"
+    },
+    {
+      "id": "collect-dfac2b01a96dca75",
+      "category": "inner",
+      "title": "华山心法",
+      "access": "华山拜师学习",
+      "available": true,
+      "rank": "B"
+    },
+    {
+      "id": "collect-436d853408f9d20b",
+      "category": "inner",
+      "title": "浑天真气",
+      "access": "签到",
+      "available": true,
+      "rank": "B"
+    },
+    {
+      "id": "collect-6fcd0666122725ea",
+      "category": "inner",
+      "title": "嵩山心法",
+      "access": "嵩山商店",
+      "available": true,
+      "rank": "B"
+    },
+    {
+      "id": "collect-df873eee78bc6b96",
+      "category": "inner",
+      "title": "太乙心法",
+      "access": "太乙拜师学习",
+      "available": true,
+      "rank": "B"
+    },
+    {
+      "id": "collect-a1f179a6ea344ad3",
+      "category": "inner",
+      "title": "峨眉心法",
+      "access": "峨眉拜师学习",
+      "available": true,
+      "rank": "B"
+    },
+    {
+      "id": "collect-08422b6159070eac",
+      "category": "inner",
+      "title": "神照残经",
+      "access": "襄阳支线",
+      "available": true,
+      "rank": "B"
+    },
+    {
+      "id": "collect-707093b600e5e7cb",
+      "category": "inner",
+      "title": "武当心法",
+      "access": "武当拜师学习",
+      "available": true,
+      "rank": "B"
+    },
+    {
+      "id": "collect-5c58521a683abd65",
+      "category": "inner",
+      "title": "圣火诀",
+      "access": "圣教拜师学习",
+      "available": true,
+      "rank": "B"
+    },
+    {
+      "id": "collect-404da2737057c6a5",
+      "category": "inner",
+      "title": "怒相功",
+      "access": "丐帮拜师学习",
+      "available": true,
+      "rank": "B"
+    },
+    {
+      "id": "collect-7af15d0db815a8b7",
+      "category": "inner",
+      "title": "吐纳功",
+      "access": "洛阳武馆",
+      "available": true,
+      "rank": "C"
+    },
+    {
+      "id": "collect-931aac958fc72f40",
+      "category": "inner",
+      "title": "气引术",
+      "access": "洛阳武馆",
+      "available": true,
+      "rank": "C"
+    },
+    {
+      "id": "collect-ea850879f9e0cbe4",
+      "category": "inner",
+      "title": "毒龙心法",
+      "access": "汉阳毒龙帮支线",
+      "available": true,
+      "rank": "C"
+    },
+    {
+      "id": "collect-b8fec9afd6a24aaa",
+      "category": "inner",
+      "title": "五虎心法",
+      "access": "洛阳武馆",
+      "available": true,
+      "rank": "C"
+    },
+    {
+      "id": "collect-9655e18388304980",
+      "category": "technique",
+      "title": "音律",
+      "access": "",
+      "available": true,
+      "maxLevel": 300
+    },
+    {
+      "id": "collect-db581f9a60020ce5",
+      "category": "technique",
+      "title": "丹青",
+      "access": "",
+      "available": true,
+      "maxLevel": 1
+    },
+    {
+      "id": "collect-3fa6e165b6693d78",
+      "category": "technique",
+      "title": "佛法禅理",
+      "access": "",
+      "available": true,
+      "maxLevel": 300
+    },
+    {
+      "id": "collect-57801c621ae6249a",
+      "category": "technique",
+      "title": "剑意",
+      "access": "",
+      "available": true,
+      "maxLevel": 300
+    },
+    {
+      "id": "collect-2b4c0017c9ac2667",
+      "category": "technique",
+      "title": "浩然正气",
+      "access": "",
+      "available": true,
+      "maxLevel": 300
+    },
+    {
+      "id": "collect-d4a2dfee93ebaf02",
+      "category": "technique",
+      "title": "厨艺",
+      "access": "",
+      "available": true,
+      "maxLevel": 300
+    },
+    {
+      "id": "collect-dd21787322505fca",
+      "category": "technique",
+      "title": "庖丁解牛",
+      "access": "",
+      "available": true,
+      "maxLevel": 300
+    },
+    {
+      "id": "collect-5bb1459939e5cef6",
+      "category": "technique",
+      "title": "横练护体气功",
+      "access": "",
+      "available": true,
+      "maxLevel": 300
+    },
+    {
+      "id": "collect-fd67148a85767201",
+      "category": "technique",
+      "title": "拳劲",
+      "access": "",
+      "available": true,
+      "maxLevel": 300
+    },
+    {
+      "id": "collect-85d71e3034e0167a",
+      "category": "technique",
+      "title": "一苇渡江术",
+      "access": "",
+      "available": true,
+      "maxLevel": 300
+    },
+    {
+      "id": "collect-a952d3f189bea8e3",
+      "category": "technique",
+      "title": "五禽戏",
+      "access": "",
+      "available": true,
+      "maxLevel": 300
+    },
+    {
+      "id": "collect-e5b30c01e61b53d4",
+      "category": "technique",
+      "title": "铁指禅劲",
+      "access": "",
+      "available": true,
+      "maxLevel": 300
+    },
+    {
+      "id": "collect-fa3291167cc12e9b",
+      "category": "technique",
+      "title": "道学",
+      "access": "",
+      "available": true,
+      "maxLevel": 300
+    },
+    {
+      "id": "collect-e46edc292214c063",
+      "category": "technique",
+      "title": "诸天化身法",
+      "access": "",
+      "available": true,
+      "maxLevel": 300
+    },
+    {
+      "id": "collect-8fc8bc9fb50bc1f1",
+      "category": "technique",
+      "title": "大乘涅磐功",
+      "access": "",
+      "available": true,
+      "maxLevel": 300
+    },
+    {
+      "id": "collect-7db478b1875f5095",
+      "category": "technique",
+      "title": "染羽",
+      "access": "",
+      "available": true,
+      "maxLevel": 300
+    },
+    {
+      "id": "collect-2ad3e8d4840cd26f",
+      "category": "technique",
+      "title": "佛道禅心",
+      "access": "",
+      "available": true,
+      "maxLevel": 300
+    },
+    {
+      "id": "collect-9a31123e1fe1ab02",
+      "category": "technique",
+      "title": "酒量",
+      "access": "",
+      "available": true,
+      "maxLevel": 300
+    },
+    {
+      "id": "collect-fc8e2a6ef7136d0a",
+      "category": "technique",
+      "title": "斩风诀",
+      "access": "",
+      "available": true,
+      "maxLevel": 300
+    },
+    {
+      "id": "collect-2187c9b10aec0e8f",
+      "category": "technique",
+      "title": "龙象护体功",
+      "access": "",
+      "available": true,
+      "maxLevel": 300
+    },
+    {
+      "id": "collect-02aa8d4ca67d62be",
+      "category": "technique",
+      "title": "任督二脉",
+      "access": "",
+      "available": true,
+      "maxLevel": 1
+    },
+    {
+      "id": "collect-8372a5b46cc6d270",
+      "category": "technique",
+      "title": "洗髓伐骨",
+      "access": "",
+      "available": true,
+      "maxLevel": 300
+    },
+    {
+      "id": "collect-cd82407284de0578",
+      "category": "technique",
+      "title": "朱雀之力",
+      "access": "",
+      "available": true,
+      "maxLevel": 300
+    },
+    {
+      "id": "collect-5247ae1a7c02e44b",
+      "category": "technique",
+      "title": "玄武之力",
+      "access": "",
+      "available": true,
+      "maxLevel": 300
+    },
+    {
+      "id": "collect-20384461da0cb065",
+      "category": "technique",
+      "title": "白虎之力",
+      "access": "",
+      "available": true,
+      "maxLevel": 300
+    },
+    {
+      "id": "collect-1b0db306738d7c1e",
+      "category": "technique",
+      "title": "垂钓之技",
+      "access": "",
+      "available": true,
+      "maxLevel": 300
+    },
+    {
+      "id": "collect-4b33a19f6d391e99",
+      "category": "technique",
+      "title": "伐木之技",
+      "access": "",
+      "available": true,
+      "maxLevel": 300
+    },
+    {
+      "id": "collect-eae8e19be33c513d",
+      "category": "technique",
+      "title": "种植之技",
+      "access": "",
+      "available": true,
+      "maxLevel": 300
+    },
+    {
+      "id": "collect-4ef2c13b92a47b74",
+      "category": "technique",
+      "title": "研读之技",
+      "access": "",
+      "available": true,
+      "maxLevel": 300
+    },
+    {
+      "id": "collect-8600720c48fafffb",
+      "category": "technique",
+      "title": "沧浪斩",
+      "access": "",
+      "available": true,
+      "maxLevel": 300
+    },
+    {
+      "id": "collect-1ead785974c6d4c8",
+      "category": "technique",
+      "title": "医术",
+      "access": "",
+      "available": true,
+      "maxLevel": 300
+    },
+    {
+      "id": "collect-c9141aae1483a5c2",
+      "category": "technique",
+      "title": "奇门遁甲",
+      "access": "",
+      "available": true,
+      "maxLevel": 300
+    },
+    {
+      "id": "collect-6f9d1a11e59a23d7",
+      "category": "technique",
+      "title": "阴阳流转",
+      "access": "",
+      "available": true,
+      "maxLevel": 1
+    },
+    {
+      "id": "collect-fead24858426914c",
+      "category": "technique",
+      "title": "坤元厚磐",
+      "access": "",
+      "available": true,
+      "maxLevel": 1
+    },
+    {
+      "id": "collect-20db92c2fa46f94b",
+      "category": "technique",
+      "title": "乾元罡气",
+      "access": "",
+      "available": true,
+      "maxLevel": 1
+    },
+    {
+      "id": "collect-360d1b6a797db525",
+      "category": "technique",
+      "title": "爱国挚情",
+      "access": "",
+      "available": true,
+      "maxLevel": 1
+    },
+    {
+      "id": "collect-433420b72ae70138",
+      "category": "technique",
+      "title": "棍势",
+      "access": "",
+      "available": true,
+      "maxLevel": 300
+    },
+    {
+      "id": "collect-a04d7b2be9e4c6d5",
+      "category": "technique",
+      "title": "催心掌劲",
+      "access": "",
+      "available": true,
+      "maxLevel": 1
+    },
+    {
+      "id": "collect-3b2a68d73c60d2f5",
+      "category": "technique",
+      "title": "疗伤秘术",
+      "access": "",
+      "available": true,
+      "maxLevel": 1
+    },
+    {
+      "id": "collect-79b1d55a6f0cdc1e",
+      "category": "technique",
+      "title": "移形换影",
+      "access": "",
+      "available": true,
+      "maxLevel": 1
+    },
+    {
+      "id": "collect-dc98485776af2c8b",
+      "category": "technique",
+      "title": "乱披风剑诀",
+      "access": "",
+      "available": true,
+      "maxLevel": 1
+    },
+    {
+      "id": "collect-b8c4097aba86bcd4",
+      "category": "technique",
+      "title": "修罗刀诀",
+      "access": "",
+      "available": true,
+      "maxLevel": 1
+    },
+    {
+      "id": "collect-ba72dcb3428b85b2",
+      "category": "technique",
+      "title": "伏虎盘龙势",
+      "access": "",
+      "available": true,
+      "maxLevel": 1
+    },
+    {
+      "id": "collect-5d0c7a8b8c46f647",
+      "category": "technique",
+      "title": "飞絮劲道",
+      "access": "",
+      "available": true,
+      "maxLevel": 1
+    }
+  ]
+}

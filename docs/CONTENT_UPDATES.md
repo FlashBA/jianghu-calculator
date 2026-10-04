@@ -5,10 +5,11 @@
 - 图鉴首次差异保留本地、一致字段后续跟随云端、新武学追加的规则与离线报告
   命令统一记录在 [ENCYCLOPEDIA_SYNC.md](ENCYCLOPEDIA_SYNC.md)。四类图鉴已接入
   阿里云定时发布；副本保持手动维护，装备未绑定来源。
-- 阿里云是线上数据的主要存放位置和客户端第一优先更新源：
-  `https://47.95.250.113/jianghu/`，服务器目录为
+- 待发布客户端以 OSS 为第一优先数据源：
+  `https://jianghu-baitu.oss-cn-beijing.aliyuncs.com/jianghu/`。
+  ECS 保留正式发布源及第一备用地址 `https://47.95.250.113/jianghu/`，服务器目录为
   `/opt/jianghu-calculator/releases/`。本地源文件及 Git 用于编辑、追溯和备份。
-- 备用顺序为 GitHub Pages、jsDelivr、raw GitHub。正式网页地址固定为
+- OSS、ECS 之后的备用顺序为 GitHub Pages、jsDelivr、raw GitHub。正式网页地址固定为
   `https://flashba.github.io/jianghu-calculator/`，网页和 APK 共用内容数据。
 - 每次手动发布数据，同步阿里云、GitHub main 和正式网页所需文件，并确认
   Pages 部署成功；不要只更新本地或开发分支。兼容 v0.4 期间还要同步独立
@@ -37,6 +38,17 @@ APK version codes and content revisions are independent.
 
 ## 分包更新（2026-10-02）
 
+- 待发布启动恢复（2026-10-05）：图鉴绑定和内容读取独立于计算器基础文件。
+  基础文件失败时保留有效图鉴/攻略，禁止未初始化的计算器保存空配置。
+  首页原有“检查数据更新”按钮兼作启动重试，不新增按钮；重试成功后恢复计算器
+  配置并检查更新，攻略通过内容就绪事件恢复。事件绑定只执行一次。
+- 待发布阵法修正：面板生命/攻击最后乘阵法，成就和装备/武器固定值也计入。
+  先完成原有非阵法取整，再进行阵法乘算并取整；不重复套用独立伤害乘区。
+  计算说明已同步至本地内容包，应随新客户端发布，不能将文案更新当作旧 APK 计算逻辑修复。
+- 待发布的客户端超时修正（2026-10-05）：清单单次 8 秒、分包单次 20 秒，
+  内容初始化完成后的整轮联网检查/下载/保存共用 45 秒预算；本地缓存打开及
+  单次事务分别最多 3 秒。基础 JSON 文件读取最多 20 秒。超时中止请求/事务，
+  更新失败保留旧内容并恢复按钮，不在下载过程中替换数据。已有 APK 需升级代码才能生效。
 - 完整包继续作为首次启动/离线内置数据及旧客户端兼容文件；后续只下载哈希改变的分包。
 - 客户端每次最多并发下载 3 个分包。一次检查内，切换备用源会复用已校验的分包。
 - 所有需要的分包下载、校验及组装成功后，以同一个 IndexedDB 事务覆盖 `current`；失败不更新任何正在使用的数据。
@@ -45,12 +57,40 @@ APK version codes and content revisions are independent.
 - 清单约 1.6 KB 未压缩；当前 gzip 估算：图鉴 17 KB、副本 6.7 KB、避坑 3 KB、其他攻略 10.6 KB、原版检索 190 KB、菜谱 0.5 KB、攻略提取文本 5.9 KB、日志 19 KB。不含 HTTP/TLS 开销。
 - 定时发布器和手动构建共用 `tools/content_parts.py`。先写不可变分包，再写完整兼容包及 v1 清单，最后写 v2 清单。不能只上传清单，不上传它引用的文件。
 - 保留旧哈希文件，允许已取得旧清单的请求完成；服务器分包文件不属于手机缓存。GitHub 备用源也须同步分包文件与 v2 清单。
-- 数据地址仍为阿里云优先；以后迁往 OSS/CDN 可沿用相同格式，但当前并未迁移。
+- OSS 已镜像正式数据；客户端 OSS 优先代码仍待随网页和新 APK 发布，旧 APK 继续走 ECS。
+
+## OSS 发布（2026-10-05）
+
+- Bucket `jianghu-baitu`，公开读取仅限 `jianghu/*`，跨域 GET/HEAD 已验证支持网页及 APK 来源。
+- 使用 ECS RAM 角色临时凭证，不保存 AccessKey。脚本 `tools/sync_oss.py` 只镜像已校验的正式文件，
+  不上传来源材料、凭证或开发目录。先上传并校验内容，再上传清单；相同文件跳过。
+- 两个来源发布服务均已接入 `ExecStartPost`，每日北京时间 04:00（避坑）、04:10（图鉴）
+  发布后同步 OSS。手动在服务器运行 `jianghu-sync-oss`；完整验证使用 `jianghu-sync-oss --verify-all`。
+  该命令只镜像 ECS 已发布内容，不抓取腾讯文档。
+- 首次镜像正式 revision `1791132191428` 共 18 个文件；本地未发布成就及计算改动未上传。
+- 可变 JSON 缓存 60 秒，哈希分包缓存 30 天。未变更时客户端只检查清单。
+- OSS 默认域名实测拒绝公开 APK 下载（`ApkDownloadForbidden`），需要自定义域名才能使用。
+  因此 APK 继续 ECS 优先、GitHub 备用；OSS 的 `latest.json` 保留 ECS 下载地址。
 
 ## Editable sources
 
+### 成就清单（待发布，2026-10-05）
+
+- 来源：服务器 `/root/data/白兔全成就武学内功技艺统计.xlsx`。只导入成就清单，
+  不覆盖图鉴/计算器数据。共 305 条，其中 4 条“暂未开放”不计入 301 条可收集进度。
+- `web/achievements.json` 随现有 `guides` 分包发布，不增加新的分包请求；旧内容包
+  没有此字段时仍可加载。服务器定时发布必须保留这一字段。
+- 勾选使用 `jianghu-stat-simulator:achievements:v1`，数据更新不清空本地进度。
+  条目 ID 必须保持稳定；重命名手工保留 ID。同名不同品阶保留独立条目。
+  页面只记录收集状态，不推算游戏成就奖励或改变计算器成就固定值。
+- 导入：`python3 tools/import_achievements.py <Excel路径>`（需要 openpyxl），
+  然后运行 `node tools/build-content-bundle.cjs`。重复导入会优先保留已有 ID。
+- 首次显示功能需新 APK；安装支持此功能的版本后，清单新增、修改、删除可走数据更新。
+- 验证：`NODE_PATH=/tmp/jianghu-test-runtime/node_modules node tools/test-achievements.cjs`。
+
 | File under `web/` | Content |
 | --- | --- |
+| `achievements.json` | Six-category collection checklist, ranks, access and technique maximum levels |
 | `whiterabbit_data.json` | Encyclopedia and calculator values, dungeon drops |
 | `wiki_content.json` | Version notes, 31 confirmed lineups, statistics |
 | `tencent_pitfalls.json` | Generated full text from the bound Tencent pitfalls sheet |

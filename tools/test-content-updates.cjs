@@ -45,8 +45,8 @@ async function open(savedFavorites, lastCheck) {
     const url = new URL(input, w.location.href);
     if (url.hostname === 'appassets.androidplatform.net') return new Response(fs.readFileSync(path.join(web, path.basename(url.pathname)), 'utf8'));
     requests.push(url.hostname);
-    if (mode === 'offline' || (mode === 'fallback' && url.hostname === '47.95.250.113')) throw new Error('Network unavailable');
-    if (mode === 'timeout' && url.hostname === '47.95.250.113') return new Promise((resolve, reject) => options.signal.addEventListener('abort', () => reject(new Error('timeout'))));
+    if (mode === 'offline' || (mode === 'fallback' && ['jianghu-baitu.oss-cn-beijing.aliyuncs.com', '47.95.250.113'].includes(url.hostname))) throw new Error('Network unavailable');
+    if (mode === 'timeout' && url.hostname === 'jianghu-baitu.oss-cn-beijing.aliyuncs.com') return new Promise((resolve, reject) => options.signal.addEventListener('abort', () => reject(new Error('timeout'))));
     const files = {};
     const parts = {};
     const original = splitPayload(bundle.data);
@@ -91,7 +91,7 @@ async function open(savedFavorites, lastCheck) {
     let w = dom.window;
     let doc = w.document;
     assert.equal(doc.getElementById('data-update-status').textContent, '数据已是最新');
-    assert.equal(requests[0], '47.95.250.113');
+    assert.equal(requests[0], 'jianghu-baitu.oss-cn-beijing.aliyuncs.com');
     assert.equal(downloads.length, 0, 'Unchanged version only fetches manifest');
     assert.equal(w.displayMartialRank(' ？ '), '?');
     assert.equal(w.displayMartialRank('?'), '?');
@@ -99,6 +99,27 @@ async function open(savedFavorites, lastCheck) {
     for (const text of ['限1', '奖励，限一', '限１', '限 1 本', '限一份']) assert(w.martialIsLimitedCopy(text), text);
     for (const text of ['', '不限1次', '限10本', '限一百本', '凤翔令']) assert(!w.martialIsLimitedCopy(text), text);
     const martialRecords = w.encyclopediaRecords('martial_arts');
+    const favoriteKeys = ['characters', 'martial_arts', 'inner_skills', 'techniques', 'equipment']
+      .flatMap((type) => w.encyclopediaRecords(type).map((item) => `${type}:${item.id}`));
+    const dispatch = w.dispatchEvent;
+    w.dispatchEvent = () => true;
+    for (const key of favoriteKeys) w.jianghuEncyclopedia.toggleFavorite(key);
+    w.dispatchEvent = dispatch;
+    const records = w.encyclopediaRecords;
+    let categoryBuilds = 0;
+    w.encyclopediaRecords = (...args) => { categoryBuilds += 1; return records(...args); };
+    w.dispatchEvent(new w.Event('jianghu-encyclopedia-favorites-changed'));
+    assert.equal(doc.querySelectorAll('.v03-home-favorite-item').length, favoriteKeys.length);
+    assert.equal(categoryBuilds, 5, 'Render each category once, including all favorite buttons');
+    categoryBuilds = 0;
+    doc.querySelector('#favorites-list [data-encyclopedia-favorite]').click();
+    assert.equal(doc.querySelectorAll('.v03-home-favorite-item').length, favoriteKeys.length - 1);
+    assert.equal(categoryBuilds, 5, 'Removing a favorite must render the list only once');
+    w.encyclopediaRecords = records;
+    w.dispatchEvent = () => true;
+    for (const key of favoriteKeys.slice(1)) w.jianghuEncyclopedia.toggleFavorite(key);
+    w.dispatchEvent = dispatch;
+    w.dispatchEvent(new w.Event('jianghu-encyclopedia-favorites-changed'));
     assert.equal(martialRecords.filter((item) => w.martialIsLimitedCopy(item.access)).length, 35);
     const limitedSword = martialRecords.find((item) => item.name === '白兔三仙剑');
     const limitedCard = w.renderEncyclopediaCard('martial_arts', limitedSword);
@@ -195,7 +216,7 @@ async function open(savedFavorites, lastCheck) {
     mode = 'timeout';
     const started = Date.now();
     assert.equal(await w.JianghuContent.checkForUpdates(), 'current');
-    assert(Date.now() - started >= 14900 && Date.now() - started < 19000);
+    assert(Date.now() - started >= 7900 && Date.now() - started < 12000);
     mode = 'normal';
     const first = w.JianghuContent.checkForUpdates();
     const second = w.JianghuContent.checkForUpdates();

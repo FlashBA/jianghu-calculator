@@ -49,6 +49,14 @@ FORMULAS*.md
 !/tools/build-content-bundle.cjs
 !/tools/content_parts.py
 !/tools/test-content-updates.cjs
+!/tools/test-content-timeouts.cjs
+!/tools/test-startup-formation.cjs
+!/tools/import_achievements.py
+!/tools/test-achievements.cjs
+!/tools/sync_oss.py
+!/tools/jianghu-oss-sync.conf
+!/tools/jianghu-sync-oss
+!/tools/test_oss_sync.py
 !/tools/test-android-startup.sh
 !/tools/compare_tencent_encyclopedia.py
 !/tools/test_encyclopedia_diff.py

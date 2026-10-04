@@ -3,6 +3,8 @@ package com.flashba.jianghucalculator;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Intent;
+import android.graphics.Color;
+import android.graphics.Insets;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
@@ -11,9 +13,12 @@ import android.provider.Settings;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.view.Window;
+import android.view.WindowInsets;
+import android.view.DisplayCutout;
 import android.view.WindowManager;
 import android.view.View;
 import android.widget.Button;
+import android.widget.FrameLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.webkit.WebSettings;
@@ -50,6 +55,9 @@ import org.json.JSONObject;
 public final class MainActivity extends Activity {
     private static final String PACKAGE_NAME = "com.flashba.jianghucalculator";
     private static final String ASSET_HOST = "appassets.androidplatform.net";
+    private static final String OSS_BASE_URL =
+        "https://jianghu-baitu.oss-cn-beijing.aliyuncs.com/jianghu/";
+    private static final String ECS_BASE_URL = "https://47.95.250.113/jianghu/";
     private static final String MIRROR_LATEST_URL =
         "https://47.95.250.113/jianghu/latest.json";
     private static final String RELEASES_API_URL =
@@ -107,9 +115,73 @@ public final class MainActivity extends Activity {
             }
         });
         webView.setOverScrollMode(WebView.OVER_SCROLL_NEVER);
+        installSafeWebView();
         webView.loadUrl("https://" + ASSET_HOST + "/assets/index.html");
-        setContentView(webView);
         checkForUpdate();
+    }
+
+    private void installSafeWebView() {
+        Window window = getWindow();
+        window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
+        if (Build.VERSION.SDK_INT >= 30) {
+            window.setDecorFitsSystemWindows(false);
+        } else {
+            View decor = window.getDecorView();
+            decor.setSystemUiVisibility(decor.getSystemUiVisibility()
+                | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION);
+        }
+        window.setStatusBarColor(Color.TRANSPARENT);
+        window.setNavigationBarColor(Color.TRANSPARENT);
+        if (Build.VERSION.SDK_INT >= 28) {
+            WindowManager.LayoutParams attributes = window.getAttributes();
+            attributes.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
+            window.setAttributes(attributes);
+        }
+
+        FrameLayout container = new FrameLayout(this);
+        container.setBackgroundColor(Color.rgb(244, 238, 230));
+        container.addView(webView, new FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
+        container.setOnApplyWindowInsetsListener((view, insets) -> {
+            int left;
+            int top;
+            int right;
+            int bottom;
+            if (Build.VERSION.SDK_INT >= 30) {
+                Insets safe = insets.getInsetsIgnoringVisibility(
+                    WindowInsets.Type.systemBars() | WindowInsets.Type.displayCutout());
+                Insets keyboard = insets.getInsets(WindowInsets.Type.ime());
+                left = Math.max(safe.left, keyboard.left);
+                top = Math.max(safe.top, keyboard.top);
+                right = Math.max(safe.right, keyboard.right);
+                bottom = Math.max(safe.bottom, keyboard.bottom);
+            } else {
+                left = insets.getSystemWindowInsetLeft();
+                top = insets.getSystemWindowInsetTop();
+                right = insets.getSystemWindowInsetRight();
+                bottom = insets.getSystemWindowInsetBottom();
+                if (Build.VERSION.SDK_INT >= 28) {
+                    DisplayCutout cutout = insets.getDisplayCutout();
+                    if (cutout != null) {
+                        left = Math.max(left, cutout.getSafeInsetLeft());
+                        top = Math.max(top, cutout.getSafeInsetTop());
+                        right = Math.max(right, cutout.getSafeInsetRight());
+                        bottom = Math.max(bottom, cutout.getSafeInsetBottom());
+                    }
+                }
+            }
+            // Resize the WebView itself so fixed HTML navigation and dialogs stay safe.
+            // Insets are absolute, not added to the previous padding on each dispatch.
+            view.setPadding(left, top, right, bottom);
+            if (Build.VERSION.SDK_INT >= 30) return WindowInsets.CONSUMED;
+            WindowInsets consumed = insets.consumeSystemWindowInsets();
+            if (Build.VERSION.SDK_INT >= 28) consumed = consumed.consumeDisplayCutout();
+            return consumed;
+        });
+        setContentView(container);
+        container.requestApplyInsets();
     }
 
     private void checkForUpdate() {
@@ -145,14 +217,16 @@ public final class MainActivity extends Activity {
     }
 
     private static JSONObject fetchLatestUpdate() throws IOException, JSONException {
-        try {
-            JSONObject mirror = fetchJson(MIRROR_LATEST_URL);
-            if (mirror == null) return fetchLatestRelease();
-            String version = normalizeVersion(mirror.optString("version"));
-            String apkUrl = mirror.optString("apk", "").trim();
-            if (!version.isEmpty() && !apkUrl.isEmpty()) return mirror;
-        } catch (Exception ignored) {
-            // The mirror is optional. Fall back to GitHub below.
+        for (String endpoint : new String[]{OSS_BASE_URL + "latest.json", MIRROR_LATEST_URL}) {
+            try {
+                JSONObject mirror = fetchJson(endpoint);
+                if (mirror == null) continue;
+                String version = normalizeVersion(mirror.optString("version"));
+                String apkUrl = mirror.optString("apk", "").trim();
+                if (!version.isEmpty() && !apkUrl.isEmpty()) return mirror;
+            } catch (Exception ignored) {
+                // Try the next published update source.
+            }
         }
         return fetchLatestRelease();
     }
@@ -280,7 +354,9 @@ public final class MainActivity extends Activity {
 
                 String githubApkUrl = githubApkUrlForVersion(version);
                 ArrayList<String> downloadSources = new ArrayList<>();
+                String apkPath = "v" + version + "/jianghu-calculator-" + version + ".apk";
                 if (!apkUrl.isEmpty()) downloadSources.add(apkUrl);
+                if (!downloadSources.contains(ECS_BASE_URL + apkPath)) downloadSources.add(ECS_BASE_URL + apkPath);
                 if (!githubApkUrl.isEmpty() && !githubApkUrl.equals(apkUrl)) {
                     downloadSources.add(githubApkUrl);
                 }
@@ -288,17 +364,14 @@ public final class MainActivity extends Activity {
                 for (int sourceIndex = 0; sourceIndex < downloadSources.size(); sourceIndex++) {
                     String sourceUrl = downloadSources.get(sourceIndex);
                     try {
-                        updateDownloadSourceStatus(sourceIndex == 0 && isMirrorApkUrl(sourceUrl)
-                            ? "正在从阿里云下载更新"
-                            : sourceIndex == 0
-                                ? "正在从 GitHub 下载更新"
-                                : "阿里云连接超时，切换 GitHub 下载");
+                        String sourceName = sourceUrl.startsWith(ECS_BASE_URL) ? "阿里云服务器" : "备用地址";
+                        updateDownloadSourceStatus((sourceIndex == 0 ? "正在从" : "切换至") + sourceName + "下载更新");
                         downloadApkOnce(sourceUrl, temporaryFile);
                         verifyDownloadedApk(
                             temporaryFile,
                             version,
                             versionCode,
-                            sourceIndex == 0 ? expectedSha256 : "");
+                            expectedSha256);
                         downloadError = null;
                         break;
                     } catch (IOException error) {
