@@ -96,6 +96,14 @@ async function open(savedFavorites, lastCheck) {
     assert.equal(w.displayMartialRank(' ？ '), '?');
     assert.equal(w.displayMartialRank('?'), '?');
     assert.equal(w.displayMartialRank('12S'), 'S');
+    for (const text of ['限1', '奖励，限一', '限１', '限 1 本', '限一份']) assert(w.martialIsLimitedCopy(text), text);
+    for (const text of ['', '不限1次', '限10本', '限一百本', '凤翔令']) assert(!w.martialIsLimitedCopy(text), text);
+    const martialRecords = w.encyclopediaRecords('martial_arts');
+    assert.equal(martialRecords.filter((item) => w.martialIsLimitedCopy(item.access)).length, 35);
+    const limitedSword = martialRecords.find((item) => item.name === '白兔三仙剑');
+    const limitedCard = w.renderEncyclopediaCard('martial_arts', limitedSword);
+    assert.match(limitedCard, /剑法<\/span>\s*<span class="encyclopedia-card-badge">孤本<\/span>/);
+    assert(!w.renderEncyclopediaCard('martial_arts', martialRecords.find((item) => item.name === '神龙掌法')).includes('>孤本<'));
     doc.getElementById('encyclopedia-type').value = 'martial_arts';
     doc.getElementById('encyclopedia-martial-rank-filter').value = '?';
     doc.getElementById('encyclopedia-martial-rank-filter').dispatchEvent(new w.Event('change'));

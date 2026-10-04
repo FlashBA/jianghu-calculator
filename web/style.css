@@ -5200,6 +5200,10 @@ body {
   white-space: nowrap;
 }
 
+.encyclopedia-martial-card .encyclopedia-card-title-line {
+  flex-wrap: wrap;
+}
+
 .encyclopedia-card-meta {
   display: block;
   margin-top: 0;

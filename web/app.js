@@ -3599,6 +3599,11 @@ function renderCharacterCard(record) {
   `;
 }
 
+function martialIsLimitedCopy(access) {
+  const text = String(access || '').normalize('NFKC').replace(/\s/g, '');
+  return /(?:^|[^不限])限(?:1(?!\d)|一(?![二三四五六七八九十百千万]))/.test(text);
+}
+
 function encyclopediaCardBadge(type, record) {
   if (type === 'martial_arts') return record.style || '武学';
   if (type === 'inner_skills') return '';
@@ -3625,6 +3630,7 @@ function renderEncyclopediaCard(type, record) {
           <span class="encyclopedia-card-heading">
             <span class="encyclopedia-card-title-line">
               <span class="encyclopedia-card-badge">${escapeHtml(badge || '武学')}</span>
+              ${martialIsLimitedCopy(record.access) ? '<span class="encyclopedia-card-badge">孤本</span>' : ''}
               <strong>${escapeHtml(record.name || '未命名')}</strong>
             </span>
             ${meta ? `<span class="encyclopedia-card-meta">${escapeHtml(meta)}</span>` : ''}
