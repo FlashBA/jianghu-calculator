@@ -3443,26 +3443,7 @@ function encyclopediaRecords(type) {
         sourceText: item.access || '',
       };
     });
-    const seen = new Set();
-    const weaponRecords = Object.values(state.data?.equip || {})
-      .filter((item) => isWeapon(item) && isSEquipment(item) && (item.nick || item.name))
-      .filter((item) => {
-        const key = `${item.id}:${item.nick || item.name}`;
-        if (seen.has(key)) return false;
-        seen.add(key);
-        return true;
-      })
-      .map((item) => ({
-        id: `weapon-${item.id}`,
-        name: item.nick || item.name,
-        equipmentSlot: ENCYCLOPEDIA_WEAPON_SLOTS[Number(item.type)] || '',
-        meta: encyclopediaText(ENCYCLOPEDIA_EQUIPMENT_SLOT_LABELS[ENCYCLOPEDIA_WEAPON_SLOTS[Number(item.type)]] || '武器', `品阶 ${item.star || '待补'}`),
-        summaryLabel: '武器说明',
-        summary: '白值、强化档与铸造属性以当前武器数据为准',
-        detail: String(item.desp || '').replace(/【\|[^|]+\|/g, '').replace(/\|】/g, ''),
-        sourceText: '',
-      }));
-    return [...whiteRecords, ...weaponRecords];
+    return whiteRecords;
   }
   return [];
 }
