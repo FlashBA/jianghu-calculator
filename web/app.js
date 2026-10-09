@@ -1231,7 +1231,7 @@ function equipmentSummary(item) {
   const parts = [];
   if (stats.hpFlat) parts.push(`${formatNumber(stats.hpFlat)}血`);
   if (stats.hp) parts.push(`${formatPercent(stats.hp)}血`);
-  if (stats.attackFlat) parts.push(`${isWeapon(item) ? '+9 ' : ''}${formatNumber(stats.attackFlat)}攻`);
+  if (stats.attackFlat) parts.push(`${formatNumber(stats.attackFlat)}攻`);
   if (stats.attack) parts.push(`${formatPercent(stats.attack)}攻`);
   SECONDARY_STAT_DEFS.forEach((definition) => {
     const value = stats.secondary[definition.key];
@@ -1731,7 +1731,7 @@ function updateWeaponSummary() {
   const selectedWeapon = getWhiteEquipment(state.weaponId);
   const weaponName = String(state.weaponName || '').trim() || equipmentName(selectedWeapon);
   summary.textContent = weaponActive()
-    ? `${weaponName || '已配置'}${selectedWeapon ? ` · +9白值${formatNumber(equipmentStats(selectedWeapon).attackFlat)}攻` : ''}${affixCount ? ` · ${affixCount} 个词条` : ''}`
+    ? `${weaponName || '已配置'}${selectedWeapon ? ` · +0白值${formatNumber(equipmentStats(selectedWeapon).attackFlat)}攻` : ''}${affixCount ? ` · ${affixCount} 个词条` : ''}`
     : '未设置';
 }
 function setError(message) {
@@ -3435,18 +3435,20 @@ function encyclopediaRecords(type) {
   if (type === 'equipment') {
     const whiteRecords = (white.equipment || []).map((item, index) => {
       const equipmentSlot = equipmentCategory(item);
+      const forgeSummary = isWeapon(item) && Array.isArray(item.forge_options) && item.forge_options.length
+        ? `可锻造：${item.forge_options.join('；')}`
+        : '';
       return {
         id: item.id || `equipment-${index}`,
         name: item.name || item.nick,
         equipmentSlot,
         meta: encyclopediaText(ENCYCLOPEDIA_EQUIPMENT_SLOT_LABELS[equipmentSlot] || '装备部位待补', item.rank, equipmentSummary(item), item.scope || '佩戴者'),
         summaryLabel: '装备效果',
-        summary: item.special || '特殊效果待补',
+        summary: encyclopediaText(item.special, forgeSummary) || '特殊效果待补',
         access: isWeapon(item) ? '' : (item.access || '获取方式待补'),
         detail: encyclopediaText(
           item.unique && '唯一装备',
           Array.isArray(item.aliases) && item.aliases.length && `别名：${item.aliases.join('、')}`,
-          Array.isArray(item.forge_options) && item.forge_options.length && `可铸造：${item.forge_options.join('、')}`,
           item.designer && `设计：${item.designer}`,
         ),
         sourceText: isWeapon(item) ? '' : (item.access || ''),
