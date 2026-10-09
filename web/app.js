@@ -3442,14 +3442,14 @@ function encyclopediaRecords(type) {
         meta: encyclopediaText(ENCYCLOPEDIA_EQUIPMENT_SLOT_LABELS[equipmentSlot] || '装备部位待补', item.rank, equipmentSummary(item), item.scope || '佩戴者'),
         summaryLabel: '装备效果',
         summary: item.special || '特殊效果待补',
-        access: item.access || '获取方式待补',
+        access: isWeapon(item) ? '' : (item.access || '获取方式待补'),
         detail: encyclopediaText(
           item.unique && '唯一装备',
           Array.isArray(item.aliases) && item.aliases.length && `别名：${item.aliases.join('、')}`,
           Array.isArray(item.forge_options) && item.forge_options.length && `可铸造：${item.forge_options.join('、')}`,
           item.designer && `设计：${item.designer}`,
         ),
-        sourceText: item.access || '',
+        sourceText: isWeapon(item) ? '' : (item.access || ''),
       };
     });
     return whiteRecords;
