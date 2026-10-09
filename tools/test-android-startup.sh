@@ -2,7 +2,7 @@
 set -euo pipefail
 mkdir -p android-app/test-evidence
 trap 'adb logcat -d > android-app/test-evidence/logcat.txt || true; adb exec-out screencap -p > android-app/test-evidence/screen.png || true' EXIT
-curl --fail --location --max-time 90 https://github.com/FlashBA/jianghu-calculator/releases/download/v0.5.0/jianghu-calculator-0.5.0.apk -o /tmp/jianghu-old.apk
+curl --fail --location --max-time 90 https://github.com/FlashBA/jianghu-calculator/releases/download/v0.5.1/jianghu-calculator-0.5.1.apk -o /tmp/jianghu-old.apk
 adb install /tmp/jianghu-old.apk
 adb shell am start -n com.flashba.jianghucalculator/.MainActivity
 sleep 3
@@ -23,7 +23,7 @@ for attempt in $(seq 1 30); do
     fi
     adb shell dumpsys package com.flashba.jianghucalculator > android-app/test-evidence/package.txt
     grep "versionCode=$VERSION_CODE" android-app/test-evidence/package.txt
-    echo 'PASS: v0.5.0 upgrade, encrypted asset startup, dynamic encyclopedia data, no uncaught JS errors'
+    echo 'PASS: v0.5.1 upgrade, encrypted asset startup, dynamic encyclopedia data, no uncaught JS errors'
     exit 0
   fi
   sleep 2
