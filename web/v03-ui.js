@@ -606,19 +606,24 @@
   function renderUpdateLogs() {
     const logs = updateLogEntries();
     const isLoading = !guideState.updateLogs;
+    const options = logs.map((item) => `<option value="${escapeHtml(item.version)}"${item.version === guideState.updateLogVersion ? ' selected' : ''}>${escapeHtml(item.version)}</option>`).join('');
+    return `<div class="v03-update-log-tools"><label class="v03-guide-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="10.8" cy="10.8" r="6.8"></circle><path d="m16 16 5 5"></path></svg><input id="update-log-search" type="search" value="${escapeHtml(guideState.updateLogQuery)}" placeholder="搜索更新日志" autocomplete="off"${isLoading ? ' disabled' : ''}></label><label class="v03-update-log-version"><span>版本</span><select id="update-log-version" aria-label="选择更新日志版本"${isLoading ? ' disabled' : ''}><option value="">全部版本</option>${options}</select></label></div><div class="v03-update-log-list">${renderUpdateLogList()}</div>`;
+  }
+
+  function renderUpdateLogList() {
+    const logs = updateLogEntries();
+    const isLoading = !guideState.updateLogs;
     const query = normalizeGuideSearch(guideState.updateLogQuery);
     const visible = logs.filter((item) => {
       if (guideState.updateLogVersion && item.version !== guideState.updateLogVersion) return false;
       if (!query) return true;
       return normalizeGuideSearch(`${item.version} ${item.title} ${item.meta} ${item.body}`).includes(query);
     });
-    const options = logs.map((item) => `<option value="${escapeHtml(item.version)}"${item.version === guideState.updateLogVersion ? ' selected' : ''}>${escapeHtml(item.version)}</option>`).join('');
-    const listMarkup = isLoading
+    return isLoading
       ? `<p class="v03-guide-empty">${guideState.loadError ? '更新日志加载失败，请重新打开或刷新重试' : '更新日志加载中…'}</p>`
       : visible.length
         ? visible.map((item) => `<article class="v03-update-log-card" id="update-log-${escapeHtml(item.id || item.version)}"><header><div><span>版本 ${escapeHtml(item.version || '-')}</span><h3>${escapeHtml(item.title || `版本 ${item.version || '-'}`)}</h3></div><small>${escapeHtml(item.meta || '')}</small></header><div class="v03-update-log-body">${escapeHtml(item.body || '').split(/\n\n+/).map((paragraph) => `<p>${paragraph.replaceAll('\n', '<br>')}</p>`).join('')}</div></article>`).join('')
         : '<p class="v03-guide-empty">没有匹配的更新日志。</p>';
-    return `<div class="v03-update-log-tools"><label class="v03-guide-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="10.8" cy="10.8" r="6.8"></circle><path d="m16 16 5 5"></path></svg><input id="update-log-search" type="search" value="${escapeHtml(guideState.updateLogQuery)}" placeholder="搜索更新日志" autocomplete="off"${isLoading ? ' disabled' : ''}></label><label class="v03-update-log-version"><span>版本</span><select id="update-log-version" aria-label="选择更新日志版本"${isLoading ? ' disabled' : ''}><option value="">全部版本</option>${options}</select></label></div><div class="v03-update-log-list">${listMarkup}</div>`;
   }
 
   function renderGuideDetailContent(id) {
@@ -642,7 +647,8 @@
         renderOriginalResults();
       } else if (event.target.id === 'update-log-search') {
         guideState.updateLogQuery = event.target.value;
-        detailContent.innerHTML = renderUpdateLogs();
+        const results = detailContent.querySelector('.v03-update-log-list');
+        if (results) results.innerHTML = renderUpdateLogList();
       }
     });
     detailContent?.addEventListener('change', (event) => {
