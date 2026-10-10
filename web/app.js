@@ -1760,6 +1760,7 @@ function renderWeaponForgeOptions() {
   const field = $('weapon-forge-field');
   const select = $('weapon-forge-select');
   const customFields = $('weapon-custom-fields');
+  const editor = $('weapon-editor');
   if (!field || !select || !customFields) return;
   const item = getWhiteEquipment(state.weaponId);
   const options = Array.isArray(item?.forge_options)
@@ -1771,11 +1772,12 @@ function renderWeaponForgeOptions() {
   const builtIn = state.weaponMode === 'builtin' && Boolean(selectedValue || state.weaponId);
   field.hidden = !builtIn || !options.length;
   customFields.hidden = state.weaponMode !== 'custom';
+  if (editor) editor.hidden = state.weaponMode !== 'custom';
   select.replaceChildren();
   if (options.length) {
     const empty = document.createElement('option');
     empty.value = '';
-    empty.textContent = '不选择锻造属性';
+    empty.textContent = '不选';
     select.appendChild(empty);
     options.forEach((value) => {
       const option = document.createElement('option');
