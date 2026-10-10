@@ -1322,7 +1322,7 @@ h2 {
 }
 
 .weapon-direct-row {
-  grid-template-columns: 68px minmax(0, 1.15fr) minmax(140px, 0.85fr);
+  grid-template-columns: 48px minmax(0, 1.15fr) minmax(140px, 0.85fr);
   position: relative;
 }
 
@@ -1392,7 +1392,7 @@ h2 {
   }
 
   .weapon-direct-row {
-    grid-template-columns: 52px minmax(0, 1.15fr) minmax(108px, 0.85fr);
+    grid-template-columns: 42px minmax(0, 1.15fr) minmax(108px, 0.85fr);
   }
 
   .weapon-direct-row .weapon-forge-field {
@@ -1788,7 +1788,7 @@ h2 {
 }
 
 .weapon-editor {
-  margin: 0 0 2px 68px;
+  margin: 0 0 2px;
   border-bottom: 1px solid #d7e2df;
 }
 
@@ -1822,10 +1822,8 @@ h2 {
 
 .weapon-row {
   grid-template-columns: minmax(0, 1fr);
-  padding: 8px 10px 10px;
-  border: 1px solid #d7e2df;
-  border-radius: 6px;
-  background: rgba(245, 249, 247, 0.72);
+  padding: 8px 0 10px;
+  border-bottom: 1px solid #d7e2df;
 }
 
 .weapon-row > .slot-picker {
@@ -1845,6 +1843,24 @@ h2 {
 .weapon-row .weapon-affix-grid {
   grid-row: 3;
   margin-top: 8px;
+}
+
+.weapon-custom-fields {
+  width: 100%;
+}
+
+.weapon-custom-affixes {
+  margin-top: 8px;
+  border-top: 1px solid #d7e2df;
+}
+
+.weapon-custom-affixes > summary {
+  padding: 7px 0 5px;
+  color: var(--teal-dark);
+  cursor: pointer;
+  font-size: 0.72rem;
+  font-weight: 700;
+  list-style-position: inside;
 }
 
 .weapon-forge-field {

@@ -345,7 +345,9 @@
                   <div class="weapon-row" data-slot="0">
                     <div class="weapon-custom-fields" id="weapon-custom-fields">
                     <label class="field slot-name"><span>名称</span><input id="weapon-name" type="text" placeholder="自定义武器" autocomplete="off"></label>
-                    <div class="weapon-affix-grid">
+                    <details class="weapon-custom-affixes">
+                      <summary>自定义词条（可选）</summary>
+                      <div class="weapon-affix-grid">
                       <div class="weapon-affix-row">
                         <strong>词条 1</strong>
                         <label class="field"><span>属性</span><select id="weapon-affix-key-0" class="weapon-affix-key compact-picker"></select></label>
@@ -364,7 +366,8 @@
                         <label class="field"><span>类型</span><select id="weapon-affix-mode-2" class="weapon-affix-mode compact-picker"><option value="flat">白值</option><option value="percent">百分比</option></select></label>
                         <label class="field"><span>数值</span><input id="weapon-affix-value-2" class="weapon-affix-value" type="number" step="0.1" value="0" inputmode="decimal"></label>
                       </div>
-                    </div>
+                      </div>
+                    </details>
                     </div>
                   </div>
                 </div>
