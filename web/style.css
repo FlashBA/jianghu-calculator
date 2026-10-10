@@ -1765,6 +1765,7 @@ h2 {
 }
 
 .weapon-editor {
+  margin: 0 0 2px 68px;
   border-bottom: 1px solid #d7e2df;
 }
 
@@ -1789,13 +1790,15 @@ h2 {
 }
 
 .weapon-editor-content {
-  padding-bottom: 6px;
+  padding: 0 0 8px;
 }
 
 .weapon-row {
   grid-template-columns: minmax(0, 1fr);
-  padding: 8px 0 2px;
-  border-bottom: 0;
+  padding: 8px 10px 10px;
+  border: 1px solid #d7e2df;
+  border-radius: 6px;
+  background: rgba(245, 249, 247, 0.72);
 }
 
 .weapon-row > .slot-picker {

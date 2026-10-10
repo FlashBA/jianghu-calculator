@@ -167,6 +167,7 @@ const state = {
   equipmentSlots: [EMPTY_EQUIPMENT(), EMPTY_EQUIPMENT(), EMPTY_EQUIPMENT(), EMPTY_EQUIPMENT()],
   weaponId: '',
   weaponName: '',
+  weaponMode: 'empty',
   weaponForgeOption: '',
   weaponAffixes: [EMPTY_WEAPON_AFFIX(), EMPTY_WEAPON_AFFIX(), EMPTY_WEAPON_AFFIX()],
 };
@@ -1690,7 +1691,7 @@ function normalizeCustomEquipment(value, id) {
   };
 }
 function weaponActive() {
-  return Boolean(state.weaponId || String(state.weaponName || '').trim() || state.weaponAffixes.some((affix) => Number(affix.value)));
+  return state.weaponMode !== 'empty' && Boolean(state.weaponId || String(state.weaponName || '').trim() || state.weaponAffixes.some((affix) => Number(affix.value)));
 }
 function parseWeaponForgeOption(value) {
   const text = String(value || '').trim();
@@ -1715,7 +1716,7 @@ function selectedWeaponForgeAffix(item = getWhiteEquipment(state.weaponId)) {
 function populateWeaponAffixes() {
   const weaponSelect = $('weapon-select');
   if (weaponSelect) {
-    weaponSelect.innerHTML = '<option value="">手动填写</option>';
+    weaponSelect.innerHTML = '<option value="">未选择</option><option value="custom">自定义武器</option>';
     (state.whiteRabbit?.equipment || []).filter((item) => isWeapon(item) && isSEquipment(item)).forEach((item) => {
       const option = document.createElement('option');
       option.value = String(item.id);
@@ -1745,11 +1746,12 @@ function renderWeaponForgeOptions() {
   const options = Array.isArray(item?.forge_options)
     ? item.forge_options.filter((value) => parseWeaponForgeOption(value))
     : [];
-  // The empty option is the custom weapon mode. Keep the manual editor hidden
-  // for every selected built-in value, even while a content update is loading.
-  const builtIn = Boolean(String($('weapon-select')?.value || state.weaponId || '').trim());
+  // Keep the manual editor hidden for every selected built-in value, even while
+  // a content update is loading.
+  const selectedValue = String($('weapon-select')?.value || '').trim();
+  const builtIn = state.weaponMode === 'builtin' && Boolean(selectedValue || state.weaponId);
   field.hidden = !builtIn || !options.length;
-  customFields.hidden = builtIn;
+  customFields.hidden = state.weaponMode !== 'custom';
   select.replaceChildren();
   if (options.length) {
     const empty = document.createElement('option');
@@ -1769,7 +1771,9 @@ function renderWeaponForgeOptions() {
   }
 }
 function renderWeaponAffixes() {
-  if ($('weapon-select')) $('weapon-select').value = state.weaponId || '';
+  if ($('weapon-select')) $('weapon-select').value = state.weaponMode === 'builtin'
+    ? state.weaponId || ''
+    : state.weaponMode === 'custom' ? 'custom' : '';
   $('weapon-name').value = state.weaponName || '';
   state.weaponAffixes.forEach((affix, index) => {
     $(`weapon-affix-key-${index}`).value = affix.key || '';
@@ -1953,6 +1957,7 @@ function currentConfig() {
     })),
     weaponId: state.weaponId,
     weaponName: $('weapon-name').value,
+    weaponMode: state.weaponMode,
     weaponForgeOption: state.weaponForgeOption,
     weaponAffixes: state.weaponAffixes.map((affix) => ({ ...affix })),
     martialId: $('martial-select').value,
@@ -2311,6 +2316,13 @@ function restoreConfig(sourceConfig = null) {
     state.weaponId = item && isWeapon(item) ? String(config.weaponId) : '';
   }
   if (config.weaponName !== undefined) $('weapon-name').value = String(config.weaponName);
+  if (config.weaponMode === 'builtin' || config.weaponMode === 'custom' || config.weaponMode === 'empty') {
+    state.weaponMode = config.weaponMode;
+  } else {
+    state.weaponMode = state.weaponId ? 'builtin'
+      : (String(config.weaponName || '').trim() || Array.isArray(config.weaponAffixes)
+        && config.weaponAffixes.some((affix) => Number(affix?.value)) ? 'custom' : 'empty');
+  }
   if (config.weaponForgeOption !== undefined) state.weaponForgeOption = String(config.weaponForgeOption || '');
   if (Array.isArray(config.weaponAffixes)) {
     state.weaponAffixes = config.weaponAffixes.slice(0, 3).map((affix) => ({
@@ -4261,7 +4273,18 @@ function bindEvents() {
     state.weaponId = event.target.value;
     state.weaponForgeOption = '';
     const item = getWhiteEquipment(state.weaponId);
-    state.weaponName = item ? equipmentName(item) : (usedBuiltInName ? '' : state.weaponName);
+    if (event.target.value === 'custom') {
+      state.weaponId = '';
+      state.weaponMode = 'custom';
+      if (usedBuiltInName) state.weaponName = '';
+    } else if (event.target.value) {
+      state.weaponMode = 'builtin';
+      state.weaponName = item ? equipmentName(item) : (usedBuiltInName ? '' : state.weaponName);
+    } else {
+      state.weaponMode = 'empty';
+      state.weaponName = '';
+      state.weaponAffixes = [EMPTY_WEAPON_AFFIX(), EMPTY_WEAPON_AFFIX(), EMPTY_WEAPON_AFFIX()];
+    }
     renderWeaponAffixes();
     calculate();
   });
@@ -4294,6 +4317,7 @@ function bindEvents() {
     state.equipmentSlots = [EMPTY_EQUIPMENT(), EMPTY_EQUIPMENT(), EMPTY_EQUIPMENT(), EMPTY_EQUIPMENT()];
     state.weaponId = '';
     state.weaponName = '';
+    state.weaponMode = 'empty';
     state.weaponForgeOption = '';
     state.weaponAffixes = [EMPTY_WEAPON_AFFIX(), EMPTY_WEAPON_AFFIX(), EMPTY_WEAPON_AFFIX()];
     $('person-name').value = '主角'; $('hp-factor').value = 1; $('power-factor').value = 1;
