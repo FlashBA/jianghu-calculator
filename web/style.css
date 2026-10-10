@@ -1849,18 +1849,20 @@ h2 {
   width: 100%;
 }
 
-.weapon-custom-affixes {
-  margin-top: 8px;
-  border-top: 1px solid #d7e2df;
+.weapon-custom-fields .weapon-affix-grid {
+  gap: 12px;
+  margin-top: 12px;
 }
 
-.weapon-custom-affixes > summary {
-  padding: 7px 0 5px;
-  color: var(--teal-dark);
-  cursor: pointer;
-  font-size: 0.72rem;
-  font-weight: 700;
-  list-style-position: inside;
+.weapon-custom-fields .weapon-affix-row {
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 0.85fr);
+  gap: 8px;
+}
+
+.weapon-custom-fields .weapon-affix-row .field {
+  min-width: 0;
+  grid-column: auto;
+  grid-row: auto;
 }
 
 .weapon-forge-field {
