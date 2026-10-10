@@ -1823,7 +1823,7 @@ h2 {
 
 .weapon-custom-fields[hidden],
 .weapon-forge-field[hidden] {
-  display: none;
+  display: none !important;
 }
 
 .custom-equipment-editor {

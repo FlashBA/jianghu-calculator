@@ -1745,7 +1745,9 @@ function renderWeaponForgeOptions() {
   const options = Array.isArray(item?.forge_options)
     ? item.forge_options.filter((value) => parseWeaponForgeOption(value))
     : [];
-  const builtIn = Boolean(item && isWeapon(item));
+  // The empty option is the custom weapon mode. Keep the manual editor hidden
+  // for every selected built-in value, even while a content update is loading.
+  const builtIn = Boolean(String($('weapon-select')?.value || state.weaponId || '').trim());
   field.hidden = !builtIn || !options.length;
   customFields.hidden = builtIn;
   select.replaceChildren();
