@@ -334,11 +334,16 @@
               <span class="section-count" id="equipment-count">已装备 0/4</span>
             </div>
             <div class="equipment-slot-grid" id="equipment-slot-grid">
-              <details class="weapon-editor" id="weapon-editor">
-                <summary><strong>武器设置</strong><span id="weapon-summary">未设置</span></summary>
+              <div class="equipment-slot-row direct-equipment-row weapon-direct-row" data-slot="0">
+                <strong class="slot-label">武器</strong>
+                <label class="field slot-picker"><span>选择武器</span><select id="weapon-select" class="compact-picker" aria-label="选择武器"></select></label>
+                <span class="weapon-summary" id="weapon-summary">未设置</span>
+              </div>
+              <div class="weapon-editor" id="weapon-editor">
                 <div class="weapon-editor-content">
-                  <div class="equipment-slot-row weapon-row" data-slot="0">
-                    <label class="field slot-picker"><span>内置武器</span><select id="weapon-select" class="compact-picker" aria-label="选择内置武器"></select></label>
+                  <div class="weapon-row" data-slot="0">
+                    <label class="field weapon-forge-field" id="weapon-forge-field" hidden><span>选择锻造属性</span><select id="weapon-forge-select" class="compact-picker" aria-label="选择锻造属性"></select></label>
+                    <div class="weapon-custom-fields" id="weapon-custom-fields">
                     <label class="field slot-name"><span>名称</span><input id="weapon-name" type="text" placeholder="自定义武器" autocomplete="off"></label>
                     <div class="weapon-affix-grid">
                       <div class="weapon-affix-row">
@@ -360,9 +365,10 @@
                         <label class="field"><span>数值</span><input id="weapon-affix-value-2" class="weapon-affix-value" type="number" step="0.1" value="0" inputmode="decimal"></label>
                       </div>
                     </div>
+                    </div>
                   </div>
                 </div>
-              </details>
+              </div>
               <div class="equipment-slot-row direct-equipment-row" data-slot="1">
                 <strong class="slot-label">衣甲</strong>
                 <label class="field slot-picker"><span>选择衣甲</span><select class="equipment-slot compact-picker" id="equipment-slot-1" aria-label="选择衣甲"></select></label>

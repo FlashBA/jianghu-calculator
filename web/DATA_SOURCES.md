@@ -71,7 +71,7 @@
 
 ### 3. 装备图鉴
 
-- 当前数据：`web/whiterabbit_data.json` → `equipment`，共 32 条。
+- 当前数据：`web/whiterabbit_data.json` → `equipment`，共 54 条；其中 S 武器 26 条。
 - 当前实际状态：现有 `equipment_282.xlsx` 的工作表中没有独立的“装备”表；JSON 的 `source: "white"` 只是应用内部标签，不是腾讯文档来源证明。
 - 结论：这 32 条属于旧数据与人工整理的混合结果，目前不能归因到两个腾讯文档中的某一张表，必须单独补来源或重新从线上资料核对。
 

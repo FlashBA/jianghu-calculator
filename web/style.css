@@ -1321,6 +1321,19 @@ h2 {
   grid-row: 1;
 }
 
+.weapon-direct-row {
+  position: relative;
+}
+
+.weapon-direct-row .weapon-summary {
+  grid-column: 2;
+  grid-row: 2;
+  margin-top: -3px;
+  color: var(--muted);
+  font-size: 0.7rem;
+  line-height: 1.35;
+}
+
 .weapon-row {
   grid-template-columns: 68px minmax(0, 1fr);
   align-items: start;
@@ -1802,6 +1815,15 @@ h2 {
 .weapon-row .weapon-affix-grid {
   grid-row: 3;
   margin-top: 8px;
+}
+
+.weapon-forge-field {
+  margin: 8px 0 2px;
+}
+
+.weapon-custom-fields[hidden],
+.weapon-forge-field[hidden] {
+  display: none;
 }
 
 .custom-equipment-editor {

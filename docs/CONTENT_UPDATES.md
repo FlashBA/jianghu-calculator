@@ -43,6 +43,48 @@ strategy text, and update logs. Android still ships a complete encrypted offline
 copy in `app.vault`. No remote JavaScript is loaded.
 APK version codes and content revisions are independent.
 
+## 武器图鉴热更新记录（2026-10-10）
+
+武器数据必须同时更新两处：
+
+1. `web/whiterabbit_data.json`：兼容旧版客户端和网页直读链路。
+2. `web/content_bundle.json` 及新的 `web/content-parts/encyclopedia-<sha256>.json`：v0.5 APK 的 `JianghuContent` 实际读取链路。
+
+只上传 `whiterabbit_data.json` 不足以更新 v0.5 APK；APK 启动后优先读取 IndexedDB 内容包，联网检查的是 `content_manifest_v2.json` 和内容分片。
+
+本次验证结果：
+
+- 内容 revision：`1791610608942`
+- 内容包中的装备数量：54
+- S 武器数量：26
+- 包含破阵枪和四把绝世神兵
+- 四把绝世神兵的最新 `+0` 白值均为 1200
+- OSS 公网内容包、百科分片和服务器正式目录校验一致
+
+以后修改图鉴数据时，使用以下顺序：
+
+```sh
+python3 -m json.tool web/whiterabbit_data.json >/dev/null
+node tools/build-content-bundle.cjs
+node tools/build-content-bundle.cjs --check
+```
+
+然后把以下文件同步到服务器 `/opt/jianghu-calculator/releases/`：
+
+- `whiterabbit_data.json`
+- `content_bundle.json`
+- `content_manifest.json`
+- `content_manifest_v2.json`
+- 新生成的 `content-parts/` 分片，必须保留目录结构
+
+最后在服务器运行：
+
+```sh
+jianghu-sync-oss
+```
+
+必须通过公网检查 `content_manifest_v2.json` 的 revision、百科分片中的装备数量和目标武器名称。数据内容更新不改 `latest.json`，不触发 APK 安装提示，也不需要重新打包 APK；只有新增客户端代码或变更内容包 schema 才需要发 APK。
+
 ## 分包更新（2026-10-02）
 
 - 待发布启动恢复（2026-10-05）：图鉴绑定和内容读取独立于计算器基础文件。

@@ -167,6 +167,7 @@ const state = {
   equipmentSlots: [EMPTY_EQUIPMENT(), EMPTY_EQUIPMENT(), EMPTY_EQUIPMENT(), EMPTY_EQUIPMENT()],
   weaponId: '',
   weaponName: '',
+  weaponForgeOption: '',
   weaponAffixes: [EMPTY_WEAPON_AFFIX(), EMPTY_WEAPON_AFFIX(), EMPTY_WEAPON_AFFIX()],
 };
 let calculatorInitialized = false;
@@ -1691,6 +1692,26 @@ function normalizeCustomEquipment(value, id) {
 function weaponActive() {
   return Boolean(state.weaponId || String(state.weaponName || '').trim() || state.weaponAffixes.some((affix) => Number(affix.value)));
 }
+function parseWeaponForgeOption(value) {
+  const text = String(value || '').trim();
+  const match = text.match(/^([+-]?\d+(?:\.\d+)?)\s*(吸血|暴击伤害|爆伤|暴击率|暴击|速度|反伤|闪避|格挡|招架|血|生命|攻击)$/);
+  if (!match) return null;
+  const key = {
+    血: 'hp', 生命: 'hp', 攻击: 'attack', 速度: 'speed', 吸血: 'lifesteal',
+    暴击: 'crit', 暴击率: 'crit', 暴击伤害: 'critDamage', 爆伤: 'critDamage',
+    反伤: 'reflect', 闪避: 'dodge', 格挡: 'block', 招架: 'block',
+  }[match[2]];
+  if (!key) return null;
+  const mode = ['speed', 'block', 'dodge'].includes(key) ? 'flat' : 'percent';
+  return { key, mode, value: Number(match[1]) || 0 };
+}
+function calculatorWeaponAttackFlat(item) {
+  return Math.round((Number(item?.attack_flat) || 0) * 1.72);
+}
+function selectedWeaponForgeAffix(item = getWhiteEquipment(state.weaponId)) {
+  if (!item || !state.weaponForgeOption) return null;
+  return parseWeaponForgeOption(state.weaponForgeOption);
+}
 function populateWeaponAffixes() {
   const weaponSelect = $('weapon-select');
   if (weaponSelect) {
@@ -1712,7 +1733,38 @@ function populateWeaponAffixes() {
       select.appendChild(option);
     });
   });
+  renderWeaponForgeOptions();
   renderWeaponAffixes();
+}
+function renderWeaponForgeOptions() {
+  const field = $('weapon-forge-field');
+  const select = $('weapon-forge-select');
+  const customFields = $('weapon-custom-fields');
+  if (!field || !select || !customFields) return;
+  const item = getWhiteEquipment(state.weaponId);
+  const options = Array.isArray(item?.forge_options)
+    ? item.forge_options.filter((value) => parseWeaponForgeOption(value))
+    : [];
+  const builtIn = Boolean(item && isWeapon(item));
+  field.hidden = !builtIn || !options.length;
+  customFields.hidden = builtIn;
+  select.replaceChildren();
+  if (options.length) {
+    const empty = document.createElement('option');
+    empty.value = '';
+    empty.textContent = '不选择锻造属性';
+    select.appendChild(empty);
+    options.forEach((value) => {
+      const option = document.createElement('option');
+      option.value = String(value);
+      option.textContent = String(value);
+      select.appendChild(option);
+    });
+    if (!options.includes(state.weaponForgeOption)) state.weaponForgeOption = '';
+    select.value = state.weaponForgeOption;
+  } else {
+    state.weaponForgeOption = '';
+  }
 }
 function renderWeaponAffixes() {
   if ($('weapon-select')) $('weapon-select').value = state.weaponId || '';
@@ -1722,16 +1774,17 @@ function renderWeaponAffixes() {
     $(`weapon-affix-mode-${index}`).value = affix.mode || 'flat';
     $(`weapon-affix-value-${index}`).value = affix.value || 0;
   });
+  renderWeaponForgeOptions();
   updateWeaponSummary();
 }
 function updateWeaponSummary() {
   const summary = $('weapon-summary');
   if (!summary) return;
-  const affixCount = state.weaponAffixes.filter((affix) => affix.key && Number(affix.value)).length;
   const selectedWeapon = getWhiteEquipment(state.weaponId);
+  const affixCount = selectedWeapon ? 0 : state.weaponAffixes.filter((affix) => affix.key && Number(affix.value)).length;
   const weaponName = String(state.weaponName || '').trim() || equipmentName(selectedWeapon);
   summary.textContent = weaponActive()
-    ? `${weaponName || '已配置'}${selectedWeapon ? ` · +0白值${formatNumber(equipmentStats(selectedWeapon).attackFlat)}攻` : ''}${affixCount ? ` · ${affixCount} 个词条` : ''}`
+    ? `${weaponName || '已配置'}${selectedWeapon ? ` · +9白值${formatNumber(calculatorWeaponAttackFlat(selectedWeapon))}攻` : ''}${selectedWeaponForgeAffix() ? ` · 锻造 ${state.weaponForgeOption}` : ''}${affixCount ? ` · ${affixCount} 个词条` : ''}`
     : '未设置';
 }
 function setError(message) {
@@ -1898,6 +1951,7 @@ function currentConfig() {
     })),
     weaponId: state.weaponId,
     weaponName: $('weapon-name').value,
+    weaponForgeOption: state.weaponForgeOption,
     weaponAffixes: state.weaponAffixes.map((affix) => ({ ...affix })),
     martialId: $('martial-select').value,
     martialName: selectedText('martial-select'),
@@ -2255,6 +2309,7 @@ function restoreConfig(sourceConfig = null) {
     state.weaponId = item && isWeapon(item) ? String(config.weaponId) : '';
   }
   if (config.weaponName !== undefined) $('weapon-name').value = String(config.weaponName);
+  if (config.weaponForgeOption !== undefined) state.weaponForgeOption = String(config.weaponForgeOption || '');
   if (Array.isArray(config.weaponAffixes)) {
     state.weaponAffixes = config.weaponAffixes.slice(0, 3).map((affix) => ({
       key: WEAPON_ATTRIBUTE_OPTIONS.some((item) => item.key === affix?.key) ? affix.key : '',
@@ -2552,18 +2607,27 @@ function weaponAffixTotals() {
     const builtIn = equipmentStats(selectedWeapon);
     totals.hpFlat += builtIn.hpFlat;
     totals.hpPercent += builtIn.hp;
-    totals.attackFlat += builtIn.attackFlat;
+    totals.attackFlat += calculatorWeaponAttackFlat(selectedWeapon);
     totals.attackPercent += builtIn.attack;
     addSecondaryStats(totals.secondary, builtIn.secondary);
   }
-  state.weaponAffixes.forEach((affix) => {
-    const value = Number(affix.value) || 0;
-    if (!affix.key || !value) return;
-    const suffix = affix.mode === 'percent' ? 'Percent' : 'Flat';
-    if (affix.key === 'hp') totals[`hp${suffix}`] += value;
-    else if (affix.key === 'attack') totals[`attack${suffix}`] += value;
-    else if (SECONDARY_KEYS.includes(affix.key)) totals.secondary[affix.key] += value;
-  });
+  const forgeAffix = selectedWeaponForgeAffix(selectedWeapon);
+  if (forgeAffix) {
+    const suffix = forgeAffix.mode === 'percent' ? 'Percent' : 'Flat';
+    if (forgeAffix.key === 'hp') totals[`hp${suffix}`] += forgeAffix.value;
+    else if (forgeAffix.key === 'attack') totals[`attack${suffix}`] += forgeAffix.value;
+    else if (SECONDARY_KEYS.includes(forgeAffix.key)) totals.secondary[forgeAffix.key] += forgeAffix.value;
+  }
+  if (!selectedWeapon) {
+    state.weaponAffixes.forEach((affix) => {
+      const value = Number(affix.value) || 0;
+      if (!affix.key || !value) return;
+      const suffix = affix.mode === 'percent' ? 'Percent' : 'Flat';
+      if (affix.key === 'hp') totals[`hp${suffix}`] += value;
+      else if (affix.key === 'attack') totals[`attack${suffix}`] += value;
+      else if (SECONDARY_KEYS.includes(affix.key)) totals.secondary[affix.key] += value;
+    });
+  }
   return totals;
 }
 
@@ -4193,9 +4257,15 @@ function bindEvents() {
     const usedBuiltInName = !String(state.weaponName || '').trim()
       || String(state.weaponName).trim() === equipmentName(previousWeapon);
     state.weaponId = event.target.value;
+    state.weaponForgeOption = '';
     const item = getWhiteEquipment(state.weaponId);
-    if (usedBuiltInName) state.weaponName = item ? equipmentName(item) : '';
+    state.weaponName = item ? equipmentName(item) : (usedBuiltInName ? '' : state.weaponName);
     renderWeaponAffixes();
+    calculate();
+  });
+  $('weapon-forge-select').addEventListener('change', (event) => {
+    state.weaponForgeOption = event.target.value;
+    updateWeaponSummary();
     calculate();
   });
   state.weaponAffixes.forEach((affix, index) => {
@@ -4222,6 +4292,7 @@ function bindEvents() {
     state.equipmentSlots = [EMPTY_EQUIPMENT(), EMPTY_EQUIPMENT(), EMPTY_EQUIPMENT(), EMPTY_EQUIPMENT()];
     state.weaponId = '';
     state.weaponName = '';
+    state.weaponForgeOption = '';
     state.weaponAffixes = [EMPTY_WEAPON_AFFIX(), EMPTY_WEAPON_AFFIX(), EMPTY_WEAPON_AFFIX()];
     $('person-name').value = '主角'; $('hp-factor').value = 1; $('power-factor').value = 1;
     $('person-style').value = ''; $('person-gender').value = '';

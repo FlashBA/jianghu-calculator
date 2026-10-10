@@ -1,5 +1,5 @@
 {
-  "version": "3.10",
+  "version": "3.13",
   "source": {
     "guide": "3.1白兔版角色成长与天赋.png",
     "characters_and_techniques": "equipment_282.xlsx",
@@ -14,7 +14,7 @@
       "related_sheet_sha256": "f4072d7b3d6201f27f5ce748ff9d62985488d515a8ebf3f2a359860386ad02d3",
       "record_count": 166
     },
-    "synced_at": "2026-10-01T17:39:21Z",
+    "synced_at": "2026-10-10T00:00:00Z",
     "character_update_version": "3.13"
   },
   "martial_rules": {
@@ -1943,7 +1943,7 @@
       "name": "绝世拳套",
       "rank": "S",
       "base_attack": 1280,
-      "attack_flat": 1600,
+      "attack_flat": 1200,
       "lifesteal_percent": 45,
       "forge_options": [
         "24吸血",
@@ -1963,7 +1963,7 @@
       "name": "绝世好剑",
       "rank": "S",
       "base_attack": 1280,
-      "attack_flat": 1600,
+      "attack_flat": 1200,
       "crit_percent": 28,
       "forge_options": [
         "24吸血",
@@ -1985,9 +1985,9 @@
       "attack_flat": 1200,
       "access": "",
       "scope": "佩戴者",
-      "crit_percent": 52,
-      "lifesteal_percent": 24,
-      "crit_damage_percent": 24,
+      "crit_percent": 0,
+      "lifesteal_percent": 0,
+      "crit_damage_percent": 0,
       "aliases": [
         "绝世宝刀"
       ],
@@ -2012,7 +2012,7 @@
       "name": "绝世长兵",
       "rank": "S",
       "base_attack": 1280,
-      "attack_flat": 1600,
+      "attack_flat": 1200,
       "crit_damage_percent": 120,
       "forge_options": [
         "24吸血",
@@ -2023,6 +2023,391 @@
       "special": "攻击时25%概率触发地裂，为目标附加崩山（受到的所有伤害增加10%，每个目标最多一层）；每次受到敌方攻击获得一层蓄势，回合初有5层时清空蓄势并在下一回合无敌且免疫负面效果。",
       "access": "",
       "designer": "@十一"
+    },
+    {
+      "id": "wr-weapon-5623",
+      "source": "white",
+      "weapon": true,
+      "slot": "weapon-staff",
+      "name": "绿玉杖",
+      "rank": "S",
+      "base_attack": 1000,
+      "attack_flat": 1000,
+      "speed": 12,
+      "forge_options": [
+        "90爆伤"
+      ],
+      "special": "",
+      "access": ""
+    },
+    {
+    "id": "wr-weapon-5807",
+    "source": "white",
+    "weapon": true,
+    "slot": "weapon-fist",
+    "name": "绝命",
+    "rank": "S",
+    "base_attack": 636,
+    "attack_flat": 636,
+    "block": 20,
+    "forge_options": [
+      "15吸血",
+      "9暴击",
+      "45爆伤",
+      "12血",
+      "12攻击",
+      "18速度",
+      "15格挡"
+    ],
+    "special": "",
+    "access": ""
+  },
+  {
+    "id": "wr-weapon-5827",
+    "source": "white",
+    "weapon": true,
+    "slot": "weapon-fist",
+    "name": "神武爪套",
+    "rank": "S",
+    "base_attack": 668,
+    "attack_flat": 668,
+    "crit_percent": 8,
+    "forge_options": [
+      "12暴击"
+    ],
+    "special": "",
+    "access": ""
+  },
+  {
+    "id": "wr-weapon-5837",
+    "source": "white",
+    "weapon": true,
+    "slot": "weapon-fist",
+    "name": "幽冥血爪",
+    "rank": "S",
+    "base_attack": 620,
+    "attack_flat": 620,
+    "lifesteal_percent": 32,
+    "forge_options": [
+      "18吸血",
+      "15速度",
+      "12暴击",
+      "36爆伤",
+      "18格挡"
+    ],
+    "special": "",
+    "access": ""
+  },
+  {
+    "id": "wr-weapon-5884",
+    "source": "white",
+    "weapon": true,
+    "slot": "weapon-fist",
+    "name": "紫啸",
+    "rank": "S",
+    "base_attack": 520,
+    "attack_flat": 520,
+    "crit_damage_percent": 40,
+    "forge_options": [
+      "60爆伤"
+    ],
+    "special": "",
+    "access": ""
+  },
+  {
+    "id": "wr-weapon-5886",
+    "source": "white",
+    "weapon": true,
+    "slot": "weapon-fist",
+    "name": "奔雷",
+    "rank": "S",
+    "base_attack": 718,
+    "attack_flat": 718,
+    "speed": 17,
+    "forge_options": [
+      "9反伤",
+      "12暴击",
+      "18爆伤",
+      "9攻击",
+      "18速度",
+      "9闪避",
+      "18格挡"
+    ],
+    "special": "",
+    "access": ""
+  },
+  {
+    "id": "wr-weapon-5828",
+    "source": "white",
+    "weapon": true,
+    "slot": "weapon-sword",
+    "name": "青虹剑",
+    "rank": "S",
+    "base_attack": 720,
+    "attack_flat": 720,
+    "crit_damage_percent": 20,
+    "forge_options": [
+      "60爆伤"
+    ],
+    "special": "",
+    "access": ""
+  },
+  {
+    "id": "wr-weapon-5844",
+    "source": "white",
+    "weapon": true,
+    "slot": "weapon-sword",
+    "name": "摘音剑",
+    "rank": "S",
+    "base_attack": 780,
+    "attack_flat": 780,
+    "mitigation_percent": 10,
+    "forge_options": [
+      "12吸血"
+    ],
+    "special": "",
+    "access": ""
+  },
+  {
+    "id": "wr-weapon-5849",
+    "source": "white",
+    "weapon": true,
+    "slot": "weapon-sword",
+    "name": "支离",
+    "rank": "S",
+    "base_attack": 730,
+    "attack_flat": 730,
+    "lifesteal_percent": 15,
+    "forge_options": [
+      "10吸血"
+    ],
+    "special": "",
+    "access": ""
+  },
+  {
+    "id": "wr-weapon-5866",
+    "source": "white",
+    "weapon": true,
+    "slot": "weapon-sword",
+    "name": "玄阴重剑",
+    "rank": "S",
+    "base_attack": 760,
+    "attack_flat": 760,
+    "crit_percent": 18,
+    "forge_options": [
+      "12吸血",
+      "15速度",
+      "15暴击",
+      "60爆伤",
+      "12闪避"
+    ],
+    "special": "",
+    "access": ""
+  },
+  {
+    "id": "wr-weapon-5879",
+    "source": "white",
+    "weapon": true,
+    "slot": "weapon-sword",
+    "name": "君子",
+    "rank": "S",
+    "base_attack": 680,
+    "attack_flat": 680,
+    "attack_percent": 15,
+    "forge_options": [
+      "15吸血"
+    ],
+    "special": "",
+    "access": ""
+  },
+  {
+    "id": "wr-weapon-5809",
+    "source": "white",
+    "weapon": true,
+    "slot": "weapon-blade",
+    "name": "邪影",
+    "rank": "S",
+    "base_attack": 780,
+    "attack_flat": 780,
+    "crit_percent": 12,
+    "forge_options": [
+      "9暴击",
+      "75爆伤",
+      "12血",
+      "12攻击",
+      "12速度",
+      "6闪避",
+      "12格挡"
+    ],
+    "special": "",
+    "access": ""
+  },
+  {
+    "id": "wr-weapon-5829",
+    "source": "white",
+    "weapon": true,
+    "slot": "weapon-blade",
+    "name": "青龙宝刀",
+    "rank": "S",
+    "base_attack": 760,
+    "attack_flat": 760,
+    "crit_damage_percent": 50,
+    "forge_options": [
+      "60爆伤"
+    ],
+    "special": "",
+    "access": ""
+  },
+  {
+    "id": "wr-weapon-5853",
+    "source": "white",
+    "weapon": true,
+    "slot": "weapon-blade",
+    "name": "神霄",
+    "rank": "S",
+    "base_attack": 750,
+    "attack_flat": 750,
+    "crit_damage_percent": 40,
+    "forge_options": [
+      "12反伤",
+      "10暴击",
+      "50爆伤",
+      "14攻击",
+      "14速度",
+      "8闪避",
+      "16格挡"
+    ],
+    "special": "",
+    "access": ""
+  },
+  {
+    "id": "wr-weapon-5855",
+    "source": "white",
+    "weapon": true,
+    "slot": "weapon-blade",
+    "name": "镇龙",
+    "rank": "S",
+    "base_attack": 820,
+    "attack_flat": 820,
+    "crit_percent": 20,
+    "forge_options": [
+      "15吸血",
+      "12暴击",
+      "60爆伤"
+    ],
+    "special": "",
+    "access": ""
+  },
+  {
+    "id": "wr-weapon-5871",
+    "source": "white",
+    "weapon": true,
+    "slot": "weapon-blade",
+    "name": "鸣鸿刃",
+    "rank": "S",
+    "base_attack": 920,
+    "attack_flat": 920,
+    "speed": 18,
+    "forge_options": [
+      "15吸血",
+      "15速度",
+      "15暴击",
+      "80爆伤"
+    ],
+    "special": "",
+    "access": ""
+  },
+  {
+    "id": "wr-weapon-5880",
+    "source": "white",
+    "weapon": true,
+    "slot": "weapon-blade",
+    "name": "太虚",
+    "rank": "S",
+    "base_attack": 750,
+    "attack_flat": 750,
+    "speed": 10,
+    "forge_options": [
+      "12暴击",
+      "60爆伤"
+    ],
+    "special": "",
+    "access": ""
+  },
+  {
+    "id": "wr-weapon-5887",
+    "source": "white",
+    "weapon": true,
+    "slot": "weapon-blade",
+    "name": "碧螳",
+    "rank": "S",
+    "base_attack": 630,
+    "attack_flat": 630,
+    "speed": 9,
+    "forge_options": [
+      "15反伤",
+      "9暴击",
+      "24爆伤",
+      "9血",
+      "12攻击",
+      "6速度",
+      "12闪避",
+      "12格挡"
+    ],
+    "special": "",
+    "access": ""
+  },
+    {
+      "id": "wr-weapon-5618",
+      "source": "white",
+      "weapon": true,
+      "slot": "weapon-staff",
+      "name": "万人敌",
+      "rank": "S",
+      "base_attack": 740,
+      "attack_flat": 740,
+      "crit_damage_percent": 10,
+      "forge_options": [
+        "15吸血",
+        "12暴击"
+      ],
+      "special": "",
+      "access": ""
+    },
+    {
+      "id": "wr-weapon-5615",
+      "source": "white",
+      "weapon": true,
+      "slot": "weapon-staff",
+      "name": "沥泉枪",
+      "rank": "S",
+      "base_attack": 700,
+      "attack_flat": 700,
+      "crit_damage_percent": 35,
+      "forge_options": [
+        "45爆伤"
+      ],
+      "special": "",
+      "access": ""
+    },
+    {
+      "id": "wr-weapon-56065",
+      "source": "white",
+      "weapon": true,
+      "slot": "weapon-staff",
+      "name": "破阵枪",
+      "rank": "S",
+      "base_attack": 960,
+      "attack_flat": 960,
+      "crit_damage_percent": 80,
+      "forge_options": [
+        "15吸血",
+        "12暴击",
+        "15爆伤",
+        "80爆伤"
+      ],
+      "special": "",
+      "access": ""
     }
   ],
   "martial_arts": [
