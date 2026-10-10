@@ -1722,12 +1722,13 @@ function weaponStyleEligible(item) {
   return !style || style === '全能' || style === '拳剑刀棍' || weaponStyle(item) === style;
 }
 function selectedWeaponForgeAffix(item = getWhiteEquipment(state.weaponId)) {
+  if (state.weaponMode !== 'builtin') return null;
   if (!item || !state.weaponForgeOption) return null;
   return parseWeaponForgeOption(state.weaponForgeOption);
 }
 function populateWeaponAffixes() {
   const weaponSelect = $('weapon-select');
-  const selectedWeapon = getWhiteEquipment(state.weaponId);
+  const selectedWeapon = state.weaponMode === 'builtin' ? getWhiteEquipment(state.weaponId) : null;
   if (state.weaponMode === 'builtin' && selectedWeapon && !weaponStyleEligible(selectedWeapon)) {
     state.weaponId = '';
     state.weaponName = '';
@@ -1807,7 +1808,7 @@ function renderWeaponAffixes() {
 function updateWeaponSummary() {
   const summary = $('weapon-summary');
   if (!summary) return;
-  const selectedWeapon = getWhiteEquipment(state.weaponId);
+  const selectedWeapon = state.weaponMode === 'builtin' ? getWhiteEquipment(state.weaponId) : null;
   const weaponName = String(state.weaponName || '').trim() || equipmentName(selectedWeapon);
   const totals = weaponAffixTotals();
   const statParts = [];
@@ -2356,6 +2357,7 @@ function restoreConfig(sourceConfig = null) {
       : (String(config.weaponName || '').trim() || Array.isArray(config.weaponAffixes)
         && config.weaponAffixes.some((affix) => Number(affix?.value)) ? 'custom' : 'empty');
   }
+  if (state.weaponMode !== 'builtin') state.weaponId = '';
   if (config.weaponForgeOption !== undefined) state.weaponForgeOption = String(config.weaponForgeOption || '');
   if (Array.isArray(config.weaponAffixes)) {
     state.weaponAffixes = config.weaponAffixes.slice(0, 3).map((affix) => ({
@@ -2649,7 +2651,7 @@ function weaponAffixTotals() {
     attackPercent: 0,
     secondary: emptySecondaryStats(),
   };
-  const selectedWeapon = getWhiteEquipment(state.weaponId);
+  const selectedWeapon = state.weaponMode === 'builtin' ? getWhiteEquipment(state.weaponId) : null;
   if (selectedWeapon && isWeapon(selectedWeapon)) {
     const builtIn = equipmentStats(selectedWeapon);
     totals.hpFlat += builtIn.hpFlat;
