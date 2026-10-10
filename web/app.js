@@ -1808,10 +1808,22 @@ function updateWeaponSummary() {
   const summary = $('weapon-summary');
   if (!summary) return;
   const selectedWeapon = getWhiteEquipment(state.weaponId);
-  const affixCount = selectedWeapon ? 0 : state.weaponAffixes.filter((affix) => affix.key && Number(affix.value)).length;
   const weaponName = String(state.weaponName || '').trim() || equipmentName(selectedWeapon);
+  const totals = weaponAffixTotals();
+  const statParts = [];
+  const attack = totals.attackFlat || totals.attackPercent;
+  if (attack) {
+    statParts.push(`攻 ${totals.attackFlat ? formatNumber(totals.attackFlat) : ''}${totals.attackPercent ? `${totals.attackFlat ? ' · ' : ''}${formatPercent(totals.attackPercent)}` : ''}`);
+  }
+  if (totals.hpFlat || totals.hpPercent) {
+    statParts.push(`血 ${totals.hpFlat ? formatNumber(totals.hpFlat) : ''}${totals.hpPercent ? `${totals.hpFlat ? ' · ' : ''}${formatPercent(totals.hpPercent)}` : ''}`);
+  }
+  SECONDARY_STAT_DEFS.forEach((definition) => {
+    const value = totals.secondary[definition.key];
+    if (value) statParts.push(`${definition.label} ${formatSecondaryValue(definition.key, value)}`);
+  });
   summary.textContent = weaponActive()
-    ? `${weaponName || '已配置'}${selectedWeapon ? ` · +9白值${formatNumber(calculatorWeaponAttackFlat(selectedWeapon))}攻` : ''}${selectedWeaponForgeAffix() ? ` · 锻造 ${state.weaponForgeOption}` : ''}${affixCount ? ` · ${affixCount} 个词条` : ''}`
+    ? `${weaponName || '已配置'}${statParts.length ? ` · ${statParts.join(' · ')}` : ''}`
     : '未设置';
 }
 function setError(message) {
