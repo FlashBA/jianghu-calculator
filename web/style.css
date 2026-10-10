@@ -1322,11 +1322,19 @@ h2 {
 }
 
 .weapon-direct-row {
+  grid-template-columns: 68px minmax(0, 1fr) minmax(150px, 0.72fr);
   position: relative;
+}
+
+.weapon-direct-row .weapon-forge-field {
+  grid-column: 3;
+  grid-row: 1;
+  margin: 0;
 }
 
 .weapon-direct-row .weapon-summary {
   grid-column: 2;
+  grid-column: 2 / -1;
   grid-row: 2;
   margin-top: -3px;
   color: var(--muted);
@@ -1382,6 +1390,21 @@ h2 {
   .direct-equipment-row,
   .weapon-row {
     grid-template-columns: 52px minmax(0, 1fr);
+  }
+
+  .weapon-direct-row {
+    grid-template-columns: 52px minmax(0, 1fr);
+  }
+
+  .weapon-direct-row .weapon-forge-field {
+    grid-column: 2;
+    grid-row: 2;
+    margin-top: 6px;
+  }
+
+  .weapon-direct-row .weapon-summary {
+    grid-column: 2;
+    grid-row: 3;
   }
 
   .weapon-affix-row {

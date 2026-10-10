@@ -1709,15 +1709,34 @@ function parseWeaponForgeOption(value) {
 function calculatorWeaponAttackFlat(item) {
   return Math.round((Number(item?.attack_flat) || 0) * 1.72);
 }
+function weaponStyle(item) {
+  return ({
+    'weapon-fist': '拳法',
+    'weapon-sword': '剑法',
+    'weapon-blade': '刀法',
+    'weapon-staff': '棍法',
+  })[String(item?.slot || '')] || '';
+}
+function weaponStyleEligible(item) {
+  const style = currentMartialStyle();
+  return !style || style === '全能' || style === '拳剑刀棍' || weaponStyle(item) === style;
+}
 function selectedWeaponForgeAffix(item = getWhiteEquipment(state.weaponId)) {
   if (!item || !state.weaponForgeOption) return null;
   return parseWeaponForgeOption(state.weaponForgeOption);
 }
 function populateWeaponAffixes() {
   const weaponSelect = $('weapon-select');
+  const selectedWeapon = getWhiteEquipment(state.weaponId);
+  if (state.weaponMode === 'builtin' && selectedWeapon && !weaponStyleEligible(selectedWeapon)) {
+    state.weaponId = '';
+    state.weaponName = '';
+    state.weaponMode = 'empty';
+    state.weaponForgeOption = '';
+  }
   if (weaponSelect) {
     weaponSelect.innerHTML = '<option value="">未选择</option><option value="custom">自定义武器</option>';
-    (state.whiteRabbit?.equipment || []).filter((item) => isWeapon(item) && isSEquipment(item)).forEach((item) => {
+    (state.whiteRabbit?.equipment || []).filter((item) => isWeapon(item) && isSEquipment(item) && weaponStyleEligible(item)).forEach((item) => {
       const option = document.createElement('option');
       option.value = String(item.id);
       option.textContent = `${equipmentName(item)} · ${equipmentSummary(item)}`;
@@ -4157,6 +4176,7 @@ function bindEvents() {
     damageCritCustomized = false;
     applyCharacterDefaults();
     populateMartialArts();
+    populateWeaponAffixes();
     populateNeigong();
     applyDefaultTechniqueSelections();
     refreshTechniqueAvailability();
@@ -4169,7 +4189,10 @@ function bindEvents() {
   $('person-name').addEventListener('input', handleCharacterSelection);
   $('person-name').addEventListener('change', handleCharacterSelection);
   ['person-style', 'person-gender'].forEach((id) => $(id).addEventListener('change', () => {
-    if (id === 'person-style') populateMartialArts();
+    if (id === 'person-style') {
+      populateMartialArts();
+      populateWeaponAffixes();
+    }
     populateNeigong();
     applyDefaultTechniqueSelections();
     refreshTechniqueAvailability();
