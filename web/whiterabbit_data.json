@@ -1268,7 +1268,7 @@
       "name": "斗转星移",
       "rank": "S",
       "scope": "修炼者",
-      "ren_du": "10%最大气血",
+      "ren_du": "",
       "hp_percent": 43,
       "attack_percent": 30,
       "heal_percent": 30,
@@ -1279,14 +1279,14 @@
       "reflect_percent": null,
       "speed": null,
       "dodge_percent": null,
-      "special": "受击36%概率复制敌方武学反击",
+      "special": "受击36%概率复制敌方武学反击；大任督：10%最大气血",
       "access": "主角无门派，向慕容复多次打听并拜入燕子坞接任务；三次任务都找苏州古董商，仁政印找虎啸林入口陶惜阴；结束后找王妙铃领取"
     },
     {
       "name": "达摩武经",
       "rank": "S",
       "scope": "修炼者",
-      "ren_du": "10%攻击",
+      "ren_du": "",
       "hp_percent": 45,
       "attack_percent": 48,
       "heal_percent": null,
@@ -1297,7 +1297,7 @@
       "reflect_percent": null,
       "speed": null,
       "dodge_percent": null,
-      "special": "免疫减少攻击",
+      "special": "免疫减少攻击；大任督：10%攻击",
       "access": "武道感悟"
     },
     {
@@ -1340,7 +1340,7 @@
       "name": "葵花宝典",
       "rank": "S",
       "scope": "剑主",
-      "ren_du": "10%最大气血、10%攻击",
+      "ren_du": "",
       "hp_percent": 36,
       "attack_percent": 54,
       "heal_percent": null,
@@ -1351,7 +1351,7 @@
       "reflect_percent": null,
       "speed": 28,
       "dodge_percent": null,
-      "special": "增加辟魔剑法，辟邪剑法15%暴击率",
+      "special": "增加辟魔剑法，辟邪剑法15%暴击率；大任督：10%最大气血、10%攻击",
       "access": "仅剑主可学习；幽州老太监处割弟弟学习，限1"
     },
     {
@@ -1376,7 +1376,7 @@
       "name": "金顶莲华经",
       "rank": "S",
       "scope": "修炼者",
-      "ren_du": "10%攻击",
+      "ren_du": "",
       "hp_percent": 45,
       "attack_percent": 42,
       "heal_percent": null,
@@ -1387,7 +1387,7 @@
       "reflect_percent": null,
       "speed": 28,
       "dodge_percent": 28,
-      "special": "24%免伤，免疫减速，增加曜日吞云掌和倚天剑诀10%暴击",
+      "special": "24%免伤，免疫减速，增加曜日吞云掌和倚天剑诀10%暴击；大任督：10%攻击",
       "access": "带清月去金陵茕茕处领取，限1，武道感悟"
     },
     {
@@ -1412,7 +1412,7 @@
       "name": "玄阳离火功",
       "rank": "S",
       "scope": "修炼者",
-      "ren_du": "10%攻击",
+      "ren_du": "",
       "hp_percent": 48,
       "attack_percent": null,
       "heal_percent": 36,
@@ -1423,14 +1423,14 @@
       "reflect_percent": 75,
       "speed": null,
       "dodge_percent": null,
-      "special": "在场时给全部敌人施加3%流血",
+      "special": "在场时给全部敌人施加3%流血；大任督：10%攻击",
       "access": "原版乾坤大挪移支线奖励修改，限1"
     },
     {
       "name": "镇狱明镜诀",
       "rank": "S",
       "scope": "修炼者",
-      "ren_du": "10%最大气血",
+      "ren_du": "",
       "hp_percent": 42,
       "attack_percent": 42,
       "heal_percent": null,
@@ -1441,7 +1441,7 @@
       "reflect_percent": null,
       "speed": null,
       "dodge_percent": null,
-      "special": "力竭后1回合后60%血量复活",
+      "special": "力竭后1回合后60%血量复活；大任督：10%最大气血",
       "access": "六扇门主处打听獬豸呑邪斩开启任务获取，限1"
     },
     {
@@ -1466,7 +1466,7 @@
       "name": "玄同归藏诀",
       "rank": "S",
       "scope": "修炼者",
-      "ren_du": "10%最大气血、10%攻击",
+      "ren_du": "",
       "hp_percent": 42,
       "attack_percent": 45,
       "heal_percent": 40,
@@ -1477,7 +1477,7 @@
       "reflect_percent": null,
       "speed": null,
       "dodge_percent": null,
-      "special": "免疫流血，中毒，提高25%大同天演剑威力",
+      "special": "免疫流血，中毒，提高25%大同天演剑威力；大任督：10%最大气血、10%攻击",
       "access": "顾言等级专属，限1"
     },
     {
@@ -1538,7 +1538,7 @@
       "name": "白兔心决",
       "rank": "?",
       "scope": "修炼者",
-      "ren_du": "10%攻击",
+      "ren_du": "",
       "hp_percent": 60,
       "attack_percent": 60,
       "heal_percent": null,
@@ -1549,7 +1549,7 @@
       "reflect_percent": null,
       "speed": 28,
       "dodge_percent": null,
-      "special": "免疫负面，增加20%暴击",
+      "special": "免疫负面，增加20%暴击；大任督：10%攻击",
       "access": "人生目标绝世内功，限1"
     },
     {
@@ -1610,7 +1610,7 @@
       "name": "嗜心炼体诀",
       "rank": "?",
       "scope": "修炼者",
-      "ren_du": "10%攻击",
+      "ren_du": "",
       "hp_percent": 60,
       "attack_percent": 60,
       "heal_percent": -36,
@@ -1621,14 +1621,14 @@
       "reflect_percent": null,
       "speed": null,
       "dodge_percent": null,
-      "special": "增加拳掌武功15%暴击；每次出手损失33%血量",
+      "special": "增加拳掌武功15%暴击；每次出手损失33%血量；大任督：10%攻击",
       "access": "张祁连专属"
     },
     {
       "name": "喵王护御诀",
       "rank": "?",
       "scope": "修炼者",
-      "ren_du": "10%攻击",
+      "ren_du": "",
       "hp_percent": 40,
       "attack_percent": 27,
       "heal_percent": 40,
@@ -1642,7 +1642,7 @@
       "damage_transfer_percent": 20,
       "conditional_mitigation_percent": 5,
       "conditional_mitigation_condition": "自己血量最低",
-      "special": "分担绝对血量最低的伙伴受到伤害的20%，自身血量最低则增加5%额外免伤",
+      "special": "分担绝对血量最低的伙伴受到伤害的20%，自身血量最低则增加5%额外免伤；大任督：10%攻击",
       "access": "原版航海图：灵石岛任务奖励",
       "designer": "@喵喵大王"
     }
