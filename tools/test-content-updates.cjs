@@ -127,6 +127,16 @@ async function open(savedFavorites, lastCheck) {
     assert.equal((duguHtml.match(/200%/g) || []).length, 1);
     const wujiHtml = w.renderMartialDetail(martialRecords.find(item => item.name === '无极玄功拳'));
     assert(!wujiHtml.includes('60%'));
+    for (const [name, snippets] of Object.entries({
+      '白兔斩天刀': ['180%'], '六脉剑指': ['80%概率附加100%'],
+      '万躯撼岳拳': ['20%最终攻击', '80%最终生命'], '曜日破云掌': ['120%武器'],
+      '破浪刀诀': ['100%武器'], '獬豸呑邪斩': ['12%概率附加100%'],
+      '关山月破阵': ['100%人物基础'], '九霄惊雷刀法': ['每3回合附加200%'],
+      '少林六合棍': ['每2回合附加50%'],
+    })) {
+      const html = w.renderMartialDetail(martialRecords.find(item => item.name === name));
+      for (const snippet of snippets) assert.equal(html.split(snippet).length - 1, 1, name + ': ' + snippet);
+    }
     for (const item of bundle.data.encyclopedia.martial_arts) {
       if (item.damage_factor != null) assert.equal(w.martialDamageFactor(item), item.damage_factor);
     }
