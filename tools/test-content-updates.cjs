@@ -120,7 +120,16 @@ async function open(savedFavorites, lastCheck) {
     for (const key of favoriteKeys.slice(1)) w.jianghuEncyclopedia.toggleFavorite(key);
     w.dispatchEvent = dispatch;
     w.dispatchEvent(new w.Event('jianghu-encyclopedia-favorites-changed'));
-    assert.equal(martialRecords.filter((item) => w.martialIsLimitedCopy(item.access)).length, 35);
+    assert.equal(martialRecords.filter((item) => w.martialIsLimitedCopy(item.access)).length, 37);
+    const dugu = martialRecords.find(item => item.name === '独孤剑诀');
+    const duguHtml = w.renderMartialDetail(dugu);
+    assert(!duguHtml.includes('150%'));
+    assert.equal((duguHtml.match(/200%/g) || []).length, 1);
+    const wujiHtml = w.renderMartialDetail(martialRecords.find(item => item.name === '无极玄功拳'));
+    assert(!wujiHtml.includes('60%'));
+    for (const item of bundle.data.encyclopedia.martial_arts) {
+      if (item.damage_factor != null) assert.equal(w.martialDamageFactor(item), item.damage_factor);
+    }
     const limitedSword = martialRecords.find((item) => item.name === '白兔三仙剑');
     const limitedCard = w.renderEncyclopediaCard('martial_arts', limitedSword);
     assert.match(limitedCard, /剑法<\/span>\s*<span class="encyclopedia-card-badge">孤本<\/span>/);
