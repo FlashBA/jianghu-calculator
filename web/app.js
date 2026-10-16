@@ -3378,11 +3378,11 @@ function innerEncyclopediaEffect(item) {
   });
   return [
     stats !== '无属性' ? stats : '',
-    item?.ren_du ? `大任督：${item.ren_du}` : '',
     item?.special || '',
     item?.conditional_mitigation_percent
       ? `${item.conditional_mitigation_condition || '满足条件时'}增加${formatPercent(item.conditional_mitigation_percent)}免伤`
       : '',
+    item?.ren_du ? `大任督：${item.ren_du}` : '',
   ].filter(Boolean).join('；') || '特殊效果待补';
 }
 function innerEncyclopediaMeta(item) {
